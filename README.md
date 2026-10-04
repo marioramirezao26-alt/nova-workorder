@@ -14,6 +14,20 @@ NOVA WORKORDER permite:
 - visualizar dashboard con indicadores clave
 - controlar acceso mediante permisos por rol
 
+## Estado del proyecto
+
+Versión funcional y lista para entrega: v1.0
+
+El sistema incluye:
+- autenticación con JWT
+- roles de usuario
+- gestión de clientes
+- gestión de órdenes de trabajo
+- dashboard ejecutivo
+- búsquedas y filtros
+- validaciones y protección por permisos
+- documentación de presentación y defensa
+
 ## Stack tecnológico
 
 ### Backend
@@ -179,6 +193,13 @@ La app estará disponible en:
 - Reparación de compresor industrial — prioridad alta — cancelada
 - Ajuste de accesos de seguridad — prioridad baja — pendiente
 
+## Documentación del proyecto
+
+- VERSION.md — información de la versión final
+- PRESENTACION_FINAL.md — presentación ejecutiva del proyecto
+- GUION_DEFENSA.md — guion para defensa oral
+- README.md — documentación principal del repositorio
+
 ## Mejoras futuras
 
 - exportación de reportes PDF/Excel
@@ -191,7 +212,7 @@ La app estará disponible en:
 
 ## Estado del proyecto
 
-El proyecto se encuentra en una versión funcional con dashboard, gestión de clientes, control de tareas y permisos por rol. Está preparado para presentarse como una solución operativa real con base sólida para continuar desarrollándose.
+El proyecto se encuentra en una versión funcional con dashboard, gestión de clientes, control de tareas y permisos por rol. Está preparado para presentarse como una solución operativa real completa y usable.
 
 ## Licencia
 
