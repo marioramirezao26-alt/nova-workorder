@@ -1,33 +1,84 @@
-const express = require('express');
-const { body } = require('express-validator');
-const { protect } = require('../middleware/authMiddleware');
-const { validateRequest } = require('../middleware/validateRequest');
-const {
-  getWorkOrders,
-  createWorkOrder,
-  getWorkOrderById,
-  updateWorkOrder,
-  deleteWorkOrder,
-} = require('../controllers/workOrderController');
+const User = require('../models/User');
+const generateToken = require('../utils/generateToken');
 
-const router = express.Router();
+const registerUser = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
 
-const workOrderValidation = [
-  body('title').trim().notEmpty().withMessage('El título es obligatorio').isLength({ min: 3, max: 200 }).withMessage('El título debe tener entre 3 y 200 caracteres'),
-  body('description').trim().notEmpty().withMessage('La descripción es obligatoria').isLength({ min: 10, max: 2000 }).withMessage('La descripción debe tener entre 10 y 2000 caracteres'),
-  body('status').optional().isIn(['pendiente', 'en_proceso', 'completada', 'cancelada']).withMessage('Estado inválido'),
-  body('priority').optional().isIn(['baja', 'media', 'alta', 'urgente']).withMessage('Prioridad inválida'),
-  body('customerName').optional().trim().isLength({ max: 150 }).withMessage('El cliente no debe superar 150 caracteres'),
-  body('notes').optional().trim().isLength({ max: 1000 }).withMessage('Las notas no deben superar 1000 caracteres'),
-  validateRequest,
-];
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: 'Nombre, email y contraseña son obligatorios',
+      });
+    }
 
-router.use(protect);
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
 
-router.get('/', getWorkOrders);
-router.post('/', workOrderValidation, createWorkOrder);
-router.get('/:id', getWorkOrderById);
-router.put('/:id', workOrderValidation, updateWorkOrder);
-router.delete('/:id', deleteWorkOrder);
+    if (existingUser) {
+      return res.status(400).json({
+        message: 'Ya existe un usuario con ese email',
+      });
+    }
 
-module.exports = router;
+    const normalizedRole = ['admin', 'tecnico', 'cliente'].includes(role) ? role : 'cliente';
+
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password,
+      role: normalizedRole,
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Error al registrar el usuario',
+    });
+  }
+};
+
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: 'Email y contraseña son obligatorios',
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    res.status(200).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message || 'Error al iniciar sesión',
+    });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+};

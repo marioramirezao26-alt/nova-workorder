@@ -1,137 +1,32 @@
-const Client = require('../models/Client');
-
-const getPageOptions = (req) => {
-  const page = Math.max(1, Number(req.query.page) || 1);
-  const limit = Math.min(Math.max(1, Number(req.query.limit) || 10), 100);
-
-  return { page, limit, skip: (page - 1) * limit };
-};
-
-const getClients = async (req, res) => {
-  try {
-    const { page, limit, skip } = getPageOptions(req);
-
-    const [items, total] = await Promise.all([
-      Client.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Client.countDocuments(),
-    ]);
-
-    const totalPages = Math.ceil(total / limit) || 1;
-
-    res.status(200).json({
-      items,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al obtener los clientes',
-    });
-  }
-};
-
-const createClient = async (req, res) => {
-  try {
-    const { name, email, phone, company, address } = req.body;
-
-    if (!name || !email) {
-      return res.status(400).json({
-        message: 'Nombre y email son obligatorios',
-      });
-    }
-
-    const existingClient = await Client.findOne({ email: email.toLowerCase() });
-
-    if (existingClient) {
-      return res.status(400).json({
-        message: 'Ya existe un cliente con ese email',
-      });
-    }
-
-    const client = await Client.create({
-      name,
-      email: email.toLowerCase(),
-      phone,
-      company,
-      address,
-    });
-
-    res.status(201).json(client);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al crear el cliente',
-    });
-  }
-};
-
-const getClientById = async (req, res) => {
-  try {
-    const client = await Client.findById(req.params.id);
-
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
-    }
-
-    res.status(200).json(client);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al obtener el cliente',
-    });
-  }
-};
-
-const updateClient = async (req, res) => {
-  try {
-    const client = await Client.findById(req.params.id);
-
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
-    }
-
-    const { name, email, phone, company, address, active } = req.body;
-
-    client.name = name || client.name;
-    client.email = email ? email.toLowerCase() : client.email;
-    client.phone = phone !== undefined ? phone : client.phone;
-    client.company = company !== undefined ? company : client.company;
-    client.address = address !== undefined ? address : client.address;
-    client.active = active !== undefined ? active : client.active;
-
-    const updatedClient = await client.save();
-    res.status(200).json(updatedClient);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al actualizar el cliente',
-    });
-  }
-};
-
-const deleteClient = async (req, res) => {
-  try {
-    const client = await Client.findById(req.params.id);
-
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
-    }
-
-    await client.deleteOne();
-
-    res.status(200).json({ message: 'Cliente eliminado correctamente' });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al eliminar el cliente',
-    });
-  }
-};
-
-module.exports = {
+const express = require('express');
+const { body } = require('express-validator');
+const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateRequest } = require('../middleware/validateRequest');
+const {
   getClients,
   createClient,
   getClientById,
   updateClient,
   deleteClient,
-};
+} = require('../controllers/clientController');
+
+const router = express.Router();
+
+const clientValidation = [
+  body('name').trim().notEmpty().withMessage('El nombre del cliente es obligatorio'),
+  body('email').isEmail().withMessage('Debe enviar un email válido'),
+  body('phone').optional().trim().isLength({ max: 30 }).withMessage('El teléfono no debe superar 30 caracteres'),
+  body('company').optional().trim().isLength({ max: 150 }).withMessage('La empresa no debe superar 150 caracteres'),
+  body('address').optional().trim().isLength({ max: 250 }).withMessage('La dirección no debe superar 250 caracteres'),
+  validateRequest,
+];
+
+router.use(protect);
+
+router.get('/', authorize('admin', 'tecnico', 'cliente'), getClients);
+router.post('/', authorize('admin', 'tecnico'), createClient);
+router.get('/:id', authorize('admin', 'tecnico', 'cliente'), getClientById);
+router.put('/:id', authorize('admin', 'tecnico'), updateClient);
+router.delete('/:id', authorize('admin'), deleteClient);
+
+module.exports = router;

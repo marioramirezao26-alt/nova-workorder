@@ -78,6 +78,9 @@ function App() {
     [token]
   );
 
+  const canManageOrders = user?.role === 'admin' || user?.role === 'tecnico';
+  const canManageClients = user?.role === 'admin' || user?.role === 'tecnico';
+
   useEffect(() => {
     if (!token) {
       setUser(null);
@@ -179,6 +182,11 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!canManageOrders) {
+      alert('No tienes permisos para gestionar órdenes');
+      return;
+    }
+
     try {
       if (editingId) {
         await api.put(`/workorders/${editingId}`, form);
@@ -198,6 +206,11 @@ function App() {
   const handleClientSubmit = async (e) => {
     e.preventDefault();
 
+    if (!canManageClients) {
+      alert('No tienes permisos para gestionar clientes');
+      return;
+    }
+
     try {
       if (editingClientId) {
         await api.put(`/clients/${editingClientId}`, clientForm);
@@ -214,6 +227,7 @@ function App() {
   };
 
   const handleEditOrder = (order) => {
+    if (!canManageOrders) return;
     setEditingId(order._id);
     setSelectedOrder(order);
     setForm({
@@ -227,6 +241,7 @@ function App() {
   };
 
   const handleEditClient = (client) => {
+    if (!canManageClients) return;
     setEditingClientId(client._id);
     setSelectedClient(client);
     setClientForm({
@@ -240,6 +255,11 @@ function App() {
   };
 
   const handleDeleteOrder = async (id) => {
+    if (!canManageOrders) {
+      alert('No tienes permisos para eliminar órdenes');
+      return;
+    }
+
     if (!window.confirm('¿Quieres eliminar esta orden?')) return;
 
     try {
@@ -259,6 +279,11 @@ function App() {
   };
 
   const handleDeleteClient = async (id) => {
+    if (!canManageClients) {
+      alert('No tienes permisos para eliminar clientes');
+      return;
+    }
+
     if (!window.confirm('¿Quieres eliminar este cliente?')) return;
 
     try {
@@ -401,9 +426,11 @@ function App() {
             <p className="eyebrow">Resumen</p>
             <h2>Panel principal</h2>
           </div>
-          <button className="primary-button small" onClick={() => { setEditingId(null); setSelectedOrder(null); setForm(emptyForm); }}>
-            Nueva tarea
-          </button>
+          {canManageOrders && (
+            <button className="primary-button small" onClick={() => { setEditingId(null); setSelectedOrder(null); setForm(emptyForm); }}>
+              Nueva tarea
+            </button>
+          )}
         </header>
 
         <section className="stats-grid">
@@ -485,64 +512,66 @@ function App() {
         </section>
 
         <section className="content-grid two-column-layout">
-          <div className="panel-box">
-            <div className="panel-header">
-              <h3>{editingId ? 'Editar orden' : 'Crear orden'}</h3>
-              {editingId && (
-                <button className="ghost-button" onClick={() => { setEditingId(null); setForm(emptyForm); }}>
-                  Cancelar
-                </button>
-              )}
-            </div>
-
-            <form className="order-form" onSubmit={handleSubmit}>
-              <label>
-                Título
-                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
-              </label>
-
-              <label>
-                Descripción
-                <textarea rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
-              </label>
-
-              <div className="two-columns">
-                <label>
-                  Estado
-                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="en_proceso">En proceso</option>
-                    <option value="completada">Completada</option>
-                    <option value="cancelada">Cancelada</option>
-                  </select>
-                </label>
-
-                <label>
-                  Prioridad
-                  <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
-                    <option value="baja">Baja</option>
-                    <option value="media">Media</option>
-                    <option value="alta">Alta</option>
-                    <option value="urgente">Urgente</option>
-                  </select>
-                </label>
+          {canManageOrders && (
+            <div className="panel-box">
+              <div className="panel-header">
+                <h3>{editingId ? 'Editar orden' : 'Crear orden'}</h3>
+                {editingId && (
+                  <button className="ghost-button" onClick={() => { setEditingId(null); setForm(emptyForm); }}>
+                    Cancelar
+                  </button>
+                )}
               </div>
 
-              <label>
-                Cliente
-                <input type="text" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} />
-              </label>
+              <form className="order-form" onSubmit={handleSubmit}>
+                <label>
+                  Título
+                  <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+                </label>
 
-              <label>
-                Notas
-                <textarea rows="2" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-              </label>
+                <label>
+                  Descripción
+                  <textarea rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
+                </label>
 
-              <button type="submit" className="primary-button">
-                {editingId ? 'Actualizar orden' : 'Guardar orden'}
-              </button>
-            </form>
-          </div>
+                <div className="two-columns">
+                  <label>
+                    Estado
+                    <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="en_proceso">En proceso</option>
+                      <option value="completada">Completada</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Prioridad
+                    <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                      <option value="baja">Baja</option>
+                      <option value="media">Media</option>
+                      <option value="alta">Alta</option>
+                      <option value="urgente">Urgente</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label>
+                  Cliente
+                  <input type="text" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} />
+                </label>
+
+                <label>
+                  Notas
+                  <textarea rows="2" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                </label>
+
+                <button type="submit" className="primary-button">
+                  {editingId ? 'Actualizar orden' : 'Guardar orden'}
+                </button>
+              </form>
+            </div>
+          )}
 
           <div className="panel-box">
             <div className="panel-header">
@@ -572,10 +601,12 @@ function App() {
                         </div>
                         <small>{order.customerName || 'Cliente sin nombre'}</small>
                       </button>
-                      <div className="order-actions">
-                        <button type="button" className="mini-button edit" onClick={() => handleEditOrder(order)}>Editar</button>
-                        <button type="button" className="mini-button delete" onClick={() => handleDeleteOrder(order._id)}>Eliminar</button>
-                      </div>
+                      {canManageOrders && (
+                        <div className="order-actions">
+                          <button type="button" className="mini-button edit" onClick={() => handleEditOrder(order)}>Editar</button>
+                          <button type="button" className="mini-button delete" onClick={() => handleDeleteOrder(order._id)}>Eliminar</button>
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
@@ -585,55 +616,57 @@ function App() {
         </section>
 
         <section className="content-grid client-grid">
-          <div className="panel-box">
-            <div className="panel-header">
-              <h3>{editingClientId ? 'Editar cliente' : 'Crear cliente'}</h3>
-              {editingClientId && (
-                <button className="ghost-button" onClick={() => { setEditingClientId(null); setClientForm(emptyClientForm); }}>
-                  Cancelar
+          {canManageClients && (
+            <div className="panel-box">
+              <div className="panel-header">
+                <h3>{editingClientId ? 'Editar cliente' : 'Crear cliente'}</h3>
+                {editingClientId && (
+                  <button className="ghost-button" onClick={() => { setEditingClientId(null); setClientForm(emptyClientForm); }}>
+                    Cancelar
+                  </button>
+                )}
+              </div>
+
+              <form className="order-form" onSubmit={handleClientSubmit}>
+                <label>
+                  Nombre
+                  <input type="text" value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} required />
+                </label>
+
+                <label>
+                  Email
+                  <input type="email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} required />
+                </label>
+
+                <label>
+                  Teléfono
+                  <input type="text" value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} />
+                </label>
+
+                <label>
+                  Empresa
+                  <input type="text" value={clientForm.company} onChange={(e) => setClientForm({ ...clientForm, company: e.target.value })} />
+                </label>
+
+                <label>
+                  Dirección
+                  <textarea rows="2" value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} />
+                </label>
+
+                <label>
+                  Estado
+                  <select value={clientForm.active ? 'active' : 'inactive'} onChange={(e) => setClientForm({ ...clientForm, active: e.target.value === 'active' })}>
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                  </select>
+                </label>
+
+                <button type="submit" className="primary-button">
+                  {editingClientId ? 'Actualizar cliente' : 'Guardar cliente'}
                 </button>
-              )}
+              </form>
             </div>
-
-            <form className="order-form" onSubmit={handleClientSubmit}>
-              <label>
-                Nombre
-                <input type="text" value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} required />
-              </label>
-
-              <label>
-                Email
-                <input type="email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} required />
-              </label>
-
-              <label>
-                Teléfono
-                <input type="text" value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} />
-              </label>
-
-              <label>
-                Empresa
-                <input type="text" value={clientForm.company} onChange={(e) => setClientForm({ ...clientForm, company: e.target.value })} />
-              </label>
-
-              <label>
-                Dirección
-                <textarea rows="2" value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} />
-              </label>
-
-              <label>
-                Estado
-                <select value={clientForm.active ? 'active' : 'inactive'} onChange={(e) => setClientForm({ ...clientForm, active: e.target.value === 'active' })}>
-                  <option value="active">Activo</option>
-                  <option value="inactive">Inactivo</option>
-                </select>
-              </label>
-
-              <button type="submit" className="primary-button">
-                {editingClientId ? 'Actualizar cliente' : 'Guardar cliente'}
-              </button>
-            </form>
-          </div>
+          )}
 
           <div className="panel-box">
             <h3>Clientes</h3>
@@ -650,10 +683,12 @@ function App() {
                       </div>
                       <small>{client.email}</small>
                     </button>
-                    <div className="order-actions">
-                      <button type="button" className="mini-button edit" onClick={() => handleEditClient(client)}>Editar</button>
-                      <button type="button" className="mini-button delete" onClick={() => handleDeleteClient(client._id)}>Eliminar</button>
-                    </div>
+                    {canManageClients && (
+                      <div className="order-actions">
+                        <button type="button" className="mini-button edit" onClick={() => handleEditClient(client)}>Editar</button>
+                        <button type="button" className="mini-button delete" onClick={() => handleDeleteClient(client._id)}>Eliminar</button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
