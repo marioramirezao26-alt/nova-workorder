@@ -286,6 +286,10 @@ textarea {
   margin-top: 24px;
 }
 
+.client-grid {
+  margin-top: 26px;
+}
+
 .panel-box {
   background: rgba(14, 26, 38, 0.8);
   border: 1px solid rgba(141, 174, 215, 0.2);
@@ -322,6 +326,9 @@ textarea {
   color: white;
   border-radius: 14px;
   padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .order-item.selected {
@@ -329,11 +336,55 @@ textarea {
   box-shadow: 0 0 0 1px rgba(111, 171, 255, 0.35);
 }
 
+.order-select {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 0;
+}
+
 .order-headline {
   display: flex;
   justify-content: space-between;
   gap: 10px;
   align-items: center;
+}
+
+.order-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mini-button,
+.ghost-button,
+.filter-select {
+  border-radius: 10px;
+  border: 1px solid rgba(141, 174, 215, 0.18);
+  background: rgba(255, 255, 255, 0.03);
+  color: white;
+  padding: 8px 10px;
+}
+
+.mini-button.edit {
+  background: rgba(79, 150, 255, 0.15);
+}
+
+.mini-button.delete {
+  background: rgba(255, 101, 101, 0.15);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.filter-select {
+  min-width: 130px;
 }
 
 .status-tag {

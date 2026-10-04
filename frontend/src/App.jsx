@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
 const API_URL = '/api';
@@ -13,14 +13,38 @@ const emptyForm = {
   notes: '',
 };
 
+const emptyClientForm = {
+  name: '',
+  email: '',
+  phone: '',
+  company: '',
+  address: '',
+  active: true,
+};
+
 function App() {
   const [token, setToken] = useState(localStorage.getItem(storageKey) || '');
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState('login');
   const [loading, setLoading] = useState(false);
   const [workOrders, setWorkOrders] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [dashboard, setDashboard] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    cancelled: 0,
+    priorities: [],
+    recentOrders: [],
+  });
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingClientId, setEditingClientId] = useState(null);
+  const [filter, setFilter] = useState('all');
   const [form, setForm] = useState(emptyForm);
+  const [clientForm, setClientForm] = useState(emptyClientForm);
   const [authForm, setAuthForm] = useState({
     name: '',
     email: '',
@@ -39,6 +63,25 @@ function App() {
     [token]
   );
 
+  useEffect(() => {
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    fetchProfile();
+    fetchWorkOrders();
+    fetchClients();
+    fetchDashboard();
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      fetchWorkOrders();
+      fetchDashboard();
+    }
+  }, [filter]);
+
   const fetchProfile = async () => {
     try {
       const { data } = await api.get('/auth/profile');
@@ -48,18 +91,45 @@ function App() {
     }
   };
 
+  const fetchDashboard = async () => {
+    try {
+      const { data } = await api.get('/dashboard/summary');
+      setDashboard(data);
+    } catch (error) {
+      console.error('Error fetching dashboard:', error);
+    }
+  };
+
   const fetchWorkOrders = async () => {
     try {
       setLoading(true);
-      const { data } = await api.get('/workorders');
-      setWorkOrders(data);
-      if (!selectedOrder && data.length) {
-        setSelectedOrder(data[0]);
+      const query = filter !== 'all' ? `?status=${filter}` : '';
+      const { data } = await api.get(`/workorders${query}`);
+      const items = data.items || data;
+      setWorkOrders(items);
+      if (!selectedOrder && items.length) {
+        setSelectedOrder(items[0]);
+      }
+      if (selectedOrder && !items.find((order) => order._id === selectedOrder._id)) {
+        setSelectedOrder(items[0] || null);
       }
     } catch (error) {
       console.error('Error fetching work orders:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchClients = async () => {
+    try {
+      const { data } = await api.get('/clients');
+      const items = data.items || data;
+      setClients(items);
+      if (!selectedClient && items.length) {
+        setSelectedClient(items[0]);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
     }
   };
 
@@ -91,15 +161,103 @@ function App() {
     }
   };
 
-  const handleCreateWorkOrder = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      await api.post('/workorders', form);
+      if (editingId) {
+        await api.put(`/workorders/${editingId}`, form);
+      } else {
+        await api.post('/workorders', form);
+      }
+
       setForm(emptyForm);
+      setEditingId(null);
       fetchWorkOrders();
+      fetchDashboard();
     } catch (error) {
-      alert(error.response?.data?.message || 'No se pudo crear la orden');
+      alert(error.response?.data?.message || 'No se pudo guardar la orden');
+    }
+  };
+
+  const handleClientSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      if (editingClientId) {
+        await api.put(`/clients/${editingClientId}`, clientForm);
+      } else {
+        await api.post('/clients', clientForm);
+      }
+
+      setClientForm(emptyClientForm);
+      setEditingClientId(null);
+      fetchClients();
+    } catch (error) {
+      alert(error.response?.data?.message || 'No se pudo guardar el cliente');
+    }
+  };
+
+  const handleEditOrder = (order) => {
+    setEditingId(order._id);
+    setSelectedOrder(order);
+    setForm({
+      title: order.title,
+      description: order.description,
+      status: order.status,
+      priority: order.priority,
+      customerName: order.customerName || '',
+      notes: order.notes || '',
+    });
+  };
+
+  const handleEditClient = (client) => {
+    setEditingClientId(client._id);
+    setSelectedClient(client);
+    setClientForm({
+      name: client.name,
+      email: client.email,
+      phone: client.phone || '',
+      company: client.company || '',
+      address: client.address || '',
+      active: client.active,
+    });
+  };
+
+  const handleDeleteOrder = async (id) => {
+    if (!window.confirm('¿Quieres eliminar esta orden?')) return;
+
+    try {
+      await api.delete(`/workorders/${id}`);
+      if (selectedOrder?._id === id) {
+        setSelectedOrder(null);
+      }
+      if (editingId === id) {
+        setEditingId(null);
+        setForm(emptyForm);
+      }
+      fetchWorkOrders();
+      fetchDashboard();
+    } catch (error) {
+      alert(error.response?.data?.message || 'No se pudo eliminar la orden');
+    }
+  };
+
+  const handleDeleteClient = async (id) => {
+    if (!window.confirm('¿Quieres eliminar este cliente?')) return;
+
+    try {
+      await api.delete(`/clients/${id}`);
+      if (selectedClient?._id === id) {
+        setSelectedClient(null);
+      }
+      if (editingClientId === id) {
+        setEditingClientId(null);
+        setClientForm(emptyClientForm);
+      }
+      fetchClients();
+    } catch (error) {
+      alert(error.response?.data?.message || 'No se pudo eliminar el cliente');
     }
   };
 
@@ -108,15 +266,16 @@ function App() {
     setToken('');
     setUser(null);
     setWorkOrders([]);
+    setClients([]);
     setSelectedOrder(null);
+    setSelectedClient(null);
+    setEditingId(null);
+    setEditingClientId(null);
+    setForm(emptyForm);
+    setClientForm(emptyClientForm);
   };
 
-  const stats = {
-    total: workOrders.length,
-    pending: workOrders.filter((item) => item.status === 'pendiente').length,
-    inProgress: workOrders.filter((item) => item.status === 'en_proceso').length,
-    completed: workOrders.filter((item) => item.status === 'completada').length,
-  };
+  const visibleOrders = filter === 'all' ? workOrders : workOrders.filter((order) => order.status === filter);
 
   if (!token || !user) {
     return (
@@ -124,28 +283,20 @@ function App() {
         <div className="auth-hero">
           <div className="hero-badge">NOVA</div>
           <h1>WORKORDER</h1>
-          <p>Gestión moderna de órdenes y operaciones.</p>
+          <p>Gestión moderna de órdenes, clientes y métricas.</p>
           <ul>
             <li>Seguimiento en tiempo real</li>
-            <li>Control de prioridad</li>
-            <li>Panel de trabajo centralizado</li>
+            <li>Control de clientes y prioridad</li>
+            <li>Dashboard con indicadores clave</li>
           </ul>
         </div>
 
         <form className="auth-card" onSubmit={handleLoginRegister}>
           <div className="segmented-control">
-            <button
-              type="button"
-              className={authMode === 'login' ? 'active' : ''}
-              onClick={() => setAuthMode('login')}
-            >
+            <button type="button" className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>
               Iniciar sesión
             </button>
-            <button
-              type="button"
-              className={authMode === 'register' ? 'active' : ''}
-              onClick={() => setAuthMode('register')}
-            >
+            <button type="button" className={authMode === 'register' ? 'active' : ''} onClick={() => setAuthMode('register')}>
               Registrarse
             </button>
           </div>
@@ -156,9 +307,7 @@ function App() {
               <input
                 type="text"
                 value={authForm.name}
-                onChange={(e) =>
-                  setAuthForm((prev) => ({ ...prev, name: e.target.value }))
-                }
+                onChange={(e) => setAuthForm((prev) => ({ ...prev, name: e.target.value }))}
                 required
               />
             </label>
@@ -169,9 +318,7 @@ function App() {
             <input
               type="email"
               value={authForm.email}
-              onChange={(e) =>
-                setAuthForm((prev) => ({ ...prev, email: e.target.value }))
-              }
+              onChange={(e) => setAuthForm((prev) => ({ ...prev, email: e.target.value }))}
               required
             />
           </label>
@@ -181,9 +328,7 @@ function App() {
             <input
               type="password"
               value={authForm.password}
-              onChange={(e) =>
-                setAuthForm((prev) => ({ ...prev, password: e.target.value }))
-              }
+              onChange={(e) => setAuthForm((prev) => ({ ...prev, password: e.target.value }))}
               required
             />
           </label>
@@ -191,12 +336,7 @@ function App() {
           {authMode === 'register' && (
             <label>
               Rol
-              <select
-                value={authForm.role}
-                onChange={(e) =>
-                  setAuthForm((prev) => ({ ...prev, role: e.target.value }))
-                }
-              >
+              <select value={authForm.role} onChange={(e) => setAuthForm((prev) => ({ ...prev, role: e.target.value }))}>
                 <option value="cliente">Cliente</option>
                 <option value="tecnico">Técnico</option>
                 <option value="admin">Administrador</option>
@@ -226,7 +366,7 @@ function App() {
         <nav className="nav">
           <button className="nav-item active">Dashboard</button>
           <button className="nav-item">Órdenes</button>
-          <button className="nav-item">Usuarios</button>
+          <button className="nav-item">Clientes</button>
           <button className="nav-item">Informes</button>
         </nav>
 
@@ -243,61 +383,56 @@ function App() {
             <p className="eyebrow">Resumen</p>
             <h2>Panel principal</h2>
           </div>
-          <button className="primary-button small">Nueva tarea</button>
+          <button className="primary-button small" onClick={() => { setEditingId(null); setSelectedOrder(null); setForm(emptyForm); }}>
+            Nueva tarea
+          </button>
         </header>
 
         <section className="stats-grid">
           <div className="stat-card">
             <span>Total</span>
-            <strong>{stats.total}</strong>
+            <strong>{dashboard.total || workOrders.length}</strong>
           </div>
           <div className="stat-card">
             <span>Pendientes</span>
-            <strong>{stats.pending}</strong>
+            <strong>{dashboard.pending || 0}</strong>
           </div>
           <div className="stat-card">
             <span>En proceso</span>
-            <strong>{stats.inProgress}</strong>
+            <strong>{dashboard.inProgress || 0}</strong>
           </div>
           <div className="stat-card">
             <span>Completadas</span>
-            <strong>{stats.completed}</strong>
+            <strong>{dashboard.completed || 0}</strong>
           </div>
         </section>
 
-        <section className="content-grid">
+        <section className="content-grid two-column-layout">
           <div className="panel-box">
-            <h3>Crear orden</h3>
-            <form className="order-form" onSubmit={handleCreateWorkOrder}>
+            <div className="panel-header">
+              <h3>{editingId ? 'Editar orden' : 'Crear orden'}</h3>
+              {editingId && (
+                <button className="ghost-button" onClick={() => { setEditingId(null); setForm(emptyForm); }}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+
+            <form className="order-form" onSubmit={handleSubmit}>
               <label>
                 Título
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  required
-                />
+                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
               </label>
 
               <label>
                 Descripción
-                <textarea
-                  rows="3"
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  required
-                />
+                <textarea rows="3" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
               </label>
 
               <div className="two-columns">
                 <label>
                   Estado
-                  <select
-                    value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  >
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                     <option value="pendiente">Pendiente</option>
                     <option value="en_proceso">En proceso</option>
                     <option value="completada">Completada</option>
@@ -307,10 +442,7 @@ function App() {
 
                 <label>
                   Prioridad
-                  <select
-                    value={form.priority}
-                    onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                  >
+                  <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                     <option value="baja">Baja</option>
                     <option value="media">Media</option>
                     <option value="alta">Alta</option>
@@ -321,51 +453,134 @@ function App() {
 
               <label>
                 Cliente
-                <input
-                  type="text"
-                  value={form.customerName}
-                  onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                />
+                <input type="text" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} />
               </label>
 
               <label>
                 Notas
-                <textarea
-                  rows="2"
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                />
+                <textarea rows="2" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </label>
 
-              <button type="submit" className="primary-button">Guardar orden</button>
+              <button type="submit" className="primary-button">
+                {editingId ? 'Actualizar orden' : 'Guardar orden'}
+              </button>
             </form>
           </div>
 
           <div className="panel-box">
-            <h3>Órdenes recientes</h3>
+            <div className="panel-header">
+              <h3>Órdenes recientes</h3>
+              <select className="filter-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
+                <option value="all">Todas</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="completada">Completadas</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+            </div>
+
             {loading ? (
               <p className="muted">Cargando...</p>
             ) : (
               <div className="order-list">
-                {workOrders.length === 0 ? (
+                {visibleOrders.length === 0 ? (
                   <p className="muted">No hay órdenes registradas.</p>
                 ) : (
-                  workOrders.map((order) => (
-                    <button
-                      key={order._id}
-                      className={`order-item ${selectedOrder?._id === order._id ? 'selected' : ''}`}
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      <div className="order-headline">
-                        <strong>{order.title}</strong>
-                        <span className={`status-tag ${order.status}`}>{order.status}</span>
+                  visibleOrders.map((order) => (
+                    <div key={order._id} className={`order-item ${selectedOrder?._id === order._id ? 'selected' : ''}`}>
+                      <button type="button" className="order-select" onClick={() => setSelectedOrder(order)}>
+                        <div className="order-headline">
+                          <strong>{order.title}</strong>
+                          <span className={`status-tag ${order.status}`}>{order.status}</span>
+                        </div>
+                        <small>{order.customerName || 'Cliente sin nombre'}</small>
+                      </button>
+                      <div className="order-actions">
+                        <button type="button" className="mini-button edit" onClick={() => handleEditOrder(order)}>Editar</button>
+                        <button type="button" className="mini-button delete" onClick={() => handleDeleteOrder(order._id)}>Eliminar</button>
                       </div>
-                      <small>{order.customerName || 'Cliente sin nombre'}</small>
-                    </button>
+                    </div>
                   ))
                 )}
               </div>
             )}
+          </div>
+        </section>
+
+        <section className="content-grid client-grid">
+          <div className="panel-box">
+            <div className="panel-header">
+              <h3>{editingClientId ? 'Editar cliente' : 'Crear cliente'}</h3>
+              {editingClientId && (
+                <button className="ghost-button" onClick={() => { setEditingClientId(null); setClientForm(emptyClientForm); }}>
+                  Cancelar
+                </button>
+              )}
+            </div>
+
+            <form className="order-form" onSubmit={handleClientSubmit}>
+              <label>
+                Nombre
+                <input type="text" value={clientForm.name} onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })} required />
+              </label>
+
+              <label>
+                Email
+                <input type="email" value={clientForm.email} onChange={(e) => setClientForm({ ...clientForm, email: e.target.value })} required />
+              </label>
+
+              <label>
+                Teléfono
+                <input type="text" value={clientForm.phone} onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })} />
+              </label>
+
+              <label>
+                Empresa
+                <input type="text" value={clientForm.company} onChange={(e) => setClientForm({ ...clientForm, company: e.target.value })} />
+              </label>
+
+              <label>
+                Dirección
+                <textarea rows="2" value={clientForm.address} onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })} />
+              </label>
+
+              <label>
+                Estado
+                <select value={clientForm.active ? 'active' : 'inactive'} onChange={(e) => setClientForm({ ...clientForm, active: e.target.value === 'active' })}>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </label>
+
+              <button type="submit" className="primary-button">
+                {editingClientId ? 'Actualizar cliente' : 'Guardar cliente'}
+              </button>
+            </form>
+          </div>
+
+          <div className="panel-box">
+            <h3>Clientes</h3>
+            <div className="order-list">
+              {clients.length === 0 ? (
+                <p className="muted">No hay clientes registrados.</p>
+              ) : (
+                clients.map((client) => (
+                  <div key={client._id} className={`order-item ${selectedClient?._id === client._id ? 'selected' : ''}`}>
+                    <button type="button" className="order-select" onClick={() => setSelectedClient(client)}>
+                      <div className="order-headline">
+                        <strong>{client.name}</strong>
+                        <span className={`status-tag ${client.active ? 'completada' : 'cancelada'}`}>{client.active ? 'Activo' : 'Inactivo'}</span>
+                      </div>
+                      <small>{client.email}</small>
+                    </button>
+                    <div className="order-actions">
+                      <button type="button" className="mini-button edit" onClick={() => handleEditClient(client)}>Editar</button>
+                      <button type="button" className="mini-button delete" onClick={() => handleDeleteClient(client._id)}>Eliminar</button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </section>
 
@@ -393,6 +608,34 @@ function App() {
             <div className="detail-description">
               <p className="label">Descripción</p>
               <p>{selectedOrder.description}</p>
+            </div>
+          </section>
+        )}
+
+        {selectedClient && (
+          <section className="detail-panel panel-box">
+            <h3>Detalle de cliente</h3>
+            <div className="detail-grid">
+              <div>
+                <p className="label">Nombre</p>
+                <strong>{selectedClient.name}</strong>
+              </div>
+              <div>
+                <p className="label">Email</p>
+                <strong>{selectedClient.email}</strong>
+              </div>
+              <div>
+                <p className="label">Teléfono</p>
+                <strong>{selectedClient.phone || 'Sin teléfono'}</strong>
+              </div>
+              <div>
+                <p className="label">Empresa</p>
+                <strong>{selectedClient.company || 'Sin empresa'}</strong>
+              </div>
+            </div>
+            <div className="detail-description">
+              <p className="label">Dirección</p>
+              <p>{selectedClient.address || 'Sin dirección registrada'}</p>
             </div>
           </section>
         )}
