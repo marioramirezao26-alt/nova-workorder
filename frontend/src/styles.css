@@ -58,6 +58,7 @@ function App() {
   const [editingId, setEditingId] = useState(null);
   const [editingClientId, setEditingClientId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [clientForm, setClientForm] = useState(emptyClientForm);
   const [authForm, setAuthForm] = useState({
@@ -313,9 +314,24 @@ function App() {
     setEditingClientId(null);
     setForm(emptyForm);
     setClientForm(emptyClientForm);
+    setSearchTerm('');
   };
 
   const visibleOrders = filter === 'all' ? workOrders : workOrders.filter((order) => order.status === filter);
+  const filteredOrders = visibleOrders.filter((order) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+    const haystack = `${order.title} ${order.description} ${order.customerName || ''}`.toLowerCase();
+    return haystack.includes(query);
+  });
+
+  const filteredClients = clients.filter((client) => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return true;
+    const haystack = `${client.name} ${client.email} ${client.company || ''} ${client.phone || ''}`.toLowerCase();
+    return haystack.includes(query);
+  });
+
   const maxMonthlyValue = dashboard.monthlyTrend.length
     ? Math.max(...dashboard.monthlyTrend.map((item) => item.count))
     : 1;
@@ -416,6 +432,7 @@ function App() {
         <div className="profile-box">
           <p>{user.name}</p>
           <small>{user.role}</small>
+          <span className="role-badge">{user.role}</span>
           <button className="logout-button" onClick={logout}>Cerrar sesión</button>
         </div>
       </aside>
@@ -432,6 +449,20 @@ function App() {
             </button>
           )}
         </header>
+
+        <div className="role-header">
+          <div>
+            <p className="eyebrow">Permisos actuales</p>
+            <h3>{user.role.toUpperCase()}</h3>
+          </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar órdenes o clientes..."
+            className="search-input"
+          />
+        </div>
 
         <section className="stats-grid">
           <div className="stat-card">
@@ -589,10 +620,10 @@ function App() {
               <p className="muted">Cargando...</p>
             ) : (
               <div className="order-list">
-                {visibleOrders.length === 0 ? (
+                {filteredOrders.length === 0 ? (
                   <p className="muted">No hay órdenes registradas.</p>
                 ) : (
-                  visibleOrders.map((order) => (
+                  filteredOrders.map((order) => (
                     <div key={order._id} className={`order-item ${selectedOrder?._id === order._id ? 'selected' : ''}`}>
                       <button type="button" className="order-select" onClick={() => setSelectedOrder(order)}>
                         <div className="order-headline">
@@ -671,10 +702,10 @@ function App() {
           <div className="panel-box">
             <h3>Clientes</h3>
             <div className="order-list">
-              {clients.length === 0 ? (
+              {filteredClients.length === 0 ? (
                 <p className="muted">No hay clientes registrados.</p>
               ) : (
-                clients.map((client) => (
+                filteredClients.map((client) => (
                   <div key={client._id} className={`order-item ${selectedClient?._id === client._id ? 'selected' : ''}`}>
                     <button type="button" className="order-select" onClick={() => setSelectedClient(client)}>
                       <div className="order-headline">
