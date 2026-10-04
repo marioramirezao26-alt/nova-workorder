@@ -4,6 +4,8 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const workOrderRoutes = require('./routes/workOrderRoutes');
+const clientRoutes = require('./routes/clientRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 dotenv.config();
 
@@ -21,6 +23,8 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/workorders', workOrderRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
