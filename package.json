@@ -1,0 +1,16 @@
+{
+  "name": "nova-workorder-backend",
+  "version": "1.0.0",
+  "description": "Backend empresarial para NOVA WORKORDER",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3"
+  }
+}
