@@ -1,19 +1,18 @@
 # NOVA WORKORDER
 
-NOVA WORKORDER es una plataforma de gestión operativa para empresas que necesitan controlar órdenes de trabajo, clientes y rendimiento del servicio en tiempo real.
+NOVA WORKORDER es una plataforma moderna de gestión operativa diseñada para empresas que necesitan controlar órdenes de trabajo, clientes y métricas de desempeño en tiempo real.
 
-La solución centraliza la administración de clientes, tareas, prioridades, estados y métricas clave para una operación más eficiente y ordenada.
+La solución centraliza la administración de clientes, tareas, prioridades, estados y reportes clave para una operación más eficiente y organizada.
 
-## Visión general
+## Descripción general
 
-NOVA WORKORDER está diseñada para ayudar a equipos de servicio, mantenimiento, soporte técnico y atención al cliente a:
-
+NOVA WORKORDER permite:
 - registrar clientes
 - crear y gestionar órdenes de trabajo
-- priorizar tareas por urgencia
-- controlar el estado de cada servicio
-- visualizar métricas de performance
-- proteger el acceso con roles y permisos
+- asignar prioridades y estados
+- seguir el avance de cada tarea
+- visualizar dashboard con indicadores clave
+- controlar acceso mediante permisos por rol
 
 ## Stack tecnológico
 
@@ -30,69 +29,42 @@ NOVA WORKORDER está diseñada para ayudar a equipos de servicio, mantenimiento,
 - React
 - Vite
 - Axios
+- CSS custom
 
-## Funcionalidades
+## Funcionalidades principales
 
-- Sistema de autenticación y registro
-- Login seguro con JWT
-- Roles diferenciados:
+- Registro e inicio de sesión
+- Gestión de usuarios con roles:
   - Administrador
   - Técnico
   - Cliente
-- Gestión completa de clientes
-- Gestión completa de órdenes de trabajo
-- Dashboard ejecutivo con métricas
-- Reportes por estado y prioridad
-- Tendencia mensual
-- Validación de formularios
-- Paginación en listados
+- CRUD de clientes
+- CRUD de órdenes de trabajo
+- Dashboard con métricas:
+  - total de órdenes
+  - pendientes
+  - en proceso
+  - completadas
+  - canceladas
+  - prioridad
+  - tendencia mensual
+- Búsqueda por texto
 - Filtros por estado
-- Control de permisos por rol
+- Control de permisos y acceso
+- Validaciones y manejo de errores
 
 ## Roles del sistema
 
 ### Administrador
-Puede administrar todo el sistema, incluyendo clientes, órdenes y configuración general.
+Puede gestionar todo el sistema, incluyendo clientes, órdenes y permisos.
 
 ### Técnico
-Puede manejar órdenes y clientes, y revisar el estado operativo del sistema.
+Puede gestionar clientes y órdenes, así como visualizar reportes del sistema.
 
 ### Cliente
-Tiene acceso de consulta para ver información relevante sin poder generar cambios críticos.
+Tiene acceso de consulta y visualización, pero no puede modificar información crítica.
 
-## Casos de uso
-
-NOVA WORKORDER es ideal para:
-- empresas de mantenimiento
-- servicios técnicos
-- soporte remoto
-- administración de equipos
-- atención a clientes
-- gestión interna de tareas operativas
-
-## Estructura del proyecto
-
-```bash
-nova-workorder/
-├── src/
-│   ├── app.js
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── models/
-│   ├── routes/
-│   └── utils/
-├── frontend/
-│   ├── src/
-│   ├── public/
-│   └── package.json
-├── package.json
-├── .env
-├── README.md
-└── .gitignore
-```
-
-## Requisitos
+## Requisitos previos
 
 - Node.js 18+
 - MongoDB
@@ -146,9 +118,23 @@ cd frontend
 npm run dev
 ```
 
-La aplicación estará disponible en:
+La app estará disponible en:
 - Frontend: http://localhost:5173
 - Backend: http://localhost:5000
+
+## Usuarios de prueba
+
+### Admin
+- Email: admin@nova.com
+- Contraseña: 123456
+
+### Técnico
+- Email: tecnico@nova.com
+- Contraseña: 123456
+
+### Cliente
+- Email: cliente@nova.com
+- Contraseña: 123456
 
 ## Endpoints principales
 
@@ -174,30 +160,38 @@ La aplicación estará disponible en:
 ### Dashboard
 - GET /api/dashboard/summary
 
-## Flujo recomendado
+## Datos de prueba sugeridos
 
-1. Registrar un usuario
-2. Iniciar sesión
-3. Crear clientes
-4. Registrar órdenes de trabajo
-5. Actualizar estado y prioridad
-6. Revisar el dashboard ejecutivo
-7. Analizar rendimiento por trabajo y cliente
+### Clientes
+- Servicios Eléctricos del Sur
+- Mantenimiento Industrial Pro
+- Soluciones Técnicas López
+- Telecom Norte
+- Grupo Inmobiliario Vega
 
-## Estado del proyecto
-
-Esta versión del proyecto incluye la lógica principal de una herramienta funcional de gestión operativa, con base sólida para crecer hacia una solución de producción.
+### Órdenes
+- Revisar tablero eléctrico del local principal — prioridad alta — pendiente
+- Cambio de sensores en planta 2 — prioridad media — en_proceso
+- Instalación de sistema de monitoreo — prioridad urgente — completada
+- Mantenimiento preventivo de bombas — prioridad media — pendiente
+- Diagnóstico de fallas en red — prioridad alta — en_proceso
+- Revisión de servidores y cableado — prioridad urgente — completada
+- Reparación de compresor industrial — prioridad alta — cancelada
+- Ajuste de accesos de seguridad — prioridad baja — pendiente
 
 ## Mejoras futuras
 
 - exportación de reportes PDF/Excel
-- gestión de calendario de tareas
-- alertas y notificaciones
+- calendario y agenda de tareas
+- notificaciones por email o WhatsApp
 - historial de cambios
-- facturación y cobros
-- integración con WhatsApp o correo
-- panel más avanzado para analítica
-- accesos específicos por área de negocio
+- facturación y pagos
+- analítica avanzada
+- integración con herramientas externas
+
+## Estado del proyecto
+
+El proyecto se encuentra en una versión funcional con dashboard, gestión de clientes, control de tareas y permisos por rol. Está preparado para presentarse como una solución operativa real con base sólida para continuar desarrollándose.
 
 ## Licencia
 
