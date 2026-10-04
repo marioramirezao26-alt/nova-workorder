@@ -9,16 +9,29 @@ const getWorkOrders = async (req, res) => {
 
     res.status(200).json(workOrders);
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al obtener las órdenes de trabajo' });
+    res.status(500).json({
+      message: error.message || 'Error al obtener las órdenes de trabajo',
+    });
   }
 };
 
 const createWorkOrder = async (req, res) => {
   try {
-    const { title, description, status, priority, customerName, assignedTo, dueDate, notes } = req.body;
+    const {
+      title,
+      description,
+      status,
+      priority,
+      customerName,
+      assignedTo,
+      dueDate,
+      notes,
+    } = req.body;
 
     if (!title || !description) {
-      return res.status(400).json({ message: 'Título y descripción son obligatorios' });
+      return res.status(400).json({
+        message: 'Título y descripción son obligatorios',
+      });
     }
 
     const workOrder = await WorkOrder.create({
@@ -39,7 +52,9 @@ const createWorkOrder = async (req, res) => {
 
     res.status(201).json(populatedWorkOrder);
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al crear la orden de trabajo' });
+    res.status(500).json({
+      message: error.message || 'Error al crear la orden de trabajo',
+    });
   }
 };
 
@@ -55,13 +70,24 @@ const getWorkOrderById = async (req, res) => {
 
     res.status(200).json(workOrder);
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al obtener la orden de trabajo' });
+    res.status(500).json({
+      message: error.message || 'Error al obtener la orden de trabajo',
+    });
   }
 };
 
 const updateWorkOrder = async (req, res) => {
   try {
-    const { title, description, status, priority, customerName, assignedTo, dueDate, notes } = req.body;
+    const {
+      title,
+      description,
+      status,
+      priority,
+      customerName,
+      assignedTo,
+      dueDate,
+      notes,
+    } = req.body;
 
     const workOrder = await WorkOrder.findById(req.params.id);
 
@@ -86,7 +112,9 @@ const updateWorkOrder = async (req, res) => {
 
     res.status(200).json(populatedWorkOrder);
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al actualizar la orden de trabajo' });
+    res.status(500).json({
+      message: error.message || 'Error al actualizar la orden de trabajo',
+    });
   }
 };
 
@@ -100,9 +128,13 @@ const deleteWorkOrder = async (req, res) => {
 
     await workOrder.deleteOne();
 
-    res.status(200).json({ message: 'Orden de trabajo eliminada correctamente' });
+    res.status(200).json({
+      message: 'Orden de trabajo eliminada correctamente',
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al eliminar la orden de trabajo' });
+    res.status(500).json({
+      message: error.message || 'Error al eliminar la orden de trabajo',
+    });
   }
 };
 

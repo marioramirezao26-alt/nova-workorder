@@ -1,6 +1,4 @@
-const { protect } = require('../middleware/authMiddleware');
 const User = require('../models/User');
-const WorkOrder = require('../models/WorkOrder');
 const generateToken = require('../utils/generateToken');
 
 const registerUser = async (req, res) => {
@@ -8,18 +6,22 @@ const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Nombre, email y contraseña son obligatorios' });
+      return res.status(400).json({
+        message: 'Nombre, email y contraseña son obligatorios',
+      });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Ya existe un usuario con ese email' });
+      return res.status(400).json({
+        message: 'Ya existe un usuario con ese email',
+      });
     }
 
     const user = await User.create({
       name,
-      email,
+      email: email.toLowerCase(),
       password,
       role: role || 'cliente',
     });
@@ -32,7 +34,9 @@ const registerUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al registrar el usuario' });
+    res.status(500).json({
+      message: error.message || 'Error al registrar el usuario',
+    });
   }
 };
 
@@ -41,10 +45,12 @@ const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email y contraseña son obligatorios' });
+      return res.status(400).json({
+        message: 'Email y contraseña son obligatorios',
+      });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
@@ -64,12 +70,13 @@ const loginUser = async (req, res) => {
       token: generateToken(user._id),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Error al iniciar sesión' });
+    res.status(500).json({
+      message: error.message || 'Error al iniciar sesión',
+    });
   }
 };
 
 module.exports = {
   registerUser,
   loginUser,
-  protect,
 };
