@@ -1,28 +1,58 @@
 # NOVA WORKORDER
 
-## Backend empresarial para NOVA WORKORDER
+Backend empresarial para gestión de órdenes de trabajo.
 
-### Instalación
+## Requisitos
+
+- Node.js 18+
+- MongoDB
+- npm
+
+## Instalación
 
 ```bash
 npm install
 ```
 
-### Desarrollo
+## Variables de entorno
+
+Copia el archivo `.env.example` y ajusta los valores:
+
+```bash
+cp .env.example .env
+```
+
+## Ejecutar en desarrollo
 
 ```bash
 npm run dev
 ```
 
-### Producción
+## Ejecutar en producción
 
 ```bash
 npm start
 ```
 
-### Dependencias
+## Endpoints principales
 
-- Express: Framework web
-- Mongoose: ODM para MongoDB
-- CORS: Middleware para CORS
-- Dotenv: Variables de entorno
+### Autenticación
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+### Órdenes de trabajo
+
+- `GET /api/workorders`
+- `POST /api/workorders`
+- `GET /api/workorders/:id`
+- `PUT /api/workorders/:id`
+- `DELETE /api/workorders/:id`
+
+## Tecnologías
+
+- Express
+- MongoDB + Mongoose
+- JWT
+- bcryptjs
+- CORS
