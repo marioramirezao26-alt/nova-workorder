@@ -1,114 +1,171 @@
-const Client = require('../models/Client');
+const WorkOrder = require('../models/WorkOrder');
 
-const getClients = async (req, res) => {
+const getPageOptions = (req) => {
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(Math.max(1, Number(req.query.limit) || 10), 100);
+
+  return { page, limit, skip: (page - 1) * limit };
+};
+
+const getWorkOrders = async (req, res) => {
   try {
-    const clients = await Client.find().sort({ createdAt: -1 });
-    res.status(200).json(clients);
+    const filter = {};
+
+    if (req.query.status && req.query.status !== 'all') {
+      filter.status = req.query.status;
+    }
+
+    const { page, limit, skip } = getPageOptions(req);
+
+    const [items, total] = await Promise.all([
+      WorkOrder.find(filter)
+        .populate('createdBy', 'name email role')
+        .populate('assignedTo', 'name email role')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      WorkOrder.countDocuments(filter),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    res.status(200).json({
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+    });
   } catch (error) {
     res.status(500).json({
-      message: error.message || 'Error al obtener los clientes',
+      message: error.message || 'Error al obtener las órdenes de trabajo',
     });
   }
 };
 
-const createClient = async (req, res) => {
+const createWorkOrder = async (req, res) => {
   try {
-    const { name, email, phone, company, address } = req.body;
+    const {
+      title,
+      description,
+      status,
+      priority,
+      customerName,
+      assignedTo,
+      dueDate,
+      notes,
+    } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({
-        message: 'Nombre y email son obligatorios',
-      });
-    }
-
-    const existingClient = await Client.findOne({ email: email.toLowerCase() });
-
-    if (existingClient) {
-      return res.status(400).json({
-        message: 'Ya existe un cliente con ese email',
-      });
-    }
-
-    const client = await Client.create({
-      name,
-      email: email.toLowerCase(),
-      phone,
-      company,
-      address,
+    const workOrder = await WorkOrder.create({
+      title,
+      description,
+      status: status || 'pendiente',
+      priority: priority || 'media',
+      customerName,
+      assignedTo,
+      dueDate,
+      notes,
+      createdBy: req.user._id,
     });
 
-    res.status(201).json(client);
+    const populatedWorkOrder = await WorkOrder.findById(workOrder._id)
+      .populate('createdBy', 'name email role')
+      .populate('assignedTo', 'name email role');
+
+    res.status(201).json(populatedWorkOrder);
   } catch (error) {
     res.status(500).json({
-      message: error.message || 'Error al crear el cliente',
-    });
-  }
-};
-
-const getClientById = async (req, res) => {
-  try {
-    const client = await Client.findById(req.params.id);
-
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
-    }
-
-    res.status(200).json(client);
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al obtener el cliente',
+      message: error.message || 'Error al crear la orden de trabajo',
     });
   }
 };
 
-const updateClient = async (req, res) => {
+const getWorkOrderById = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id);
+    const workOrder = await WorkOrder.findById(req.params.id)
+      .populate('createdBy', 'name email role')
+      .populate('assignedTo', 'name email role');
 
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
+    if (!workOrder) {
+      return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
     }
 
-    const { name, email, phone, company, address, active } = req.body;
-
-    client.name = name || client.name;
-    client.email = email ? email.toLowerCase() : client.email;
-    client.phone = phone !== undefined ? phone : client.phone;
-    client.company = company !== undefined ? company : client.company;
-    client.address = address !== undefined ? address : client.address;
-    client.active = active !== undefined ? active : client.active;
-
-    const updatedClient = await client.save();
-    res.status(200).json(updatedClient);
+    return res.status(200).json(workOrder);
   } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al actualizar el cliente',
+    return res.status(500).json({
+      message: error.message || 'Error al obtener la orden de trabajo',
     });
   }
 };
 
-const deleteClient = async (req, res) => {
+const updateWorkOrder = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id);
+    const {
+      title,
+      description,
+      status,
+      priority,
+      customerName,
+      assignedTo,
+      dueDate,
+      notes,
+    } = req.body;
 
-    if (!client) {
-      return res.status(404).json({ message: 'Cliente no encontrado' });
+    const workOrder = await WorkOrder.findById(req.params.id);
+
+    if (!workOrder) {
+      return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
     }
 
-    await client.deleteOne();
+    workOrder.title = title || workOrder.title;
+    workOrder.description = description || workOrder.description;
+    workOrder.status = status || workOrder.status;
+    workOrder.priority = priority || workOrder.priority;
+    workOrder.customerName = customerName || workOrder.customerName;
+    workOrder.assignedTo = assignedTo || workOrder.assignedTo;
+    workOrder.dueDate = dueDate || workOrder.dueDate;
+    workOrder.notes = notes !== undefined ? notes : workOrder.notes;
 
-    res.status(200).json({ message: 'Cliente eliminado correctamente' });
+    const updatedWorkOrder = await workOrder.save();
+
+    const populatedWorkOrder = await WorkOrder.findById(updatedWorkOrder._id)
+      .populate('createdBy', 'name email role')
+      .populate('assignedTo', 'name email role');
+
+    return res.status(200).json(populatedWorkOrder);
   } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al eliminar el cliente',
+    return res.status(500).json({
+      message: error.message || 'Error al actualizar la orden de trabajo',
+    });
+  }
+};
+
+const deleteWorkOrder = async (req, res) => {
+  try {
+    const workOrder = await WorkOrder.findById(req.params.id);
+
+    if (!workOrder) {
+      return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
+    }
+
+    await workOrder.deleteOne();
+
+    return res.status(200).json({
+      message: 'Orden de trabajo eliminada correctamente',
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message || 'Error al eliminar la orden de trabajo',
     });
   }
 };
 
 module.exports = {
-  getClients,
-  createClient,
-  getClientById,
-  updateClient,
-  deleteClient,
+  getWorkOrders,
+  createWorkOrder,
+  getWorkOrderById,
+  updateWorkOrder,
+  deleteWorkOrder,
 };
