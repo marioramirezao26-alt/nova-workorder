@@ -62,7 +62,7 @@ El sistema incluye:
   - canceladas
   - prioridad
   - tendencia mensual
-- Búsqueda por texto
+- Búsqueda por texto (en el panel y con `?q=` en la API)
 - Filtros por estado
 - Control de permisos y acceso
 - Validaciones y manejo de errores
@@ -108,14 +108,24 @@ npm install
 
 ## Variables de entorno
 
-Crear un archivo `.env` en la raíz del proyecto con este contenido:
+Copiar `.env.example` a `.env` en la raíz del proyecto y completar los valores:
 
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/nova-workorder
-JWT_SECRET=nova-workorder-secret-key
+JWT_SECRET=<un secreto largo y aleatorio>
 NODE_ENV=development
+SEED_PASSWORD=<contraseña de los usuarios de demo, mínimo 8 caracteres>
 ```
+
+Para generar un `JWT_SECRET`:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+El backend no arranca sin `JWT_SECRET`. **Importante:** versiones anteriores de este README publicaron un `JWT_SECRET` de
+ejemplo; si alguna instalación lo usó, cámbialo por uno nuevo (los tokens firmados con el anterior dejarán de valer).
 
 ## Ejecutar la aplicación
 
@@ -138,17 +148,18 @@ La app estará disponible en:
 
 ## Usuarios de prueba
 
-### Admin
-- Email: admin@nova.com
-- Contraseña: 123456
+El registro público siempre crea usuarios con rol **cliente** (el rol enviado en el formulario se ignora). Los usuarios
+de demo, incluido el administrador, se crean con:
 
-### Técnico
-- Email: tecnico@nova.com
-- Contraseña: 123456
+```bash
+npm run seed
+```
 
-### Cliente
-- Email: cliente@nova.com
-- Contraseña: 123456
+Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
+
+- Admin: admin@nova.com
+- Técnico: tecnico@nova.com
+- Cliente: cliente@nova.com
 
 ## Endpoints principales
 
@@ -165,7 +176,8 @@ La app estará disponible en:
 - DELETE /api/clients/:id
 
 ### Órdenes de trabajo
-- GET /api/workorders
+- GET /api/workorders — filtros `?status=pendiente|en_proceso|completada|cancelada`, búsqueda `?q=texto` (título,
+  descripción o cliente) y paginación `?page=1&limit=10`
 - POST /api/workorders
 - GET /api/workorders/:id
 - PUT /api/workorders/:id

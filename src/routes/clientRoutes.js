@@ -1,84 +1,33 @@
-const User = require('../models/User');
-const generateToken = require('../utils/generateToken');
+const express = require('express');
+const { body } = require('express-validator');
+const { protect, authorize } = require('../middleware/authMiddleware');
+const { validateRequest } = require('../middleware/validateRequest');
+const { validateObjectId } = require('../middleware/validateObjectId');
+const {
+  getClients,
+  createClient,
+  getClientById,
+  updateClient,
+  deleteClient,
+} = require('../controllers/clientController');
 
-const registerUser = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
+const router = express.Router();
 
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: 'Nombre, email y contraseña son obligatorios',
-      });
-    }
+const clientValidation = [
+  body('name').trim().notEmpty().withMessage('El nombre del cliente es obligatorio'),
+  body('email').isEmail().withMessage('Debe enviar un email válido'),
+  body('phone').optional().trim().isLength({ max: 30 }).withMessage('El teléfono no debe superar 30 caracteres'),
+  body('company').optional().trim().isLength({ max: 150 }).withMessage('La empresa no debe superar 150 caracteres'),
+  body('address').optional().trim().isLength({ max: 250 }).withMessage('La dirección no debe superar 250 caracteres'),
+  validateRequest,
+];
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+router.use(protect);
 
-    if (existingUser) {
-      return res.status(400).json({
-        message: 'Ya existe un usuario con ese email',
-      });
-    }
+router.get('/', authorize('admin', 'tecnico', 'cliente'), getClients);
+router.post('/', authorize('admin', 'tecnico'), clientValidation, createClient);
+router.get('/:id', authorize('admin', 'tecnico', 'cliente'), validateObjectId, getClientById);
+router.put('/:id', authorize('admin', 'tecnico'), validateObjectId, clientValidation, updateClient);
+router.delete('/:id', authorize('admin'), validateObjectId, deleteClient);
 
-    const normalizedRole = ['admin', 'tecnico', 'cliente'].includes(role) ? role : 'cliente';
-
-    const user = await User.create({
-      name,
-      email: email.toLowerCase(),
-      password,
-      role: normalizedRole,
-    });
-
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al registrar el usuario',
-    });
-  }
-};
-
-const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        message: 'Email y contraseña son obligatorios',
-      });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
-    }
-
-    const isMatch = await user.matchPassword(password);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
-    }
-
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al iniciar sesión',
-    });
-  }
-};
-
-module.exports = {
-  registerUser,
-  loginUser,
-};
+module.exports = router;

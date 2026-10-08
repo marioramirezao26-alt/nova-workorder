@@ -23,17 +23,17 @@
 
 **Admin:**
 - Email: admin@nova.com
-- Contraseña: 123456
+- Contraseña: la que definas en `SEED_PASSWORD` (`npm run seed`)
 - Permisos: acceso total al sistema
 
 **Técnico:**
 - Email: tecnico@nova.com
-- Contraseña: 123456
+- Contraseña: la que definas en `SEED_PASSWORD` (`npm run seed`)
 - Permisos: gestionar órdenes y clientes
 
 **Cliente:**
 - Email: cliente@nova.com
-- Contraseña: 123456
+- Contraseña: la que definas en `SEED_PASSWORD` (`npm run seed`)
 - Permisos: solo consulta
 
 ### Endpoints validados:

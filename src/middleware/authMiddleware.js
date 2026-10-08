@@ -16,7 +16,7 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ message: 'No autorizado, token faltante' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'nova-workorder-secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id).select('-password');
 
