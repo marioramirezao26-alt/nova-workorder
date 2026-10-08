@@ -103,3 +103,28 @@ test('las órdenes solo se asignan a técnicos activos de la misma empresa', asy
   assert.equal(cleared.status, 200);
   assert.equal(cleared.data.assignedTo, null);
 });
+
+test('el técnico ve sus órdenes y cambia el estado desde el celular', async () => {
+  const a = await company('Campo');
+  const c = (await call('POST', '/clients', { as: a.token, body: { name: 'Planta Norte', email: 'planta@norte.com' } })).data;
+  const ana = await call('POST', '/users', { as: a.token, body: { name: 'Ana', email: 'ana@campo.com', role: 'tecnico' } });
+  const beto = await call('POST', '/users', { as: a.token, body: { name: 'Beto', email: 'beto@campo.com', role: 'tecnico' } });
+  const mine = (await call('POST', '/workorders', { as: a.token, body: { title: 'Revisar bomba', description: 'Bomba de agua del piso 2', client: c._id, assignedTo: ana.data.user._id } })).data;
+  const other = (await call('POST', '/workorders', { as: a.token, body: { title: 'Otra orden', description: 'Asignada a otro técnico', assignedTo: beto.data.user._id } })).data;
+  const anaToken = await login('ana@campo.com', ana.data.temporaryPassword);
+  const list = await call('GET', '/workorders?assigned=me', { as: anaToken });
+  assert.deepEqual(list.data.items.map((o) => o.title), ['Revisar bomba']);
+  assert.equal(list.data.items[0].client.name, 'Planta Norte');
+  const started = await call('PATCH', `/workorders/${mine._id}/status`, { as: anaToken, body: { status: 'en_proceso' } });
+  assert.equal(started.status, 200);
+  assert.ok(started.data.startedAt);
+  const done = await call('PATCH', `/workorders/${mine._id}/status`, { as: anaToken, body: { status: 'completada', note: 'Se cambió el sello' } });
+  assert.equal(done.data.status, 'completada');
+  assert.ok(done.data.completedAt);
+  assert.match(done.data.notes, /\[.* · Ana\] Se cambió el sello/);
+  assert.equal((await call('PATCH', `/workorders/${other._id}/status`, { as: anaToken, body: { status: 'completada' } })).status, 403);
+  assert.equal((await call('PATCH', `/workorders/${mine._id}/status`, { as: anaToken, body: { status: 'volando' } })).status, 400);
+  assert.equal((await call('PATCH', `/workorders/${other._id}/status`, { as: a.token, body: { status: 'cancelada' } })).status, 200);
+  const b = await company('Ajena');
+  assert.equal((await call('PATCH', `/workorders/${mine._id}/status`, { as: b.token, body: { status: 'pendiente' } })).status, 404);
+});

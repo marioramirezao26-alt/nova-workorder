@@ -9,6 +9,7 @@ const {
   getWorkOrderById,
   updateWorkOrder,
   deleteWorkOrder,
+  updateWorkOrderStatus,
 } = require('../controllers/workOrderController');
 
 const router = express.Router();
@@ -33,5 +34,10 @@ router.post('/', authorize('admin', 'tecnico'), workOrderValidation, createWorkO
 router.get('/:id', authorize('admin', 'tecnico', 'cliente'), validateObjectId, getWorkOrderById);
 router.put('/:id', authorize('admin', 'tecnico'), validateObjectId, workOrderValidation, updateWorkOrder);
 router.delete('/:id', authorize('admin'), validateObjectId, deleteWorkOrder);
+router.patch('/:id/status', authorize('admin', 'tecnico'), validateObjectId, [
+  body('status').isIn(['pendiente', 'en_proceso', 'completada', 'cancelada']).withMessage('Estado inválido'),
+  body('note').optional().trim().isLength({ max: 500 }).withMessage('La nota no debe superar 500 caracteres'),
+  validateRequest,
+], updateWorkOrderStatus);
 
 module.exports = router;
