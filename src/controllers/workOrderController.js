@@ -40,7 +40,7 @@ const resolveRefs = async (req, { client, assignedTo }) => {
 const populate = (query) => query
   .populate('createdBy', 'name email role')
   .populate('assignedTo', 'name email role')
-  .populate('client', 'name email phone company');
+  .populate('client', 'name email phone company address');
 
 const getPageOptions = (req) => {
   const page = Math.max(1, Number(req.query.page) || 1);
@@ -55,6 +55,11 @@ const getWorkOrders = async (req, res) => {
 
     if (req.query.status && req.query.status !== 'all') {
       filter.status = req.query.status;
+    }
+
+    // ?assigned=me: las órdenes asignadas al usuario (vista «Mis órdenes» del técnico)
+    if (req.query.assigned === 'me') {
+      filter.assignedTo = req.user._id;
     }
 
     // Búsqueda por texto en título, descripción y cliente (?q=...)
@@ -209,7 +214,39 @@ const deleteWorkOrder = async (req, res) => {
   }
 };
 
+// Cambio rápido de estado desde el celular del técnico: solo el estado (y una nota opcional).
+// Un técnico solo mueve las órdenes que tiene asignadas; el administrador, cualquiera de su empresa.
+const updateWorkOrderStatus = async (req, res) => {
+  try {
+    const workOrder = await WorkOrder.findOne({ $and: [orderFilter(req), { _id: req.params.id }] });
+
+    if (!workOrder) {
+      return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
+    }
+
+    if (req.user.role === 'tecnico' && String(workOrder.assignedTo) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Solo puedes actualizar las órdenes que tienes asignadas' });
+    }
+
+    const { status, note } = req.body;
+    workOrder.status = status;
+    if (status === 'en_proceso' && !workOrder.startedAt) workOrder.startedAt = new Date();
+    if (status === 'completada') workOrder.completedAt = new Date();
+    if (status !== 'completada') workOrder.completedAt = null;
+    if (note) {
+      const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      workOrder.notes = `${workOrder.notes ? `${workOrder.notes}\n` : ''}[${stamp} · ${req.user.name}] ${note}`.slice(-5000);
+    }
+    await workOrder.save();
+
+    return res.status(200).json(await populate(WorkOrder.findById(workOrder._id)));
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Error al actualizar el estado' });
+  }
+};
+
 module.exports = {
+  updateWorkOrderStatus,
   getWorkOrders,
   createWorkOrder,
   getWorkOrderById,

@@ -57,6 +57,15 @@ const workOrderSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    // Lo marca el técnico desde «Mis órdenes» (Fase 2).
+    startedAt: {
+      type: Date,
+      default: null,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
