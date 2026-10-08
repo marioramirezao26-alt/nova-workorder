@@ -1,4 +1,12 @@
 const Client = require('../models/Client');
+const { companyScope } = require('../middleware/authMiddleware');
+
+// Lo que ve cada rol: su empresa; un usuario cliente, solo su propia ficha.
+const clientFilter = (req) => {
+  const filter = companyScope(req);
+  if (req.user.role === 'cliente') filter._id = req.user.client || null;
+  return filter;
+};
 
 const getPageOptions = (req) => {
   const page = Math.max(1, Number(req.query.page) || 1);
@@ -12,8 +20,8 @@ const getClients = async (req, res) => {
     const { page, limit, skip } = getPageOptions(req);
 
     const [items, total] = await Promise.all([
-      Client.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Client.countDocuments(),
+      Client.find(clientFilter(req)).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Client.countDocuments(clientFilter(req)),
     ]);
 
     const totalPages = Math.ceil(total / limit) || 1;
@@ -44,7 +52,7 @@ const createClient = async (req, res) => {
       });
     }
 
-    const existingClient = await Client.findOne({ email: email.toLowerCase() });
+    const existingClient = await Client.findOne({ ...companyScope(req), email: email.toLowerCase() });
 
     if (existingClient) {
       return res.status(400).json({
@@ -58,6 +66,7 @@ const createClient = async (req, res) => {
       phone,
       company,
       address,
+      ...companyScope(req),
     });
 
     res.status(201).json(client);
@@ -70,7 +79,7 @@ const createClient = async (req, res) => {
 
 const getClientById = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id);
+    const client = await Client.findOne({ $and: [clientFilter(req), { _id: req.params.id }] });
 
     if (!client) {
       return res.status(404).json({ message: 'Cliente no encontrado' });
@@ -86,7 +95,7 @@ const getClientById = async (req, res) => {
 
 const updateClient = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id);
+    const client = await Client.findOne({ $and: [clientFilter(req), { _id: req.params.id }] });
 
     if (!client) {
       return res.status(404).json({ message: 'Cliente no encontrado' });
@@ -95,6 +104,10 @@ const updateClient = async (req, res) => {
     const { name, email, phone, company, address, active } = req.body;
 
     client.name = name !== undefined ? name : client.name;
+    if (email !== undefined && String(email).toLowerCase() !== client.email
+        && await Client.findOne({ ...companyScope(req), email: String(email).toLowerCase() })) {
+      return res.status(400).json({ message: 'Ya existe un cliente con ese email' });
+    }
     client.email = email !== undefined ? String(email).toLowerCase() : client.email;
     client.phone = phone !== undefined ? phone : client.phone;
     client.company = company !== undefined ? company : client.company;
@@ -112,7 +125,7 @@ const updateClient = async (req, res) => {
 
 const deleteClient = async (req, res) => {
   try {
-    const client = await Client.findById(req.params.id);
+    const client = await Client.findOne({ $and: [clientFilter(req), { _id: req.params.id }] });
 
     if (!client) {
       return res.status(404).json({ message: 'Cliente no encontrado' });

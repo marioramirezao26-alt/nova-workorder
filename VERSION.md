@@ -1,6 +1,24 @@
-# NOVA WORKORDER - VERSION 1.0
+# NOVA WORKORDER - VERSION 1.1 (Fase 1: multiempresa)
 
-## Estado: LISTO PARA PRODUCCIÓN
+## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
+
+### Cambios de la versión 1.1
+- **Multiempresa:** cada empresa cliente ve solo sus usuarios, clientes, órdenes y tablero.
+- **Corrección de seguridad:** un usuario «cliente» ya no ve todas las órdenes y clientes del sistema, solo los de su ficha.
+- **Registro público cerrado:** las cuentas las crea el administrador de cada empresa (contraseña temporal que se cambia al entrar).
+- **Usuarios:** crear, desactivar y reactivar técnicos, administradores y clientes; nueva contraseña temporal.
+- **Plan por técnicos:** cada empresa tiene un máximo de técnicos activos (`maxTechnicians`).
+- **API de plataforma** (`/api/platform`, llave `PLATFORM_API_KEY`): GABY crea empresas, ajusta el plan y suspende o reactiva.
+- **Órdenes enlazadas** a la ficha del cliente y a un técnico activo de la misma empresa, con fecha límite.
+- **Seguridad:** CORS restringido, límite de 10 intentos de inicio de sesión cada 15 minutos, encabezados de seguridad, cuerpo máximo 100 KB.
+- **Pruebas automáticas** (`npm test`, MongoDB en memoria) y CI en GitHub.
+- **Migración** de bases 1.0: `npm run migrate`.
+
+---
+
+## Versión 1.0 (histórico)
+
+Estado de entonces: demo funcional (no multiempresa).
 
 ### Fecha de release: 04-10-2026
 

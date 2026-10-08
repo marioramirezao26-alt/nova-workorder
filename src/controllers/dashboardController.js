@@ -1,11 +1,17 @@
 const WorkOrder = require('../models/WorkOrder');
+const { companyScope } = require('../middleware/authMiddleware');
 
 const getDashboardSummary = async (req, res) => {
   try {
-    const total = await WorkOrder.countDocuments();
+    // Solo la empresa del usuario; un usuario cliente, solo las órdenes de su ficha.
+    const scope = companyScope(req);
+    if (req.user.role === 'cliente') scope.client = req.user.client || null;
+    const match = { $match: scope };
+    const total = await WorkOrder.countDocuments(scope);
     const statusOrder = ['pendiente', 'en_proceso', 'completada', 'cancelada'];
 
     const statusCounts = await WorkOrder.aggregate([
+      match,
       {
         $group: {
           _id: '$status',
@@ -31,6 +37,7 @@ const getDashboardSummary = async (req, res) => {
     const cancelled = statusBreakdown.cancelada || 0;
 
     const priorities = await WorkOrder.aggregate([
+      match,
       {
         $group: {
           _id: '$priority',
@@ -40,12 +47,13 @@ const getDashboardSummary = async (req, res) => {
       { $sort: { count: -1 } },
     ]);
 
-    const recentOrders = await WorkOrder.find()
+    const recentOrders = await WorkOrder.find(scope)
       .sort({ createdAt: -1 })
       .limit(5)
       .populate('createdBy', 'name email');
 
     const monthlyTrend = await WorkOrder.aggregate([
+      match,
       {
         $project: {
           month: {
@@ -67,6 +75,7 @@ const getDashboardSummary = async (req, res) => {
     ]);
 
     const topClients = await WorkOrder.aggregate([
+      match,
       {
         $group: {
           _id: '$customerName',

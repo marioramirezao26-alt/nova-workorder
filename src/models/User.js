@@ -25,6 +25,28 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'tecnico', 'cliente'],
       default: 'cliente',
     },
+    // Empresa dueña del dato (multiempresa). No confundir con `company` del cliente, que es su razón social.
+    tenant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: [true, 'La empresa es obligatoria'],
+      index: true,
+    },
+    // Solo para el rol cliente: la ficha de cliente cuyas órdenes puede ver.
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client',
+      default: null,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+    // Las contraseñas temporales (creadas por el administrador o por la plataforma) se cambian al entrar.
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

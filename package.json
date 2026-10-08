@@ -1,12 +1,14 @@
 {
   "name": "nova-workorder-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Backend empresarial para NOVA WORKORDER",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "seed": "node src/scripts/seedUsers.js"
+    "seed": "node src/scripts/seedUsers.js",
+    "migrate": "node src/scripts/migrateMultiempresa.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,6 +20,10 @@
     "mongoose": "^7.0.3"
   },
   "devDependencies": {
+    "mongodb-memory-server": "^10.4.3",
     "nodemon": "^3.1.14"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -6,13 +6,27 @@ const authRoutes = require('./routes/authRoutes');
 const workOrderRoutes = require('./routes/workOrderRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const userRoutes = require('./routes/userRoutes');
+const platformRoutes = require('./routes/platformRoutes');
 
 dotenv.config();
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.disable('x-powered-by');
+if (process.env.TRUST_PROXY) app.set('trust proxy', 1);   // detrás de un proxy (Caddy/Nginx): IP real del visitante
+
+// CORS: solo los orígenes de CORS_ORIGINS (separados por comas). Sin la variable, en desarrollo se permite todo y
+// en producción solo el mismo origen (el frontend servido junto al backend).
+const allowed = String(process.env.CORS_ORIGINS || '').split(',').map((o) => o.trim()).filter(Boolean);
+app.use(cors({
+  origin: allowed.length ? allowed : process.env.NODE_ENV !== 'production',
+}));
+app.use((req, res, next) => {
+  res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' });
+  next();
+});
+app.use(express.json({ limit: '100kb' }));
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
@@ -25,6 +39,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workorders', workOrderRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/platform', platformRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -33,9 +49,12 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed' || err.type === 'entity.too.large') {
+    return res.status(err.status || 400).json({ message: 'El cuerpo de la petición no es válido' });
+  }
   console.error(err);
-  res.status(err.statusCode || 500).json({
-    message: err.message || 'Error interno del servidor',
+  return res.status(err.statusCode || 500).json({
+    message: err.statusCode ? err.message : 'Error interno del servidor',
   });
 });
 
