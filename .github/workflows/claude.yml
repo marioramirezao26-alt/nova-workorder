@@ -1,0 +1,48 @@
+# Claude responde cuando el dueño del repo lo menciona con @claude: en un issue nuevo (los encargos de GABY empiezan
+# con @claude), en un comentario o en una revisión de PR. Trabaja en una rama y abre el pull request; nunca fusiona.
+#
+# Configuración (una sola vez): Settings → Secrets and variables → Actions → New repository secret
+#   ANTHROPIC_API_KEY = tu clave de la API de Anthropic (console.anthropic.com)
+# Si prefieres usar tu suscripción de Claude en vez de una clave de API: en tu PC ejecuta `claude setup-token`, guarda
+# el resultado como secreto CLAUDE_CODE_OAUTH_TOKEN y cambia abajo `anthropic_api_key` por
+# `claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}`.
+name: Claude
+
+on:
+  issues:
+    types: [opened, assigned]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    # Solo el dueño del repo puede activar a Claude (nadie más puede gastar tu clave ni darle órdenes).
+    if: |
+      github.actor == github.repository_owner && (
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude'))) ||
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
