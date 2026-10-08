@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -42,6 +44,13 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/platform', platformRoutes);
 
+// En producción el mismo proceso sirve la interfaz compilada (frontend/dist): un solo origen, sin CORS.
+const dist = path.join(__dirname, '..', 'frontend', 'dist');
+if (fs.existsSync(path.join(dist, 'index.html'))) {
+  app.use(express.static(dist, { index: false, maxAge: '1h' }));
+  app.get(/^\/(?!api\/).*/, (req, res) => res.sendFile(path.join(dist, 'index.html')));
+}
+
 app.use((req, res) => {
   res.status(404).json({
     message: 'Ruta no encontrada',
@@ -67,9 +76,10 @@ const startServer = async () => {
     await connectDB();
 
     const PORT = process.env.PORT || 5000;
+    const HOST = process.env.HOST || '0.0.0.0';             // en el servidor: 127.0.0.1 (lo publica Caddy)
 
-    app.listen(PORT, () => {
-      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    app.listen(PORT, HOST, () => {
+      console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
     });
   } catch (error) {
     console.error('No se pudo iniciar el servidor:', error.message);

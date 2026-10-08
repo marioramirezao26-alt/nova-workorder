@@ -58,4 +58,6 @@ const company = async (name, { adminEmail, maxTechnicians = null } = {}) => {
 
 const login = async (email, password) => (await call('POST', '/auth/login', { body: { email, password } })).data.token;
 
-module.exports = { start, stop, reset, call, company, login, KEY };
+const origin = () => base.replace(/\/api$/, '');
+
+module.exports = { start, stop, reset, call, company, login, KEY, origin };
