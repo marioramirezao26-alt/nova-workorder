@@ -1,5 +1,11 @@
 # Caddy publica NOVA WORKORDER con HTTPS automático (Let's Encrypt) en el dominio de NOVA_DOMINIO.
 # Solo ese dominio llega a la app; GABY sigue privada en Tailscale (puerto 8443) y Caddy no la toca.
+# Caddy escucha SOLO en la IP pública (NOVA_BIND): Tailscale ya usa el 443 de la IP privada 100.x (`tailscale serve`
+# del laboratorio), y escuchar en todas las IPs choca con él ("address already in use").
+{
+	default_bind {$NOVA_BIND}
+}
+
 {$NOVA_DOMINIO} {
 	encode gzip
 	header {
