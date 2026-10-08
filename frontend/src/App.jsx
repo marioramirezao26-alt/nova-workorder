@@ -10,9 +10,14 @@ const emptyForm = {
   description: '',
   status: 'pendiente',
   priority: 'media',
-  customerName: '',
+  client: '',
+  assignedTo: '',
+  dueDate: '',
   notes: '',
 };
+
+const emptyUserForm = { name: '', email: '', role: 'tecnico', client: '' };
+const roleLabels = { admin: 'Administrador', tecnico: 'Técnico', cliente: 'Cliente' };
 
 const emptyClientForm = {
   name: '',
@@ -33,7 +38,10 @@ const statusLabels = {
 function App() {
   const [token, setToken] = useState(localStorage.getItem(storageKey) || '');
   const [user, setUser] = useState(null);
-  const [authMode, setAuthMode] = useState('login');
+  const [users, setUsers] = useState([]);
+  const [userForm, setUserForm] = useState(emptyUserForm);
+  const [issuedPassword, setIssuedPassword] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' });
   const [loading, setLoading] = useState(false);
   const [workOrders, setWorkOrders] = useState([]);
   const [clients, setClients] = useState([]);
@@ -63,7 +71,6 @@ function App() {
   const [form, setForm] = useState(emptyForm);
   const [clientForm, setClientForm] = useState(emptyClientForm);
   const [authForm, setAuthForm] = useState({
-    name: '',
     email: '',
     password: '',
   });
@@ -81,6 +88,19 @@ function App() {
 
   const canManageOrders = user?.role === 'admin' || user?.role === 'tecnico';
   const canManageClients = user?.role === 'admin' || user?.role === 'tecnico';
+  const isAdmin = user?.role === 'admin';
+
+  // Sesión vencida, usuario desactivado o empresa suspendida: volver al inicio con el motivo.
+  useEffect(() => {
+    const id = api.interceptors.response.use(undefined, (error) => {
+      if ([401, 402].includes(error.response?.status) && token) {
+        if (error.response?.status === 402) alert(error.response.data?.message);
+        logout();
+      }
+      return Promise.reject(error);
+    });
+    return () => api.interceptors.response.eject(id);
+  }, [api]);
 
   useEffect(() => {
     if (!token) {
@@ -89,10 +109,16 @@ function App() {
     }
 
     fetchProfile();
+  }, [token]);
+
+  // Los datos se cargan cuando la sesión está lista (y la contraseña temporal ya se cambió).
+  useEffect(() => {
+    if (!token || !user || user.mustChangePassword) return;
     fetchWorkOrders();
     fetchClients();
     fetchDashboard();
-  }, [token]);
+    if (user.role !== 'cliente') fetchUsers();
+  }, [user?._id, user?.mustChangePassword]);
 
   useEffect(() => {
     if (token) {
@@ -139,6 +165,15 @@ function App() {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const { data } = await api.get('/users');
+      setUsers(data.items || []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   const fetchClients = async () => {
     try {
       const { data } = await api.get('/clients');
@@ -152,31 +187,52 @@ function App() {
     }
   };
 
-  const handleLoginRegister = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     try {
-      const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
-      const payload =
-        authMode === 'login'
-          ? {
-              email: authForm.email,
-              password: authForm.password,
-            }
-          : authForm;
-
-      const { data } = await axios.post(`${API_URL}${endpoint}`, payload);
-      const nextToken = data.token;
+      const { data } = await axios.post(`${API_URL}/auth/login`, { email: authForm.email, password: authForm.password });
+      const { token: nextToken, ...profile } = data;
       localStorage.setItem(storageKey, nextToken);
       setToken(nextToken);
-      setUser({
-        name: data.name,
-        email: data.email,
-        role: data.role,
-      });
-      setAuthForm({ name: '', email: '', password: '' });
+      setUser(profile);
+      setAuthForm({ email: '', password: '' });
     } catch (error) {
-      alert(error.response?.data?.message || 'No se pudo completar la operación');
+      alert(error.response?.data?.message || 'No se pudo iniciar sesión');
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put('/auth/password', passwordForm);
+      setPasswordForm({ currentPassword: '', newPassword: '' });
+      setUser((prev) => ({ ...prev, mustChangePassword: false }));
+    } catch (error) {
+      alert(error.response?.data?.errors?.[0]?.message || error.response?.data?.message || 'No se pudo cambiar la contraseña');
+    }
+  };
+
+  const handleUserSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...userForm, client: userForm.role === 'cliente' && userForm.client ? userForm.client : undefined };
+      const { data } = await api.post('/users', payload);
+      setIssuedPassword({ email: data.user.email, password: data.temporaryPassword });
+      setUserForm(emptyUserForm);
+      fetchUsers();
+    } catch (error) {
+      alert(error.response?.data?.errors?.[0]?.message || error.response?.data?.message || 'No se pudo crear el usuario');
+    }
+  };
+
+  const updateUser = async (target, changes) => {
+    try {
+      const { data } = await api.put(`/users/${target._id}`, changes);
+      if (data.temporaryPassword) setIssuedPassword({ email: target.email, password: data.temporaryPassword });
+      fetchUsers();
+    } catch (error) {
+      alert(error.response?.data?.message || 'No se pudo actualizar el usuario');
     }
   };
 
@@ -236,7 +292,9 @@ function App() {
       description: order.description,
       status: order.status,
       priority: order.priority,
-      customerName: order.customerName || '',
+      client: order.client?._id || '',
+      assignedTo: order.assignedTo?._id || '',
+      dueDate: order.dueDate ? order.dueDate.slice(0, 10) : '',
       notes: order.notes || '',
     });
   };
@@ -314,6 +372,8 @@ function App() {
     setEditingClientId(null);
     setForm(emptyForm);
     setClientForm(emptyClientForm);
+    setUsers([]);
+    setIssuedPassword(null);
     setSearchTerm('');
   };
 
@@ -350,27 +410,8 @@ function App() {
           </ul>
         </div>
 
-        <form className="auth-card" onSubmit={handleLoginRegister}>
-          <div className="segmented-control">
-            <button type="button" className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>
-              Iniciar sesión
-            </button>
-            <button type="button" className={authMode === 'register' ? 'active' : ''} onClick={() => setAuthMode('register')}>
-              Registrarse
-            </button>
-          </div>
-
-          {authMode === 'register' && (
-            <label>
-              Nombre
-              <input
-                type="text"
-                value={authForm.name}
-                onChange={(e) => setAuthForm((prev) => ({ ...prev, name: e.target.value }))}
-                required
-              />
-            </label>
-          )}
+        <form className="auth-card" onSubmit={handleLogin}>
+          <h3>Iniciar sesión</h3>
 
           <label>
             Email
@@ -392,13 +433,37 @@ function App() {
             />
           </label>
 
-          {authMode === 'register' && (
-            <p className="muted">Las cuentas nuevas se crean como cliente. Un administrador asigna los demás roles.</p>
-          )}
-
           <button type="submit" className="primary-button">
-            {authMode === 'login' ? 'Entrar' : 'Crear cuenta'}
+            Entrar
           </button>
+          <p className="muted">¿No tienes cuenta? Pídela al administrador de tu empresa. ¿Tu empresa aún no usa NOVA WORKORDER? Solicita una demo.</p>
+        </form>
+      </div>
+    );
+  }
+
+  if (user.mustChangePassword) {
+    return (
+      <div className="auth-layout">
+        <div className="auth-hero">
+          <div className="hero-badge">NOVA</div>
+          <h1>Bienvenido, {user.name}</h1>
+          <p>Antes de empezar, cambia la contraseña temporal que te entregaron.</p>
+        </div>
+        <form className="auth-card" onSubmit={handleChangePassword}>
+          <h3>Nueva contraseña</h3>
+          <label>
+            Contraseña temporal
+            <input type="password" value={passwordForm.currentPassword} required
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))} />
+          </label>
+          <label>
+            Nueva contraseña (mínimo 8 caracteres)
+            <input type="password" minLength={8} value={passwordForm.newPassword} required
+              onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))} />
+          </label>
+          <button type="submit" className="primary-button">Guardar y entrar</button>
+          <button type="button" className="ghost-button" onClick={logout}>Salir</button>
         </form>
       </div>
     );
@@ -411,7 +476,7 @@ function App() {
           <div className="logo">N</div>
           <div>
             <h3>NOVA</h3>
-            <small>Workorder</small>
+            <small>{user.company?.name || 'Workorder'}</small>
           </div>
         </div>
 
@@ -424,8 +489,8 @@ function App() {
 
         <div className="profile-box">
           <p>{user.name}</p>
-          <small>{user.role}</small>
-          <span className="role-badge">{user.role}</span>
+          <small>{user.company?.name}</small>
+          <span className="role-badge">{roleLabels[user.role] || user.role}</span>
           <button className="logout-button" onClick={logout}>Cerrar sesión</button>
         </div>
       </aside>
@@ -580,9 +645,29 @@ function App() {
                   </label>
                 </div>
 
+                <div className="two-columns">
+                  <label>
+                    Cliente
+                    <select value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })}>
+                      <option value="">Sin cliente</option>
+                      {clients.map((client) => <option key={client._id} value={client._id}>{client.name}</option>)}
+                    </select>
+                  </label>
+
+                  <label>
+                    Técnico asignado
+                    <select value={form.assignedTo} onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}>
+                      <option value="">Sin asignar</option>
+                      {users.filter((u) => u.role !== 'cliente' && u.active !== false).map((u) => (
+                        <option key={u._id} value={u._id}>{u.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
                 <label>
-                  Cliente
-                  <input type="text" value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} />
+                  Fecha límite
+                  <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} />
                 </label>
 
                 <label>
@@ -623,7 +708,7 @@ function App() {
                           <strong>{order.title}</strong>
                           <span className={`status-tag ${order.status}`}>{order.status}</span>
                         </div>
-                        <small>{order.customerName || 'Cliente sin nombre'}</small>
+                        <small>{order.client?.name || order.customerName || 'Cliente sin nombre'}{order.assignedTo ? ` · ${order.assignedTo.name}` : ''}</small>
                       </button>
                       {canManageOrders && (
                         <div className="order-actions">
@@ -720,6 +805,79 @@ function App() {
           </div>
         </section>
 
+        {isAdmin && (
+          <section className="content-grid client-grid">
+            <div className="panel-box">
+              <h3>Nuevo usuario</h3>
+              <form className="order-form" onSubmit={handleUserSubmit}>
+                <label>
+                  Nombre
+                  <input type="text" value={userForm.name} onChange={(e) => setUserForm({ ...userForm, name: e.target.value })} required />
+                </label>
+                <label>
+                  Email
+                  <input type="email" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })} required />
+                </label>
+                <div className="two-columns">
+                  <label>
+                    Rol
+                    <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}>
+                      <option value="tecnico">Técnico</option>
+                      <option value="admin">Administrador</option>
+                      <option value="cliente">Cliente (consulta sus órdenes)</option>
+                    </select>
+                  </label>
+                  {userForm.role === 'cliente' && (
+                    <label>
+                      Ficha de cliente
+                      <select value={userForm.client} onChange={(e) => setUserForm({ ...userForm, client: e.target.value })} required>
+                        <option value="">Elige el cliente</option>
+                        {clients.map((client) => <option key={client._id} value={client._id}>{client.name}</option>)}
+                      </select>
+                    </label>
+                  )}
+                </div>
+                <button type="submit" className="primary-button">Crear usuario</button>
+              </form>
+              {issuedPassword && (
+                <div className="detail-description">
+                  <p className="label">Contraseña temporal de {issuedPassword.email} (se muestra una sola vez)</p>
+                  <p><strong>{issuedPassword.password}</strong></p>
+                  <p className="muted">Entrégasela al usuario: la cambiará al entrar.</p>
+                  <button type="button" className="ghost-button" onClick={() => setIssuedPassword(null)}>Listo</button>
+                </div>
+              )}
+            </div>
+
+            <div className="panel-box">
+              <h3>Usuarios de {user.company?.name}</h3>
+              <div className="order-list">
+                {users.map((u) => (
+                  <div key={u._id} className="order-item">
+                    <div className="order-select">
+                      <div className="order-headline">
+                        <strong>{u.name}</strong>
+                        <span className={`status-tag ${u.active ? 'completada' : 'cancelada'}`}>{u.active ? roleLabels[u.role] : 'Inactivo'}</span>
+                      </div>
+                      <small>{u.email}</small>
+                    </div>
+                    {u._id !== user._id && (
+                      <div className="order-actions">
+                        <button type="button" className="mini-button edit" onClick={() => updateUser(u, { active: !u.active })}>
+                          {u.active ? 'Desactivar' : 'Activar'}
+                        </button>
+                        <button type="button" className="mini-button edit" onClick={() => {
+                          if (window.confirm(`¿Generar una contraseña temporal nueva para ${u.email}?`)) updateUser(u, { resetPassword: true });
+                        }}>Nueva contraseña</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         {selectedOrder && (
           <section className="detail-panel panel-box">
             <h3>Detalle de orden</h3>
@@ -738,7 +896,15 @@ function App() {
               </div>
               <div>
                 <p className="label">Cliente</p>
-                <strong>{selectedOrder.customerName || 'Sin cliente'}</strong>
+                <strong>{selectedOrder.client?.name || selectedOrder.customerName || 'Sin cliente'}</strong>
+              </div>
+              <div>
+                <p className="label">Técnico</p>
+                <strong>{selectedOrder.assignedTo?.name || 'Sin asignar'}</strong>
+              </div>
+              <div>
+                <p className="label">Fecha límite</p>
+                <strong>{selectedOrder.dueDate ? new Date(selectedOrder.dueDate).toLocaleDateString('es-CO', { timeZone: 'UTC' }) : 'Sin fecha'}</strong>
               </div>
             </div>
             <div className="detail-description">

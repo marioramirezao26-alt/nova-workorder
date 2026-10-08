@@ -16,9 +16,13 @@ NOVA WORKORDER permite:
 
 ## Estado del proyecto
 
-Versión funcional y lista para entrega: v1.0
+Versión 1.1 (Fase 1): **multiempresa**. Cada empresa que compra el servicio tiene sus propios usuarios, clientes y
+órdenes, aislados del resto. Ver `VERSION.md` para el detalle de cambios.
 
 El sistema incluye:
+- empresas aisladas entre sí, con un plan de técnicos y estado (prueba, activa, suspendida)
+- gestión de usuarios por el administrador de cada empresa
+- API de plataforma para que GABY entregue y administre empresas
 - autenticación con JWT
 - roles de usuario
 - gestión de clientes
@@ -69,14 +73,16 @@ El sistema incluye:
 
 ## Roles del sistema
 
+Todos los roles ven solo los datos de **su empresa**.
+
 ### Administrador
-Puede gestionar todo el sistema, incluyendo clientes, órdenes y permisos.
+Gestiona su empresa: usuarios (crear, desactivar, nueva contraseña temporal), clientes y órdenes.
 
 ### Técnico
-Puede gestionar clientes y órdenes, así como visualizar reportes del sistema.
+Gestiona clientes y órdenes de su empresa y ve el tablero.
 
 ### Cliente
-Tiene acceso de consulta y visualización, pero no puede modificar información crítica.
+Usuario de una empresa cliente: solo consulta **las órdenes de su propia ficha de cliente**. No puede modificar nada.
 
 ## Requisitos previos
 
@@ -116,7 +122,28 @@ MONGODB_URI=mongodb://localhost:27017/nova-workorder
 JWT_SECRET=<un secreto largo y aleatorio>
 NODE_ENV=development
 SEED_PASSWORD=<contraseña de los usuarios de demo, mínimo 8 caracteres>
+CORS_ORIGINS=<en producción: https://tu-dominio>
+PLATFORM_API_KEY=<llave de al menos 32 caracteres para la API de plataforma; vacía = apagada>
 ```
+
+Ver `.env.example` para todas las variables (`TRUST_PROXY`, `MIGRATE_COMPANY_NAME`).
+
+### Pasar de la versión 1.0 a la 1.1
+
+```bash
+MIGRATE_COMPANY_NAME="Nombre de tu empresa" npm run migrate
+```
+
+Asigna todos los datos existentes a esa empresa, enlaza las órdenes con su cliente por nombre y desactiva los usuarios
+«cliente» sin ficha (los que creaba el registro público). Se puede ejecutar más de una vez.
+
+### Pruebas
+
+```bash
+npm test
+```
+
+Usan un MongoDB real en memoria (no tocan tu base de datos).
 
 Para generar un `JWT_SECRET`:
 
@@ -148,8 +175,8 @@ La app estará disponible en:
 
 ## Usuarios de prueba
 
-El registro público siempre crea usuarios con rol **cliente** (el rol enviado en el formulario se ignora). Los usuarios
-de demo, incluido el administrador, se crean con:
+El registro público está cerrado. Los usuarios de la empresa de demostración «NOVA Demo» (con un cliente de ejemplo
+enlazado al usuario cliente) se crean con:
 
 ```bash
 npm run seed
@@ -164,9 +191,20 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 ## Endpoints principales
 
 ### Autenticación
-- POST /api/auth/register
-- POST /api/auth/login
-- GET /api/auth/profile
+- POST /api/auth/login — máximo 10 intentos fallidos cada 15 minutos; 402 si la empresa está suspendida
+- GET /api/auth/profile — incluye la empresa y `mustChangePassword`
+- PUT /api/auth/password — cambia la contraseña (`currentPassword`, `newPassword`)
+- POST /api/auth/register — cerrado (410)
+
+### Usuarios (administrador; los técnicos pueden listar para asignar órdenes)
+- GET /api/users
+- POST /api/users — devuelve una contraseña temporal una sola vez
+- PUT /api/users/:id — `name`, `role`, `active`, `client`, `resetPassword`
+
+### Plataforma (GABY, con el encabezado `x-platform-key`)
+- POST /api/platform/companies — crea la empresa y su administrador (contraseña temporal)
+- GET /api/platform/companies · GET /api/platform/companies/:id — con el uso (técnicos, usuarios, órdenes)
+- PATCH /api/platform/companies/:id — `status` (prueba, activa, suspendida), `maxTechnicians`, `name`
 
 ### Clientes
 - GET /api/clients
@@ -178,7 +216,7 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 ### Órdenes de trabajo
 - GET /api/workorders — filtros `?status=pendiente|en_proceso|completada|cancelada`, búsqueda `?q=texto` (título,
   descripción o cliente) y paginación `?page=1&limit=10`
-- POST /api/workorders
+- POST /api/workorders — `client` (ficha de cliente) y `assignedTo` (técnico activo) de la misma empresa, `dueDate`
 - GET /api/workorders/:id
 - PUT /api/workorders/:id
 - DELETE /api/workorders/:id
@@ -214,6 +252,9 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 
 ## Mejoras futuras
 
+Fase 2 (competitiva): fotos y evidencias, firma del cliente, reporte PDF de la orden, avisos por WhatsApp o correo,
+vista móvil para el técnico, checklist por servicio, materiales y horas.
+
 - exportación de reportes PDF/Excel
 - calendario y agenda de tareas
 - notificaciones por email o WhatsApp
@@ -224,7 +265,9 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 
 ## Estado del proyecto
 
-El proyecto se encuentra en una versión funcional con dashboard, gestión de clientes, control de tareas y permisos por rol. Está preparado para presentarse como una solución operativa real completa y usable.
+Versión 1.1: multiempresa, con aislamiento de datos por empresa, gestión de usuarios, API de plataforma y pruebas
+automáticas. Pendiente para vender: publicarla en un dominio propio con HTTPS y copias de seguridad, el cobro (Mercado
+Pago, desde GABY) y las funciones de campo de la Fase 2.
 
 ## Licencia
 

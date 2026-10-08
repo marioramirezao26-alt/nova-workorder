@@ -20,6 +20,9 @@ const workOrderValidation = [
   body('priority').optional().isIn(['baja', 'media', 'alta', 'urgente']).withMessage('Prioridad inválida'),
   body('customerName').optional().trim().isLength({ max: 150 }).withMessage('El cliente no debe superar 150 caracteres'),
   body('notes').optional().trim().isLength({ max: 1000 }).withMessage('Las notas no deben superar 1000 caracteres'),
+  body('client').optional({ nullable: true, checkFalsy: true }).isMongoId().withMessage('Cliente inválido'),
+  body('assignedTo').optional({ nullable: true, checkFalsy: true }).isMongoId().withMessage('Técnico inválido'),
+  body('dueDate').optional({ nullable: true, checkFalsy: true }).isISO8601().withMessage('Fecha límite inválida'),
   validateRequest,
 ];
 

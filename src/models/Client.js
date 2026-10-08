@@ -10,7 +10,6 @@ const clientSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'El email es obligatorio'],
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -33,10 +32,19 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Empresa dueña del dato (multiempresa). No confundir con `company` del cliente, que es su razón social.
+    tenant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: [true, 'La empresa es obligatoria'],
+    },
   },
   {
     timestamps: true,
   }
 );
+
+// El email del cliente es único dentro de cada empresa (dos empresas pueden tener el mismo cliente).
+clientSchema.index({ tenant: 1, email: 1 }, { unique: true });
 
 module.exports = mongoose.model('Client', clientSchema);

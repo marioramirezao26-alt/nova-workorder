@@ -1,45 +1,24 @@
 const User = require('../models/User');
+const Company = require('../models/Company');
 const generateToken = require('../utils/generateToken');
+const { recordFailure, clearFailures } = require('../middleware/loginLimiter');
 
+const publicUser = (user, company) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  client: user.client || null,
+  mustChangePassword: Boolean(user.mustChangePassword),
+  company: company ? { _id: company._id, name: company.name, status: company.status } : null,
+});
+
+// El registro público quedó cerrado: cada empresa crea sus usuarios desde «Usuarios», y las empresas nuevas
+// las crea la plataforma (GABY) cuando se compra el servicio.
 const registerUser = async (req, res) => {
-  try {
-    // El rol nunca se toma del body: el registro público siempre crea clientes.
-    // Los administradores y técnicos se crean con `npm run seed` (ver README).
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: 'Nombre, email y contraseña son obligatorios',
-      });
-    }
-
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-
-    if (existingUser) {
-      return res.status(400).json({
-        message: 'Ya existe un usuario con ese email',
-      });
-    }
-
-    const user = await User.create({
-      name,
-      email: email.toLowerCase(),
-      password,
-      role: 'cliente',
-    });
-
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message || 'Error al registrar el usuario',
-    });
-  }
+  res.status(410).json({
+    message: 'El registro público está cerrado. Pide tu cuenta al administrador de tu empresa o solicita una demo de NOVA WORKORDER.',
+  });
 };
 
 const loginUser = async (req, res) => {
@@ -52,25 +31,30 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: String(email).toLowerCase() });
 
-    if (!user) {
+    if (!user || !(await user.matchPassword(password))) {
+      recordFailure(req);
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    const isMatch = await user.matchPassword(password);
-
-    if (!isMatch) {
+    if (!user.active) {
+      recordFailure(req);
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id),
-    });
+    const company = await Company.findById(user.tenant);
+
+    if (!company) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    if (company.status === 'suspendida') {
+      return res.status(402).json({ message: 'La cuenta de tu empresa está suspendida. Escríbenos para reactivarla.' });
+    }
+
+    clearFailures(req);
+    res.status(200).json({ ...publicUser(user, company), token: generateToken(user._id) });
   } catch (error) {
     res.status(500).json({
       message: error.message || 'Error al iniciar sesión',
@@ -79,16 +63,36 @@ const loginUser = async (req, res) => {
 };
 
 const getProfile = async (req, res) => {
-  res.status(200).json({
-    _id: req.user._id,
-    name: req.user.name,
-    email: req.user.email,
-    role: req.user.role,
-  });
+  res.status(200).json(publicUser(req.user, req.company));
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!(await user.matchPassword(String(currentPassword || '')))) {
+      return res.status(400).json({ message: 'La contraseña actual no es correcta' });
+    }
+
+    if (String(newPassword) === String(currentPassword)) {
+      return res.status(400).json({ message: 'La nueva contraseña debe ser distinta de la actual' });
+    }
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+    await user.save();
+
+    res.status(200).json({ message: 'Contraseña actualizada' });
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Error al cambiar la contraseña' });
+  }
 };
 
 module.exports = {
   registerUser,
   loginUser,
   getProfile,
+  changePassword,
+  publicUser,
 };

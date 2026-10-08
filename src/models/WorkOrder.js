@@ -22,9 +22,22 @@ const workOrderSchema = new mongoose.Schema(
       enum: ['baja', 'media', 'alta', 'urgente'],
       default: 'media',
     },
+    // Nombre del cliente tal como se mostró al crear la orden (se toma de la ficha si viene `client`).
     customerName: {
       type: String,
       trim: true,
+    },
+    client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client',
+      default: null,
+    },
+    // Empresa dueña del dato (multiempresa). No confundir con `company` del cliente, que es su razón social.
+    tenant: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: [true, 'La empresa es obligatoria'],
+      index: true,
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
