@@ -173,6 +173,12 @@ La app estará disponible en:
 - Frontend: http://localhost:5173
 - Backend: http://localhost:5000
 
+## Publicar en el servidor
+
+Ver [`deploy/PUBLICAR.md`](deploy/PUBLICAR.md): un comando desde el PC (`deploy/publicar.ps1`) instala NOVA WORKORDER
+con HTTPS en tu dominio (Caddy), MongoDB local y copias diarias. En producción el backend sirve también la interfaz
+compilada (`frontend/dist`), en un solo origen.
+
 ## Usuarios de prueba
 
 El registro público está cerrado. Los usuarios de la empresa de demostración «NOVA Demo» (con un cliente de ejemplo

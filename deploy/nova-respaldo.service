@@ -1,0 +1,7 @@
+[Unit]
+Description=Copia diaria de la base de NOVA WORKORDER
+After=mongod.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/nova-workorder/deploy/respaldo.sh

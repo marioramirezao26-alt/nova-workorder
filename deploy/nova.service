@@ -1,0 +1,27 @@
+# NOVA WORKORDER en el servidor (API + interfaz, un solo proceso). Lo instala deploy/instalar.sh.
+# Escucha solo en 127.0.0.1:5000: lo publica Caddy (HTTPS) en el dominio; nunca se expone directo.
+[Unit]
+Description=NOVA WORKORDER (API + interfaz)
+After=network-online.target mongod.service
+Wants=network-online.target
+Requires=mongod.service
+
+[Service]
+Type=simple
+User=nova
+Group=nova
+WorkingDirectory=/opt/nova-workorder
+EnvironmentFile=/opt/nova-workorder/.env
+Environment=NODE_ENV=production HOST=127.0.0.1 PORT=5000 TRUST_PROXY=1
+ExecStart=/usr/bin/node src/app.js
+Restart=always
+RestartSec=5
+# Endurecimiento: solo necesita su carpeta.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/nova-workorder/respaldos
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+# Caddy publica NOVA WORKORDER con HTTPS automático (Let's Encrypt) en el dominio de NOVA_DOMINIO.
+# Solo ese dominio llega a la app; GABY sigue privada en Tailscale (puerto 8443) y Caddy no la toca.
+{$NOVA_DOMINIO} {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:5000
+}
