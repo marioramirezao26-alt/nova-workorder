@@ -41,6 +41,10 @@ app.use((err, req, res, next) => {
 
 const startServer = async () => {
   try {
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET no está definido en el archivo .env (ver .env.example)');
+    }
+
     await connectDB();
 
     const PORT = process.env.PORT || 5000;
@@ -54,6 +58,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Solo arranca al ejecutar `node src/app.js`; así las pruebas pueden importar `app` sin abrir el puerto.
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;

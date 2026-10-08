@@ -3,7 +3,9 @@ const generateToken = require('../utils/generateToken');
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    // El rol nunca se toma del body: el registro público siempre crea clientes.
+    // Los administradores y técnicos se crean con `npm run seed` (ver README).
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -23,7 +25,7 @@ const registerUser = async (req, res) => {
       name,
       email: email.toLowerCase(),
       password,
-      role: role || 'cliente',
+      role: 'cliente',
     });
 
     res.status(201).json({
@@ -76,7 +78,17 @@ const loginUser = async (req, res) => {
   }
 };
 
+const getProfile = async (req, res) => {
+  res.status(200).json({
+    _id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+  });
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  getProfile,
 };
