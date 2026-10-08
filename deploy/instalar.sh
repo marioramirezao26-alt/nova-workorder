@@ -69,9 +69,8 @@ install -m 644 "$DEST/deploy/nova-respaldo.timer" /etc/systemd/system/nova-respa
 systemctl daemon-reload
 systemctl enable --now nova nova-respaldo.timer
 
-# Caddy: el dominio va en su entorno; el Caddyfile se copia tal cual.
-mkdir -p /etc/systemd/system/caddy.service.d
-printf '[Service]\nEnvironment=NOVA_DOMINIO=%s\n' "$DOMINIO" > /etc/systemd/system/caddy.service.d/nova.conf
+# Caddy: el dominio y la IP pública van en su entorno; el Caddyfile se copia tal cual.
+bash "$DEST/deploy/caddy-entorno.sh" "$DOMINIO"
 install -m 644 "$DEST/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable caddy >/dev/null

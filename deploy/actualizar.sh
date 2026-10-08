@@ -12,8 +12,9 @@ install -m 644 "$DEST/deploy/nova.service" /etc/systemd/system/nova.service
 install -m 644 "$DEST/deploy/nova-respaldo.service" /etc/systemd/system/nova-respaldo.service
 install -m 644 "$DEST/deploy/nova-respaldo.timer" /etc/systemd/system/nova-respaldo.timer
 install -m 644 "$DEST/deploy/Caddyfile" /etc/caddy/Caddyfile
+bash "$DEST/deploy/caddy-entorno.sh"            # conserva el dominio; agrega o refresca la IP pública
 systemctl daemon-reload
 systemctl restart nova
-systemctl reload caddy || systemctl restart caddy
+systemctl restart caddy
 sleep 3
 curl -fsS http://127.0.0.1:5000/api/health && echo " <- NOVA WORKORDER actualizada"
