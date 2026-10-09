@@ -233,6 +233,22 @@
       var submit = document.getElementById('demo-submit');
       var note = document.getElementById('contact-note');
 
+      // Analítica sin cookies: de qué canal llegó (utm_source del enlace o el sitio que lo trajo), guardado solo en esta
+      // pestaña. Se cuenta la visita y un clic en «Empieza gratis / Pide tu demo»; nada identifica al visitante.
+      var store = { get: function (k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } },
+                    set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* modo privado */ } } };
+      var utm = (location.search.match(/[?&]utm_source=([^&#]*)/) || [])[1];
+      if (utm) store.set('nova-utm', decodeURIComponent(utm).slice(0, 60));
+      if (!store.get('nova-ref') && document.referrer) store.set('nova-ref', document.referrer.slice(0, 500));
+      function track(event) {
+        try {
+          fetch('/api/public/visit', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: event, path: location.pathname, utm: store.get('nova-utm'), ref: store.get('nova-ref') }) })
+            .catch(function () {});
+        } catch (e) { /* sin red: no pasa nada */ }
+      }
+      track('visita');
+
       // Servicios pregunta por técnicos; Pedidos, por lo que vende. La prueba pide aceptar términos; la demo no.
       function sync() {
         var pedidos = form.product.value === 'pedidos';
@@ -249,6 +265,7 @@
       // Los botones «Pide tu demo de…» y «Empieza tus 14 días gratis» dejan elegidas la app y la forma de empezar.
       Array.prototype.forEach.call(document.querySelectorAll('a[data-app]'), function (a) {
         a.addEventListener('click', function () {
+          if (!store.get('nova-clic')) { store.set('nova-clic', '1'); track('clic'); }
           form.product.value = a.getAttribute('data-app');
           form.kind.value = a.getAttribute('data-kind') || 'demo';
           sync();
@@ -275,6 +292,8 @@
         var data = { product: form.product.value, kind: form.kind.value, consent: form.kind.value === 'prueba' && form.consent.checked };
         ['company', 'name', 'email', 'phone', 'technicians', 'message', 'website'].forEach(function (k) { data[k] = form[k].value.trim(); });
         if (data.product === 'pedidos') data.technicians = '';
+        data.utm = store.get('nova-utm');
+        data.ref = store.get('nova-ref');
         fetch('/api/public/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok, body: body }; }); })
           .then(function (res) {

@@ -211,6 +211,13 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 - POST /api/platform/companies — crea la empresa y su administrador (contraseña temporal)
 - GET /api/platform/companies · GET /api/platform/companies/:id — con el uso (técnicos, usuarios, órdenes)
 - PATCH /api/platform/companies/:id — `status` (prueba, activa, suspendida), `maxTechnicians`, `name`
+- GET /api/platform/demo-requests · POST /api/platform/demo-requests/:id/ack — solicitudes de la página de ventas (con su canal)
+- GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día
+
+### Página de ventas (sin sesión)
+- POST /api/public/demo — «Empieza gratis» o «Pide tu demo»; guarda el canal de llegada (`utm`/`ref`)
+- POST /api/public/visit — contador anónimo (`event`: visita o clic). Sin cookies ni IP: solo suma por día, página,
+  canal (utm_source del enlace o el sitio que lo trajo) y tipo de equipo. Los robots y los avances de enlaces no cuentan.
 
 ### Clientes
 - GET /api/clients
