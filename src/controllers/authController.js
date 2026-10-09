@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Company = require('../models/Company');
 const generateToken = require('../utils/generateToken');
+const { publicBranding } = require('../utils/branding');
 const { recordFailure, clearFailures } = require('../middleware/loginLimiter');
 
 const publicUser = (user, company) => ({
@@ -10,7 +11,7 @@ const publicUser = (user, company) => ({
   role: user.role,
   client: user.client || null,
   mustChangePassword: Boolean(user.mustChangePassword),
-  company: company ? { _id: company._id, name: company.name, status: company.status } : null,
+  company: company ? { _id: company._id, name: company.name, status: company.status, branding: publicBranding(company) } : null,
 });
 
 // El registro público quedó cerrado: cada empresa crea sus usuarios desde «Usuarios», y las empresas nuevas

@@ -34,6 +34,14 @@ const companySchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    // «Mi marca»: el logo y los colores que la empresa ve en su app (los pone su administrador).
+    branding: {
+      primary: { type: String, default: null },
+      accent: { type: String, default: null },
+      logo: { type: Buffer, default: null, select: false },
+      logoType: { type: String, default: null },
+      updatedAt: { type: Date, default: null },
+    },
   },
   {
     timestamps: true,

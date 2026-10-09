@@ -5,6 +5,8 @@ const { demoLimiter } = require('../middleware/demoLimiter');
 const { requestDemo } = require('../controllers/demoController');
 const { visitLimiter } = require('../middleware/visitLimiter');
 const { recordVisit } = require('../controllers/analyticsController');
+const { getLogo } = require('../controllers/brandingController');
+const { validateObjectId } = require('../middleware/validateObjectId');
 
 // Rutas sin sesión que usa la página de ventas (novaworkorder.com). Caddy solo deja pasar /api/public/* en ese dominio.
 const router = express.Router();
@@ -34,5 +36,8 @@ router.post('/visit', visitLimiter, [
   body('referral').optional().isString().isLength({ max: 40 }),
   validateRequest,
 ], recordVisit);
+
+// El logo de cada empresa (lo muestra su app, también antes de entrar).
+router.get('/logo/:id', validateObjectId, getLogo);
 
 module.exports = router;
