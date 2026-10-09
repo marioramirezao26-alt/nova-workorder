@@ -21,6 +21,7 @@ router.post('/demo', demoLimiter, [
   body('kind').optional({ checkFalsy: true }).isIn(['demo', 'prueba']).withMessage('Elige prueba gratis o demo'),
   body('utm').optional().isString().isLength({ max: 60 }),
   body('ref').optional().isString().isLength({ max: 500 }),
+  body('referral').optional().isString().isLength({ max: 40 }),
   validateRequest,
 ], requestDemo);
 
@@ -30,6 +31,7 @@ router.post('/visit', visitLimiter, [
   body('path').optional().isString().isLength({ max: 200 }),
   body('utm').optional().isString().isLength({ max: 60 }),
   body('ref').optional().isString().isLength({ max: 500 }),
+  body('referral').optional().isString().isLength({ max: 40 }),
   validateRequest,
 ], recordVisit);
 

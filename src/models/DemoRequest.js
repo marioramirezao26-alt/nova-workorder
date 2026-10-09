@@ -15,6 +15,8 @@ const demoRequestSchema = new mongoose.Schema(
     source: { type: String, trim: true, maxlength: 60, default: 'web' },
     // Canal por el que llegó a la página (instagram, facebook, linkedin, tiktok, youtube, whatsapp, buscador, correo, directo, otro).
     channel: { type: String, trim: true, maxlength: 20, default: null },
+    // Código de recomendación del cliente que compartió su enlace (?ref=…): GABY le regala un mes cuando este pague.
+    referral: { type: String, trim: true, lowercase: true, maxlength: 20, default: null },
     // demo: quiere que le muestren la app · prueba: quiere empezar ya; GABY le crea la cuenta y le envía el acceso.
     kind: { type: String, enum: ['demo', 'prueba'], default: 'demo' },
     // Una prueba exige aceptar los términos y la política de privacidad: cuándo los aceptó.

@@ -23,7 +23,7 @@ const recordVisit = async (req, res) => {
     const key = {
       day: colombiaDay(),
       path: cleanPath(req.body.path),
-      channel: channelOf({ utm: req.body.utm, ref: req.body.ref }),
+      channel: channelOf({ utm: req.body.utm, ref: req.body.ref, referral: req.body.referral }),
       device: /Mobi|Android|iPhone|iPad/i.test(ua) ? 'movil' : 'pc',
       event,
     };
