@@ -16,6 +16,7 @@ router.post('/demo', demoLimiter, [
   body('technicians').optional({ nullable: true, checkFalsy: true }).isInt({ min: 1, max: 10000 }).withMessage('¿Cuántos técnicos? Un número')
     .toInt(),
   body('message').optional().trim().isLength({ max: 1000 }).withMessage('El mensaje es muy largo'),
+  body('kind').optional({ checkFalsy: true }).isIn(['demo', 'prueba']).withMessage('Elige prueba gratis o demo'),
   validateRequest,
 ], requestDemo);
 

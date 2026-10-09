@@ -13,6 +13,10 @@ const demoRequestSchema = new mongoose.Schema(
     technicians: { type: Number, min: 1, max: 10000, default: null },
     message: { type: String, trim: true, maxlength: 1000, default: '' },
     source: { type: String, trim: true, maxlength: 60, default: 'web' },
+    // demo: quiere que le muestren la app · prueba: quiere empezar ya; GABY le crea la cuenta y le envía el acceso.
+    kind: { type: String, enum: ['demo', 'prueba'], default: 'demo' },
+    // Una prueba exige aceptar los términos y la política de privacidad: cuándo los aceptó.
+    consentAt: { type: Date, default: null },
     // nueva: aún no la lee GABY · recibida: ya es un prospecto en NOVA · Ventas
     status: { type: String, enum: ['nueva', 'recibida'], default: 'nueva', index: true },
     receivedAt: { type: Date, default: null },

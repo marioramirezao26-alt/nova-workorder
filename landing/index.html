@@ -23,7 +23,7 @@
         <a href="#pedidos">Pedidos</a>
         <a href="#precios">Precios</a>
         <a href="#preguntas">Preguntas</a>
-        <a class="btn small" href="#demo">Pide tu demo</a>
+        <a class="btn small" href="#demo" data-app="servicios" data-kind="prueba">Empieza gratis</a>
       </nav>
     </div>
   </header>
@@ -138,7 +138,7 @@
               <li>Órdenes, clientes y usuarios sin límite</li>
               <li>Soporte por WhatsApp y correo</li>
             </ul>
-            <a class="btn" href="#demo" data-app="servicios">Empieza tus 14 días gratis</a>
+            <a class="btn" href="#demo" data-app="servicios" data-kind="prueba">Empieza tus 14 días gratis</a>
             <p class="example">Ejemplo: una empresa con 5 técnicos paga $245.000 al mes.</p>
           </div>
           <div class="price">
@@ -150,7 +150,7 @@
               <li>Tu enlace propio y seguimiento para tus clientes</li>
               <li>Soporte por WhatsApp y correo</li>
             </ul>
-            <a class="btn" href="#demo" data-app="pedidos">Empieza tus 14 días gratis</a>
+            <a class="btn" href="#demo" data-app="pedidos" data-kind="prueba">Empieza tus 14 días gratis</a>
             <p class="example">Lo que vendas es tuyo: el dinero llega directo a tu Nequi o en efectivo.</p>
           </div>
         </div>
@@ -176,12 +176,17 @@
     <section id="demo" class="demo">
       <div class="wrap">
         <div>
-          <p class="eyebrow">Pide tu demo</p>
-          <h2>Mírala funcionando con tu negocio</h2>
-          <p class="lead">Déjanos tus datos y te escribimos hoy mismo para mostrarte cómo funciona y crear tu cuenta con 14 días gratis.</p>
+          <p class="eyebrow">Empieza gratis</p>
+          <h2>Pruébala 14 días con tu negocio</h2>
+          <p class="lead" id="demo-lead">Crea tu cuenta ahora: en unos minutos te llega a tu correo el acceso. Sin tarjeta y sin compromiso. ¿Prefieres que te la mostremos primero? Elige «Quiero una demo».</p>
           <p class="small">¿Prefieres escribirnos? <a href="mailto:contacto@novaworkorder.com">contacto@novaworkorder.com</a></p>
         </div>
         <form class="card" id="demo-form" novalidate>
+          <fieldset class="wide app-choice">
+            <legend>¿Cómo quieres empezar?</legend>
+            <label><input type="radio" name="kind" value="prueba" checked /> <span><b>Empezar gratis ya</b><small>Tu cuenta en minutos, 14 días</small></span></label>
+            <label><input type="radio" name="kind" value="demo" /> <span><b>Quiero una demo</b><small>Te escribimos y te la mostramos</small></span></label>
+          </fieldset>
           <fieldset class="wide app-choice">
             <legend>¿Qué app te interesa?</legend>
             <label><input type="radio" name="product" value="servicios" checked /> <span><b>Servicios</b><small>Órdenes de trabajo para técnicos</small></span></label>
@@ -194,8 +199,9 @@
           <label id="technicians-field">¿Cuántos técnicos?<input name="technicians" type="number" min="1" max="10000" inputmode="numeric" /></label>
           <label class="wide"><span id="message-label">¿Qué necesitas? (opcional)</span><textarea name="message" rows="3" maxlength="1000"></textarea></label>
           <label class="trap" aria-hidden="true">No llenes este campo<input name="website" tabindex="-1" autocomplete="off" /></label>
-          <p class="small wide">Al enviar aceptas que te contactemos sobre NOVAWORKORDER según nuestra <a href="/privacidad">política de privacidad</a>.</p>
-          <button class="btn wide" type="submit">Quiero mi demo</button>
+          <label class="wide consent" id="consent-field"><input type="checkbox" name="consent" /> <span>Acepto los <a href="/terminos">términos</a> y la <a href="/privacidad">política de privacidad</a>.</span></label>
+          <p class="small wide" id="contact-note">Al enviar aceptas que te contactemos sobre NOVAWORKORDER según nuestra <a href="/privacidad">política de privacidad</a>.</p>
+          <button class="btn wide" type="submit" id="demo-submit">Crear mi cuenta gratis</button>
           <p class="msg" id="demo-msg" role="status" aria-live="polite"></p>
         </form>
       </div>
@@ -223,17 +229,30 @@
       var companyLabel = document.getElementById('company-label');
       var messageLabel = document.getElementById('message-label');
 
-      // Servicios pregunta por técnicos; Pedidos, por lo que vende.
+      var consent = document.getElementById('consent-field');
+      var submit = document.getElementById('demo-submit');
+      var note = document.getElementById('contact-note');
+
+      // Servicios pregunta por técnicos; Pedidos, por lo que vende. La prueba pide aceptar términos; la demo no.
       function sync() {
         var pedidos = form.product.value === 'pedidos';
+        var prueba = form.kind.value === 'prueba';
+        consent.hidden = !prueba;
+        note.hidden = prueba;
+        submit.textContent = prueba ? 'Crear mi cuenta gratis' : 'Quiero mi demo';
         techs.hidden = pedidos;
         companyLabel.textContent = pedidos ? 'Nombre de tu negocio' : 'Empresa';
         messageLabel.textContent = pedidos ? '¿Qué vendes? (opcional)' : '¿Qué necesitas? (opcional)';
       }
       Array.prototype.forEach.call(form.product, function (r) { r.addEventListener('change', sync); });
-      // Los botones «Pide tu demo de…» dejan elegida la app.
+      Array.prototype.forEach.call(form.kind, function (r) { r.addEventListener('change', sync); });
+      // Los botones «Pide tu demo de…» y «Empieza tus 14 días gratis» dejan elegidas la app y la forma de empezar.
       Array.prototype.forEach.call(document.querySelectorAll('a[data-app]'), function (a) {
-        a.addEventListener('click', function () { form.product.value = a.getAttribute('data-app'); sync(); });
+        a.addEventListener('click', function () {
+          form.product.value = a.getAttribute('data-app');
+          form.kind.value = a.getAttribute('data-kind') || 'demo';
+          sync();
+        });
       });
       sync();
 
@@ -245,22 +264,30 @@
           msg.textContent = 'Escribe el nombre de tu negocio, tu nombre y un email válido.';
           return;
         }
+        if (form.kind.value === 'prueba' && !form.consent.checked) {
+          msg.className = 'msg bad';
+          msg.textContent = 'Para crear tu cuenta acepta los términos y la política de privacidad.';
+          return;
+        }
         var button = form.querySelector('button');
         button.disabled = true;
         msg.textContent = 'Enviando…';
-        var data = { product: form.product.value };
+        var data = { product: form.product.value, kind: form.kind.value, consent: form.kind.value === 'prueba' && form.consent.checked };
         ['company', 'name', 'email', 'phone', 'technicians', 'message', 'website'].forEach(function (k) { data[k] = form[k].value.trim(); });
         if (data.product === 'pedidos') data.technicians = '';
         fetch('/api/public/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok, body: body }; }); })
           .then(function (res) {
             if (!res.ok) throw new Error((res.body.errors && res.body.errors[0] && res.body.errors[0].message) || res.body.message || 'No se pudo enviar.');
-            var app = form.product.value;
+            var app = form.product.value, kind = form.kind.value, email = data.email;
             form.reset();
             form.product.value = app;
+            form.kind.value = kind;
             sync();
             msg.className = 'msg ok';
-            msg.textContent = '¡Listo! Recibimos tu solicitud: te escribimos hoy mismo por WhatsApp o correo.';
+            msg.textContent = kind === 'prueba'
+              ? '¡Listo! En unos minutos te llega a ' + email + ' el acceso a tu cuenta (revisa también la carpeta de spam).'
+              : '¡Listo! Recibimos tu solicitud: te escribimos hoy mismo por WhatsApp o correo.';
           })
           .catch(function (err) {
             msg.className = 'msg bad';
