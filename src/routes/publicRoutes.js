@@ -3,6 +3,8 @@ const { body } = require('express-validator');
 const { validateRequest } = require('../middleware/validateRequest');
 const { demoLimiter } = require('../middleware/demoLimiter');
 const { requestDemo } = require('../controllers/demoController');
+const { visitLimiter } = require('../middleware/visitLimiter');
+const { recordVisit } = require('../controllers/analyticsController');
 
 // Rutas sin sesión que usa la página de ventas (novaworkorder.com). Caddy solo deja pasar /api/public/* en ese dominio.
 const router = express.Router();
@@ -17,7 +19,18 @@ router.post('/demo', demoLimiter, [
     .toInt(),
   body('message').optional().trim().isLength({ max: 1000 }).withMessage('El mensaje es muy largo'),
   body('kind').optional({ checkFalsy: true }).isIn(['demo', 'prueba']).withMessage('Elige prueba gratis o demo'),
+  body('utm').optional().isString().isLength({ max: 60 }),
+  body('ref').optional().isString().isLength({ max: 500 }),
   validateRequest,
 ], requestDemo);
+
+// Contadores anónimos de la página (sin cookies): visitas y clics en «Empieza gratis / Pide tu demo».
+router.post('/visit', visitLimiter, [
+  body('event').optional().isIn(['visita', 'clic']),
+  body('path').optional().isString().isLength({ max: 200 }),
+  body('utm').optional().isString().isLength({ max: 60 }),
+  body('ref').optional().isString().isLength({ max: 500 }),
+  validateRequest,
+], recordVisit);
 
 module.exports = router;
