@@ -39,6 +39,7 @@ www.{$NOVA_SITIO} {
 		try_files {path} {path}.html {path}/index.html
 		file_server
 		header /img/* Cache-Control "public, max-age=604800"
+		header /video/* Cache-Control "public, max-age=604800"
 	}
 	handle_errors {
 		@noexiste expression {err.status_code} == 404
