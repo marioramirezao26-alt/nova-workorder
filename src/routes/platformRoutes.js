@@ -4,6 +4,7 @@ const { platformAuth } = require('../middleware/platformAuth');
 const { validateRequest } = require('../middleware/validateRequest');
 const { validateObjectId } = require('../middleware/validateObjectId');
 const { createCompany, listCompanies, getCompany, updateCompany } = require('../controllers/platformController');
+const { listDemoRequests, ackDemoRequest } = require('../controllers/demoController');
 
 const router = express.Router();
 
@@ -27,5 +28,9 @@ router.patch('/companies/:id', validateObjectId, [
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
   validateRequest,
 ], updateCompany);
+
+// Solicitudes de demo de la página de ventas: GABY las lee y las confirma.
+router.get('/demo-requests', listDemoRequests);
+router.post('/demo-requests/:id/ack', validateObjectId, ackDemoRequest);
 
 module.exports = router;

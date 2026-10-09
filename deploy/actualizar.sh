@@ -11,6 +11,10 @@ chown -R nova:nova "$DEST"
 install -m 644 "$DEST/deploy/nova.service" /etc/systemd/system/nova.service
 install -m 644 "$DEST/deploy/nova-respaldo.service" /etc/systemd/system/nova-respaldo.service
 install -m 644 "$DEST/deploy/nova-respaldo.timer" /etc/systemd/system/nova-respaldo.timer
+# La página de ventas (novaworkorder.com) es estática: Caddy la sirve desde /var/www/novaworkorder.
+rm -rf /var/www/novaworkorder && mkdir -p /var/www && cp -r "$DEST/landing" /var/www/novaworkorder && chmod -R a+rX /var/www/novaworkorder
+# Detrás de Caddy: la IP real del visitante (límites del formulario y del inicio de sesión por IP).
+grep -q '^TRUST_PROXY=.' "$DEST/.env" || { sed -i '/^TRUST_PROXY=$/d' "$DEST/.env"; echo 'TRUST_PROXY=1' >> "$DEST/.env"; }
 install -m 644 "$DEST/deploy/Caddyfile" /etc/caddy/Caddyfile
 bash "$DEST/deploy/caddy-entorno.sh"            # conserva el dominio; agrega o refresca la IP pública
 systemctl daemon-reload
