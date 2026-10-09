@@ -40,3 +40,16 @@ test('el formulario tiene límite por IP', async () => {
   for (let i = 0; i < 5; i += 1) assert.equal((await call('POST', '/public/demo', { body: demo })).status, 201);
   assert.equal((await call('POST', '/public/demo', { body: demo })).status, 429);
 });
+
+test('«Empieza gratis»: una prueba exige aceptar términos y privacidad; GABY la ve como prueba', async () => {
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, kind: 'otra' } })).status, 400);
+  const sin = await call('POST', '/public/demo', { body: { ...demo, kind: 'prueba' } });
+  assert.equal(sin.status, 400);
+  assert.match(sin.data.message, /términos/);
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, kind: 'prueba', consent: 'true' } })).status, 400);  // solo true de verdad
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, kind: 'prueba', consent: true } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: demo })).status, 201);
+  const items = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
+  assert.deepEqual(items.map((d) => d.kind), ['prueba', 'demo']);
+  assert.ok(items[0].consentAt && !items[1].consentAt);
+});
