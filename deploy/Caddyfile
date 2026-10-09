@@ -45,3 +45,7 @@ www.{$NOVA_SITIO} {
 		redir @noexiste https://{$NOVA_SITIO}/ 302
 	}
 }
+
+# Otros productos de NOVA en este servidor (por ejemplo NOVA PEDIDOS) agregan aquí su sitio, cada uno en su archivo.
+# Pueden usar el snippet `seguridad`. Si la carpeta está vacía o no existe, Caddy sigue igual.
+import /etc/caddy/sitios/*.caddy
