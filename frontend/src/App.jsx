@@ -49,6 +49,7 @@ function Login({ onLogin }) {
   return (
     <div className="auth-layout">
       <div className="auth-hero">
+        <img className="hero-logo" src="/logo.svg" alt="" />
         <div className="hero-badge">NOVA</div>
         <h1>WORKORDER</h1>
         <p>Las órdenes de trabajo de tu empresa, en el celular de cada técnico.</p>
@@ -85,6 +86,7 @@ function ChangePassword({ api, user, onDone, onLogout }) {
   return (
     <div className="auth-layout">
       <div className="auth-hero">
+        <img className="hero-logo" src="/logo.svg" alt="" />
         <div className="hero-badge">NOVA</div>
         <h1>Bienvenido, {user.name}</h1>
         <p>Antes de empezar, cambia la contraseña temporal que te entregaron.</p>
@@ -157,7 +159,7 @@ function App() {
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <div className="logo">N</div>
+          <img className="logo" src="/logo.svg" alt="NOVA" />
           <div>
             <h3>NOVA</h3>
             <small>{user.company?.name || 'Workorder'}</small>
@@ -179,7 +181,7 @@ function App() {
       </aside>
 
       <header className="mobile-topbar">
-        <div className="logo small">N</div>
+        <img className="logo small" src="/logo.svg" alt="NOVA" />
         <div className="mobile-title">
           <strong>{user.company?.name || 'NOVA'}</strong>
           <small>{user.name} · {ROLE[user.role]}</small>
