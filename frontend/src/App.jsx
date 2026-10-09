@@ -50,8 +50,8 @@ function Login({ onLogin }) {
     <div className="auth-layout">
       <div className="auth-hero">
         <img className="hero-logo" src="/logo.svg" alt="" />
-        <div className="hero-badge">NOVA</div>
-        <h1>WORKORDER</h1>
+        <div className="hero-badge">NOVAWORKORDER</div>
+        <h1>Servicios</h1>
         <p>Las órdenes de trabajo de tu empresa, en el celular de cada técnico.</p>
         <ul>
           <li>Cada técnico ve sus órdenes del día</li>
@@ -64,7 +64,7 @@ function Login({ onLogin }) {
         <label>Email<input type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
         <label>Contraseña<input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
         <button type="submit" className="primary-button" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
-        <p className="muted">¿No tienes cuenta? Pídela al administrador de tu empresa. ¿Tu empresa aún no usa NOVA WORKORDER? Solicita una demo.</p>
+        <p className="muted">¿No tienes cuenta? Pídela al administrador de tu empresa. ¿Tu empresa aún no usa NOVAWORKORDER Servicios? <a href="https://novaworkorder.com/#demo">Solicita una demo</a>.</p>
       </form>
     </div>
   );
@@ -87,7 +87,7 @@ function ChangePassword({ api, user, onDone, onLogout }) {
     <div className="auth-layout">
       <div className="auth-hero">
         <img className="hero-logo" src="/logo.svg" alt="" />
-        <div className="hero-badge">NOVA</div>
+        <div className="hero-badge">NOVAWORKORDER</div>
         <h1>Bienvenido, {user.name}</h1>
         <p>Antes de empezar, cambia la contraseña temporal que te entregaron.</p>
       </div>
@@ -159,9 +159,9 @@ function App() {
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img className="logo" src="/logo.svg" alt="NOVA" />
+          <img className="logo" src="/logo.svg" alt="NOVAWORKORDER" />
           <div>
-            <h3>NOVA</h3>
+            <h3>Servicios</h3>
             <small>{user.company?.name || 'Workorder'}</small>
           </div>
         </div>
@@ -181,9 +181,9 @@ function App() {
       </aside>
 
       <header className="mobile-topbar">
-        <img className="logo small" src="/logo.svg" alt="NOVA" />
+        <img className="logo small" src="/logo.svg" alt="NOVAWORKORDER" />
         <div className="mobile-title">
-          <strong>{user.company?.name || 'NOVA'}</strong>
+          <strong>{user.company?.name || 'NOVAWORKORDER Servicios'}</strong>
           <small>{user.name} · {ROLE[user.role]}</small>
         </div>
         <button type="button" className="ghost-button" onClick={() => logout()}>Salir</button>

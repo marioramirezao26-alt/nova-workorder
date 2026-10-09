@@ -34,7 +34,7 @@ app.use(express.json({ limit: '100kb' }));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
-    message: 'NOVA WORKORDER Backend funcionando correctamente',
+    message: 'NOVAWORKORDER Servicios funcionando correctamente',
   });
 });
 
