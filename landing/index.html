@@ -240,10 +240,13 @@
       var utm = (location.search.match(/[?&]utm_source=([^&#]*)/) || [])[1];
       if (utm) store.set('nova-utm', decodeURIComponent(utm).slice(0, 60));
       if (!store.get('nova-ref') && document.referrer) store.set('nova-ref', document.referrer.slice(0, 500));
+      var referral = (location.search.match(/[?&]ref=([a-z0-9-]{3,20})/i) || [])[1];      // recomendado por un cliente
+      if (referral) store.set('nova-referral', referral.toLowerCase());
       function track(event) {
         try {
           fetch('/api/public/visit', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ event: event, path: location.pathname, utm: store.get('nova-utm'), ref: store.get('nova-ref') }) })
+            body: JSON.stringify({ event: event, path: location.pathname, utm: store.get('nova-utm'), ref: store.get('nova-ref'),
+              referral: store.get('nova-referral') }) })
             .catch(function () {});
         } catch (e) { /* sin red: no pasa nada */ }
       }
@@ -294,6 +297,7 @@
         if (data.product === 'pedidos') data.technicians = '';
         data.utm = store.get('nova-utm');
         data.ref = store.get('nova-ref');
+        data.referral = store.get('nova-referral');
         fetch('/api/public/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok, body: body }; }); })
           .then(function (res) {

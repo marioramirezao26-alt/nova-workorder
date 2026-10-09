@@ -1,6 +1,6 @@
 // De dónde llegó un visitante de la página de ventas: el `utm_source` del enlace (los posts de GABY lo llevan) o, si
 // no hay, el sitio que lo trajo (referrer). Solo se guarda el nombre del canal, nunca el enlace completo.
-const CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'whatsapp', 'buscador', 'correo', 'directo', 'otro'];
+const CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'whatsapp', 'buscador', 'correo', 'referido', 'directo', 'otro'];
 
 const ALIASES = {
   ig: 'instagram', instagram: 'instagram',
@@ -43,6 +43,8 @@ const fromReferrer = (ref, ownHost = 'novaworkorder.com') => {
   return hit ? hit[1] : 'otro';
 };
 
-const channelOf = ({ utm, ref } = {}) => fromUtm(utm) || fromReferrer(ref);
+// Un enlace de recomendación de un cliente (?ref=código) cuenta como «referido», venga de donde venga.
+const REF = /^[a-z0-9-]{3,20}$/;
+const channelOf = ({ utm, ref, referral } = {}) => (REF.test(String(referral || '').toLowerCase()) ? 'referido' : (fromUtm(utm) || fromReferrer(ref)));
 
-module.exports = { CHANNELS, channelOf, fromUtm, fromReferrer };
+module.exports = { CHANNELS, REF, channelOf, fromUtm, fromReferrer };

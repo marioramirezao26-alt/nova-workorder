@@ -1,7 +1,7 @@
 const DemoRequest = require('../models/DemoRequest');
-const { channelOf } = require('../utils/channel');
+const { channelOf, REF } = require('../utils/channel');
 
-const fields = 'company name email phone product technicians message source channel kind consentAt status receivedAt createdAt';
+const fields = 'company name email phone product technicians message source channel referral kind consentAt status receivedAt createdAt';
 
 // POST /api/public/demo — el formulario de la página de ventas. `website` es una trampa para bots: los humanos no lo
 // ven; si viene lleno se responde igual que siempre, sin guardar nada.
@@ -16,7 +16,8 @@ const requestDemo = async (req, res) => {
       return res.status(400).json({ message: 'Para empezar tu prueba acepta los términos y la política de privacidad' });
     }
     await DemoRequest.create({ company, name, email, phone, product: product || 'servicios', technicians, message, source: 'web',
-      kind: kind || 'demo', channel: channelOf({ utm: req.body.utm, ref: req.body.ref }), consentAt: kind === 'prueba' ? new Date() : null });
+      kind: kind || 'demo', channel: channelOf({ utm: req.body.utm, ref: req.body.ref, referral: req.body.referral }),
+      referral: REF.test(String(req.body.referral || '').toLowerCase()) ? String(req.body.referral).toLowerCase() : null, consentAt: kind === 'prueba' ? new Date() : null });
     return res.status(201).json({ ok: true });
   } catch (error) {
     return res.status(500).json({ message: 'No pudimos registrar tu solicitud. Escríbenos a contacto@novaworkorder.com.' });

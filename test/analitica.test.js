@@ -64,3 +64,15 @@ test('los contadores tienen límite por IP y nunca fallan hacia el visitante', a
   const { data } = await call('GET', '/platform/analytics', { platformKey: KEY });
   assert.equal(data.visits, 60);
 });
+
+test('el enlace de recomendación de un cliente llega a GABY y cuenta como «referido»', async () => {
+  await visit({ event: 'visita', path: '/', utm: 'instagram', referral: 'a1b2c3' });
+  await call('POST', '/public/demo', { body: { company: 'Café Luna', name: 'Ana', email: 'a@luna.co', referral: 'A1B2C3', utm: 'instagram' } });
+  await call('POST', '/public/demo', { body: { company: 'Otro', name: 'Leo', email: 'l@o.co', referral: '<script>' } });
+  const [d, e] = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
+  assert.equal(d.referral, 'a1b2c3');
+  assert.equal(d.channel, 'referido');
+  assert.equal(e.referral, null);                                                               // un código inválido se ignora
+  const { data } = await call('GET', '/platform/analytics', { platformKey: KEY });
+  assert.equal(data.byChannel.find((c) => c.channel === 'referido').visits, 1);
+});
