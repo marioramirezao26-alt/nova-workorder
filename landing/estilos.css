@@ -1,4 +1,4 @@
-/* NOVA WORKORDER — página de ventas y documentos legales (estático, sin dependencias). */
+/* NOVAWORKORDER — página de ventas (Servicios y Pedidos) y documentos legales (estático, sin dependencias). */
 :root {
   --bg: #07111d; --bg2: #0c1a2b; --card: rgba(19, 34, 52, 0.9); --line: rgba(141, 174, 215, 0.2);
   --text: #edf3ff; --dim: #b7cce9; --accent: #4f96ff; --accent2: #7db8ff; --ok: #2bc081; --warn: #f0cd73;
@@ -94,6 +94,39 @@ input:focus, textarea:focus { outline: 2px solid rgba(79, 150, 255, 0.55); borde
 .msg.ok { color: var(--ok); } .msg.bad { color: #ff9e9e; }
 .small { font-size: 0.85rem; color: var(--dim); }
 
+/* portada con las dos apps */
+.hero.home .wrap { display: block; }
+.home .center { margin-bottom: 34px; }
+.apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.app-card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; }
+.app-card h2 { margin-bottom: 2px; }
+.app-card .eyebrow { margin-bottom: 4px; }
+.app-card .for { color: var(--accent2); font-weight: 700; margin: 0 0 10px; }
+.app-card p { color: var(--dim); }
+.app-card .app-price { color: var(--text); font-size: 1.6rem; font-weight: 800; margin: auto 0 0; padding-top: 8px; }
+.app-card .app-price small { font-size: 0.95rem; font-weight: 500; color: var(--dim); }
+.app-card .cta, .split .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.home .note { color: var(--dim); font-size: 0.92rem; margin-top: 22px; }
+section.alt { background: rgba(255, 255, 255, 0.025); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; }
+.split.reverse > :first-child { order: 2; }
+.phones { display: flex; justify-content: center; align-items: flex-start; }
+.phones .phone { width: min(260px, 60vw); position: relative; z-index: 1; }
+.phones .phone.back { margin-left: -70px; margin-top: 60px; z-index: 0; opacity: 0.92; }
+.prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; max-width: 1000px; margin: 30px auto 0; }
+.prices .price { margin: 0; max-width: none; display: flex; flex-direction: column; align-items: center; }
+.prices .price ul { align-self: stretch; }
+.prices .price .eyebrow { margin: 0; }
+.app-choice { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.app-choice legend { font-size: 0.92rem; color: var(--dim); margin-bottom: 6px; padding: 0; }
+form.card .app-choice label { flex-direction: row; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line);
+  border-radius: 12px; background: rgba(7, 17, 29, 0.75); cursor: pointer; color: var(--text); }
+.app-choice label:has(input:checked) { border-color: var(--accent); background: rgba(79, 150, 255, 0.14); }
+.app-choice input { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+.app-choice span { display: flex; flex-direction: column; line-height: 1.3; }
+.app-choice small { color: var(--dim); font-size: 0.8rem; }
+form.card [hidden] { display: none; }
+
 footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--dim); font-size: 0.9rem; }
 footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; }
 footer nav { margin-left: auto; display: flex; flex-wrap: wrap; gap: 18px; }
@@ -111,7 +144,8 @@ footer a { color: var(--dim); }
 .doc .meta { color: var(--dim); }
 
 @media (max-width: 900px) {
-  .hero .wrap, .demo .wrap { grid-template-columns: 1fr; }
+  .hero .wrap, .demo .wrap, .split, .apps, .prices { grid-template-columns: 1fr; }
+  .split.reverse > :first-child { order: 0; }
   .pains { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .features, .steps { grid-template-columns: 1fr; }
   .top nav a:not(.btn) { display: none; }
@@ -120,6 +154,9 @@ footer a { color: var(--dim); }
 @media (max-width: 520px) {
   .pains { grid-template-columns: 1fr; }
   form.card { grid-template-columns: 1fr; padding: 20px; }
+  .app-choice { grid-template-columns: 1fr; }
+  .phones .phone { width: 58vw; }
+  .phones .phone.back { margin-left: -28vw; }
   .price { padding: 24px 18px; }
   footer nav { margin-left: 0; }
 }
