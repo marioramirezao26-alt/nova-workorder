@@ -10,6 +10,7 @@ const clientRoutes = require('./routes/clientRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const userRoutes = require('./routes/userRoutes');
 const platformRoutes = require('./routes/platformRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.use('/api/clients', clientRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/platform', platformRoutes);
+app.use('/api/public', publicRoutes);
 
 // En producción el mismo proceso sirve la interfaz compilada (frontend/dist): un solo origen, sin CORS.
 const dist = path.join(__dirname, '..', 'frontend', 'dist');

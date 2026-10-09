@@ -56,6 +56,7 @@ MONGODB_URI=mongodb://127.0.0.1:27017/nova-workorder
 JWT_SECRET=$(secreto)
 PLATFORM_API_KEY=$(secreto)
 CORS_ORIGINS=https://$DOMINIO
+TRUST_PROXY=1
 ENV
   echo ">> Creado $DEST/.env con secretos nuevos. La llave de plataforma para GABY: grep PLATFORM_API_KEY $DEST/.env"
 fi
@@ -71,6 +72,7 @@ systemctl enable --now nova nova-respaldo.timer
 
 # Caddy: el dominio y la IP pública van en su entorno; el Caddyfile se copia tal cual.
 bash "$DEST/deploy/caddy-entorno.sh" "$DOMINIO"
+rm -rf /var/www/novaworkorder && mkdir -p /var/www && cp -r "$DEST/landing" /var/www/novaworkorder && chmod -R a+rX /var/www/novaworkorder
 install -m 644 "$DEST/deploy/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable caddy >/dev/null
