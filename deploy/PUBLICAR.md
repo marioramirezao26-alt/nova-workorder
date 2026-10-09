@@ -58,6 +58,7 @@ solicitudes de demo de la página.
   Si GoDaddy tiene otros MX, bórralos.
 
 ## Comandos útiles en el servidor
+- Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.
 - Estado: `systemctl status nova caddy mongod`
 - Registros: `journalctl -u nova -n 100` · `journalctl -u caddy -n 50`
 - Copia manual: `bash /opt/nova-workorder/deploy/respaldo.sh`
