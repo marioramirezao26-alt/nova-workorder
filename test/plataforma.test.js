@@ -17,7 +17,7 @@ test('GABY entrega el producto: crea la empresa y su administrador, que cambia l
     name: 'Mantenimientos Andinos S.A.S.', adminName: 'Laura Gómez', adminEmail: 'Laura@Andinos.co', maxTechnicians: 5 } });
   assert.equal(made.status, 201);
   assert.equal(made.data.company.slug, 'mantenimientos-andinos-s-a-s');
-  assert.deepEqual(made.data.company.usage, { technicians: 0, users: 1, workOrders: 0 });
+  assert.deepEqual(made.data.company.usage, { technicians: 0, users: 1, workOrders: 0, adminEntered: false });
   assert.equal(made.data.admin.email, 'laura@andinos.co');
   const first = await call('POST', '/auth/login', { body: { email: 'laura@andinos.co', password: made.data.admin.temporaryPassword } });
   assert.equal(first.status, 200);
@@ -27,6 +27,8 @@ test('GABY entrega el producto: crea la empresa y su administrador, que cambia l
   assert.equal((await call('PUT', '/auth/password', { as: first.data.token, body: { currentPassword: made.data.admin.temporaryPassword, newPassword: 'Nueva-clave-99' } })).status, 200);
   const again = await call('POST', '/auth/login', { body: { email: 'laura@andinos.co', password: 'Nueva-clave-99' } });
   assert.equal(again.data.mustChangePassword, false);
+  // GABY ve que el administrador ya entró (cambió la contraseña temporal)
+  assert.equal((await call('GET', `/platform/companies/${made.data.company._id}`, { platformKey: KEY })).data.usage.adminEntered, true);
   // el mismo email no se puede vender dos veces
   assert.equal((await call('POST', '/platform/companies', { platformKey: KEY, body: { name: 'Otra', adminName: 'X', adminEmail: 'laura@andinos.co' } })).status, 409);
   // nombre repetido: slug distinto

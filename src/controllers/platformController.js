@@ -10,13 +10,16 @@ const { temporaryPassword } = require('../utils/passwords');
 const slugify = (name) => String(name).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'empresa';
 
+// Uso de la cuenta: GABY lo mira cada día durante la prueba para avisarle a NOVA a quién llamar (sin técnicos, sin
+// órdenes, o el administrador nunca entró: sigue con la contraseña temporal).
 const usage = async (company) => {
-  const [technicians, users, workOrders] = await Promise.all([
+  const [technicians, users, workOrders, admin] = await Promise.all([
     User.countDocuments({ tenant: company._id, role: 'tecnico', active: true }),
     User.countDocuments({ tenant: company._id, active: true }),
     WorkOrder.countDocuments({ tenant: company._id }),
+    User.findOne({ tenant: company._id, email: company.contactEmail }).select('mustChangePassword'),
   ]);
-  return { technicians, users, workOrders };
+  return { technicians, users, workOrders, adminEntered: Boolean(admin && !admin.mustChangePassword) };
 };
 
 const view = async (company) => ({
