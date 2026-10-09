@@ -20,11 +20,20 @@ test('la página de ventas registra la demo y GABY la lee y la confirma', async 
   const [d] = list.data.items;
   assert.equal(d.email, 'laura@friototal.com');
   assert.equal(d.technicians, 4);
+  assert.equal(d.product, 'servicios');                                                          // sin elegir: Servicios
   assert.equal(d.status, 'nueva');
   const ack = await call('POST', `/platform/demo-requests/${d._id}/ack`, { platformKey: KEY });
   assert.equal(ack.data.status, 'recibida');
   assert.equal((await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items.length, 0);
   assert.equal((await call('GET', '/platform/demo-requests?status=recibida', { platformKey: KEY })).data.items.length, 1);
+});
+
+test('la demo dice qué app le interesa; en Pedidos no cuentan técnicos', async () => {
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, product: 'otra' } })).status, 400);
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, product: 'pedidos', company: 'Café Luna' } })).status, 201);
+  const [d] = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
+  assert.equal(d.product, 'pedidos');
+  assert.equal(d.technicians, null);
 });
 
 test('el formulario tiene límite por IP', async () => {

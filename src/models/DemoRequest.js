@@ -8,6 +8,8 @@ const demoRequestSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, trim: true, lowercase: true, maxlength: 200 },
     phone: { type: String, trim: true, maxlength: 40, default: '' },
+    // App que le interesa: servicios (órdenes de trabajo, app.novaworkorder.com) o pedidos (tienda al detal).
+    product: { type: String, enum: ['servicios', 'pedidos'], default: 'servicios' },
     technicians: { type: Number, min: 1, max: 10000, default: null },
     message: { type: String, trim: true, maxlength: 1000, default: '' },
     source: { type: String, trim: true, maxlength: 60, default: 'web' },
