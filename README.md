@@ -214,6 +214,10 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 - GET /api/platform/demo-requests · POST /api/platform/demo-requests/:id/ack — solicitudes de la página de ventas (con su canal)
 - GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día
 
+### Mi marca (administrador de la empresa)
+- PUT /api/company/branding — `primary` y `accent` (#rrggbb), `logo` (data URL PNG, JPG o WEBP, máx. 300 KB; `null` lo quita)
+- GET /api/public/logo/:id — el logo de la empresa (lo muestra su app)
+
 ### Página de ventas (sin sesión)
 - POST /api/public/demo — «Empieza gratis» o «Pide tu demo»; guarda el canal de llegada (`utm`/`ref`)
 - POST /api/public/visit — contador anónimo (`event`: visita o clic). Sin cookies ni IP: solo suma por día, página,

@@ -7,6 +7,8 @@ import MyOrders from './views/MyOrders';
 import Orders from './views/Orders';
 import Clients from './views/Clients';
 import Users from './views/Users';
+import Brand from './views/Brand';
+import { applyBrand, logoUrl } from './brand';
 
 const storageKey = 'nova-token';
 
@@ -17,9 +19,10 @@ const SECTIONS = {
   ordenes: { label: 'Órdenes', icon: '☰', view: Orders },
   clientes: { label: 'Clientes', icon: '◉', view: Clients },
   usuarios: { label: 'Usuarios', icon: '⚙', view: Users },
+  marca: { label: 'Mi marca', icon: '★', view: Brand },
 };
 const MENU = {
-  admin: ['inicio', 'ordenes', 'clientes', 'usuarios'],
+  admin: ['inicio', 'ordenes', 'clientes', 'usuarios', 'marca'],
   tecnico: ['mis', 'ordenes', 'clientes', 'inicio'],
   cliente: ['mis'],
 };
@@ -122,6 +125,11 @@ function App() {
     api.get('/auth/profile').then(({ data }) => setUser(data)).catch(() => logout());
   }, [token]);
 
+  // «Mi marca»: los colores de la empresa en toda la app; al salir, los de NOVAWORKORDER.
+  useEffect(() => { applyBrand(user?.company?.branding); }, [user?.company?.branding]);
+
+  const brandSaved = (branding) => setUser({ ...user, company: { ...user.company, branding } });
+
   const menu = MENU[user?.role] || [];
 
   // La sección vive en la dirección (#ordenes…): el botón «atrás» del celular funciona.
@@ -159,7 +167,7 @@ function App() {
     <div className="dashboard-layout">
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img className="logo" src="/logo.svg" alt="NOVAWORKORDER" />
+          <img className="logo" src={logoUrl(user.company)} alt={user.company?.name || 'NOVAWORKORDER'} />
           <div>
             <h3>Servicios</h3>
             <small>{user.company?.name || 'Workorder'}</small>
@@ -181,7 +189,7 @@ function App() {
       </aside>
 
       <header className="mobile-topbar">
-        <img className="logo small" src="/logo.svg" alt="NOVAWORKORDER" />
+        <img className="logo small" src={logoUrl(user.company)} alt={user.company?.name || 'NOVAWORKORDER'} />
         <div className="mobile-title">
           <strong>{user.company?.name || 'NOVAWORKORDER Servicios'}</strong>
           <small>{user.name} · {ROLE[user.role]}</small>
@@ -190,7 +198,7 @@ function App() {
       </header>
 
       <main className="main-panel">
-        <View key={current} api={api} user={user} go={go} />
+        <View key={current} api={api} user={user} go={go} onSaved={brandSaved} />
       </main>
 
       {menu.length > 1 && (

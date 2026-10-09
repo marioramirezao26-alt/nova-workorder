@@ -11,6 +11,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const userRoutes = require('./routes/userRoutes');
 const platformRoutes = require('./routes/platformRoutes');
 const publicRoutes = require('./routes/publicRoutes');
+const companyRoutes = require('./routes/companyRoutes');
 
 dotenv.config();
 
@@ -29,6 +30,8 @@ app.use((req, res, next) => {
   res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' });
   next();
 });
+// «Mi marca» sube el logo (hasta 300 KB, en base64): solo esa ruta acepta un cuerpo más grande.
+app.use('/api/company/branding', express.json({ limit: '500kb' }));
 app.use(express.json({ limit: '100kb' }));
 
 app.get('/api/health', (req, res) => {
@@ -45,6 +48,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/platform', platformRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/company', companyRoutes);
 
 // En producción el mismo proceso sirve la interfaz compilada (frontend/dist): un solo origen, sin CORS.
 const dist = path.join(__dirname, '..', 'frontend', 'dist');

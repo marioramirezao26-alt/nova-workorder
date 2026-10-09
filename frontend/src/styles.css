@@ -3,6 +3,8 @@
 }
 
 :root {
+  --brand: #2f78f6;                 /* «Mi marca»: el color principal de cada empresa */
+  --brand-2: #63a3ff;               /* y su color secundario */
   font-family: Inter, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -140,7 +142,7 @@ textarea {
 .primary-button {
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2f78f6, #63a3ff);
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
   color: white;
   padding: 12px 18px;
   font-weight: 700;
@@ -206,8 +208,8 @@ textarea {
 }
 
 .nav-item.active {
-  background: rgba(63, 118, 207, 0.15);
-  border: 1px solid rgba(84, 138, 223, 0.28);
+  background: color-mix(in srgb, var(--brand) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 40%, transparent);
 }
 
 .profile-box {
@@ -464,7 +466,7 @@ textarea {
   margin-top: 8px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(96, 141, 255, 0.15);
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
   color: #a9cbff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -525,7 +527,7 @@ textarea {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #2f78f6, #63a3ff);
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
 }
 
 .trend-item {
@@ -783,7 +785,7 @@ button:disabled {
 }
 
 .big-button.start {
-  background: linear-gradient(135deg, #2f78f6, #63a3ff);
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
 }
 
 .big-button.done {
@@ -894,7 +896,7 @@ button:disabled {
 
   .bottom-nav button.active {
     color: #ffffff;
-    background: rgba(63, 118, 207, 0.18);
+    background: color-mix(in srgb, var(--brand) 22%, transparent);
   }
 
   .card-list {
@@ -952,3 +954,16 @@ img.logo {
   height: 72px;
   margin-bottom: 18px;
 }
+
+/* «Mi marca» */
+.brand-box h3 { margin-top: 0; }
+.brand-logo-row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.brand-logo-preview { width: 96px; height: 96px; object-fit: contain; border-radius: 16px; background: rgba(255, 255, 255, 0.06); padding: 8px; }
+.brand-logo-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.brand-upload { cursor: pointer; }
+.brand-palettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.brand-swatch { height: 56px; border-radius: 12px; border: 2px solid transparent; color: white; font-weight: 700; display: flex; align-items: flex-end; padding: 6px 8px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.brand-swatch.active { border-color: white; }
+.brand-preview { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+input[type="color"] { width: 100%; height: 44px; padding: 2px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: transparent; }
+.muted.small { font-size: 0.85rem; margin: 0; }
