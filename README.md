@@ -124,9 +124,10 @@ NODE_ENV=development
 SEED_PASSWORD=<contraseña de los usuarios de demo, mínimo 8 caracteres>
 CORS_ORIGINS=<en producción: https://tu-dominio>
 PLATFORM_API_KEY=<llave de al menos 32 caracteres para la API de plataforma; vacía = apagada>
+OPENROUTER_API_KEY=<clave de OpenRouter para el chat de la página de ventas; vacía = sin chat>
 ```
 
-Ver `.env.example` para todas las variables (`TRUST_PROXY`, `MIGRATE_COMPANY_NAME`).
+Ver `.env.example` para todas las variables (`TRUST_PROXY`, `MIGRATE_COMPANY_NAME`, `CHAT_MODEL`, `CHAT_DAILY_LIMIT`, `CHAT_ENABLED`).
 
 ### Pasar de la versión 1.0 a la 1.1
 
@@ -222,6 +223,11 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 - POST /api/public/demo — «Empieza gratis» o «Pide tu demo»; guarda el canal de llegada (`utm`/`ref`)
 - POST /api/public/visit — contador anónimo (`event`: visita o clic). Sin cookies ni IP: solo suma por día, página,
   canal (utm_source del enlace o el sitio que lo trajo) y tipo de equipo. Los robots y los avances de enlaces no cuentan.
+- GET /api/public/chat — `{ enabled }`: si la página muestra la burbuja del chat «GABY · Ventas».
+- POST /api/public/chat — `{ messages: [{ role, content }] }` → `{ reply }`. Una IA (OpenRouter) que solo sabe precios y
+  funciones (`src/utils/salesChat.js`), sin herramientas ni acceso a datos. No guarda lo que escribe el visitante: solo
+  cuenta conversaciones y mensajes por día (`ChatStat`). Topes: 30 mensajes por IP cada hora y `CHAT_DAILY_LIMIT` por día.
+  Si después llena «Empieza gratis», la solicitud llega a GABY con `source: chat` y sus preguntas en el mensaje.
 
 ### Clientes
 - GET /api/clients

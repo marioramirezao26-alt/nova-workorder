@@ -298,6 +298,11 @@
         data.utm = store.get('nova-utm');
         data.ref = store.get('nova-ref');
         data.referral = store.get('nova-referral');
+        var asked = store.get('nova-chat');                                 // si antes habló con GABY en el chat
+        if (asked) {
+          data.source = 'chat';
+          data.message = ((data.message ? data.message + '\n\n' : '') + 'Preguntó en el chat: ' + asked).slice(0, 1000);
+        }
         fetch('/api/public/demo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (body) { return { ok: r.ok, body: body }; }); })
           .then(function (res) {
@@ -318,6 +323,96 @@
           })
           .finally(function () { button.disabled = false; });
       });
+    })();
+  </script>
+  <!-- Chat «GABY · Ventas»: una IA que responde precios y dudas. Aparece solo si el servidor tiene el chat encendido. -->
+  <button class="chat-fab" id="chat-fab" type="button" hidden aria-controls="chat-box">💬 ¿Preguntas? Habla con GABY</button>
+  <section class="chat-box" id="chat-box" hidden role="dialog" aria-label="Chat con GABY, la asistente de NOVAWORKORDER">
+    <div class="chat-head">
+      <span class="chat-avatar" aria-hidden="true">G</span>
+      <div><b>GABY · Ventas</b><small>Asistente virtual (IA) de NOVAWORKORDER</small></div>
+      <button class="chat-close" id="chat-close" type="button" aria-label="Cerrar el chat">×</button>
+    </div>
+    <div class="chat-log" id="chat-log" aria-live="polite"></div>
+    <div class="chat-quick" id="chat-quick">
+      <button type="button">¿Cuánto cuesta?</button>
+      <button type="button">¿Cuál app me sirve?</button>
+      <button type="button">¿Cómo funciona la prueba gratis?</button>
+    </div>
+    <a class="btn small chat-cta" id="chat-cta" href="#demo">Empezar gratis o pedir demo</a>
+    <form class="chat-form" id="chat-form">
+      <input id="chat-input" maxlength="500" autocomplete="off" placeholder="Escribe tu pregunta…" aria-label="Tu pregunta" />
+      <button class="btn small" type="submit">Enviar</button>
+    </form>
+    <p class="chat-note">Responde una IA y puede equivocarse. No escribas contraseñas ni datos de pago. <a href="/privacidad#chat">Privacidad</a></p>
+  </section>
+
+  <script>
+    (function () {
+      var fab = document.getElementById('chat-fab'), box = document.getElementById('chat-box');
+      var log = document.getElementById('chat-log'), form = document.getElementById('chat-form'), input = document.getElementById('chat-input');
+      var quick = document.getElementById('chat-quick'), cta = document.getElementById('chat-cta');
+      var HELLO = '¡Hola! Soy GABY, la asistente virtual de NOVAWORKORDER. Te ayudo con precios, la prueba gratis y cuál app le sirve a tu negocio. ¿Qué quieres saber?';
+      // La conversación vive solo en esta pestaña (sessionStorage): el servidor no la guarda.
+      var history = [];
+      try { history = JSON.parse(sessionStorage.getItem('nova-chat-log') || '[]') || []; } catch (e) { history = []; }
+      function save() {
+        try {
+          sessionStorage.setItem('nova-chat-log', JSON.stringify(history.slice(-30)));
+          // Lo que preguntó viaja con el formulario «Empieza gratis», para que el equipo sepa qué le interesa.
+          var asked = history.filter(function (m) { return m.role === 'user'; }).map(function (m) { return m.content; }).join(' · ');
+          sessionStorage.setItem('nova-chat', asked.slice(-600));
+        } catch (e) { /* modo privado */ }
+      }
+      function bubble(text, who) {
+        var p = document.createElement('p');
+        p.className = 'chat-msg ' + who;
+        p.textContent = text;
+        log.appendChild(p);
+        log.scrollTop = log.scrollHeight;
+        return p;
+      }
+      function render() {
+        log.textContent = '';
+        bubble(HELLO, 'bot');
+        history.forEach(function (m) { bubble(m.content, m.role === 'user' ? 'me' : 'bot'); });
+        quick.hidden = history.length > 0;
+      }
+      function open() { box.hidden = false; fab.hidden = true; render(); input.focus(); }
+      function close() { box.hidden = true; fab.hidden = false; }
+      var busy = false;
+      function send(text) {
+        text = String(text || '').trim().slice(0, 500);
+        if (!text || busy) return;
+        busy = true;
+        history.push({ role: 'user', content: text });
+        save();
+        bubble(text, 'me');
+        quick.hidden = true;
+        var wait = bubble('GABY está escribiendo…', 'bot wait');
+        fetch('/api/public/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: history.slice(-10) }) })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok, body: b }; }); })
+          .then(function (res) {
+            wait.remove();
+            if (!res.ok || !res.body.reply) { bubble(res.body.message || 'No pude responder. Escríbenos a contacto@novaworkorder.com.', 'bot'); history.pop(); save(); return; }
+            var reply = String(res.body.reply).replace(/\*\*/g, '');
+            history.push({ role: 'assistant', content: reply });
+            save();
+            bubble(reply, 'bot');
+          })
+          .catch(function () { wait.remove(); history.pop(); save(); bubble('Sin conexión. Intenta de nuevo en un momento.', 'bot'); })
+          .finally(function () { busy = false; });
+      }
+      fab.addEventListener('click', open);
+      document.getElementById('chat-close').addEventListener('click', close);
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !box.hidden) close(); });
+      form.addEventListener('submit', function (e) { e.preventDefault(); var t = input.value; input.value = ''; send(t); });
+      Array.prototype.forEach.call(quick.querySelectorAll('button'), function (b) { b.addEventListener('click', function () { send(b.textContent); }); });
+      cta.addEventListener('click', function () { close(); });
+      // La burbuja aparece solo si el servidor tiene el chat encendido.
+      fetch('/api/public/chat').then(function (r) { return r.ok ? r.json() : {}; })
+        .then(function (b) { if (b.enabled) fab.hidden = false; }).catch(function () {});
     })();
   </script>
 </body>
