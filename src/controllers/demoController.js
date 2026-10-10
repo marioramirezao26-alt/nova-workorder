@@ -15,7 +15,7 @@ const requestDemo = async (req, res) => {
     if (kind === 'prueba' && req.body.consent !== true) {
       return res.status(400).json({ message: 'Para empezar tu prueba acepta los términos y la política de privacidad' });
     }
-    await DemoRequest.create({ company, name, email, phone, product: product || 'servicios', technicians, message, source: 'web',
+    await DemoRequest.create({ company, name, email, phone, product: product || 'servicios', technicians, message, source: req.body.source === 'chat' ? 'chat' : 'web',
       kind: kind || 'demo', channel: channelOf({ utm: req.body.utm, ref: req.body.ref, referral: req.body.referral }),
       referral: REF.test(String(req.body.referral || '').toLowerCase()) ? String(req.body.referral).toLowerCase() : null, consentAt: kind === 'prueba' ? new Date() : null });
     return res.status(201).json({ ok: true });

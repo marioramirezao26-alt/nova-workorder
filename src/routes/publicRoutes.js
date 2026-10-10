@@ -7,6 +7,8 @@ const { visitLimiter } = require('../middleware/visitLimiter');
 const { recordVisit } = require('../controllers/analyticsController');
 const { getLogo } = require('../controllers/brandingController');
 const { validateObjectId } = require('../middleware/validateObjectId');
+const { chatLimiter } = require('../middleware/chatLimiter');
+const { chat, chatStatus } = require('../controllers/chatController');
 
 // Rutas sin sesión que usa la página de ventas (novaworkorder.com). Caddy solo deja pasar /api/public/* en ese dominio.
 const router = express.Router();
@@ -24,6 +26,7 @@ router.post('/demo', demoLimiter, [
   body('utm').optional().isString().isLength({ max: 60 }),
   body('ref').optional().isString().isLength({ max: 500 }),
   body('referral').optional().isString().isLength({ max: 40 }),
+  body('source').optional({ checkFalsy: true }).isIn(['web', 'chat']),
   validateRequest,
 ], requestDemo);
 
@@ -36,6 +39,14 @@ router.post('/visit', visitLimiter, [
   body('referral').optional().isString().isLength({ max: 40 }),
   validateRequest,
 ], recordVisit);
+
+// El chat «GABY · Ventas» de la página: responde precios y dudas. Sin OPENROUTER_API_KEY no aparece.
+router.get('/chat', chatStatus);
+router.post('/chat', chatLimiter, [
+  body('messages').isArray({ min: 1, max: 30 }).withMessage('Escribe tu pregunta'),
+  body('messages.*.content').isString().isLength({ max: 2000 }),
+  validateRequest,
+], chat);
 
 // El logo de cada empresa (lo muestra su app, también antes de entrar).
 router.get('/logo/:id', validateObjectId, getLogo);
