@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { ROLE } from '../ui';
+import { t } from '../i18n';
 
 const emptyForm = { name: '', email: '', role: 'tecnico', client: '' };
 
@@ -33,7 +34,7 @@ export default function Users({ api, user }) {
       setForm(emptyForm);
       load();
     } catch (error) {
-      alert(errorMessage(error, 'No se pudo crear el usuario'));
+      alert(errorMessage(error, t('No se pudo crear el usuario')));
     }
   };
 
@@ -43,14 +44,14 @@ export default function Users({ api, user }) {
       if (data.temporaryPassword) setIssued({ email: target.email, password: data.temporaryPassword });
       load();
     } catch (error) {
-      alert(errorMessage(error, 'No se pudo actualizar el usuario'));
+      alert(errorMessage(error, t('No se pudo actualizar el usuario')));
     }
   };
 
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(`Usuario: ${issued.email}\nContraseña temporal: ${issued.password}\nEntra en ${window.location.origin}`);
-      alert('Copiado. Envíaselo al usuario por un canal privado.');
+      await navigator.clipboard.writeText(t('Usuario: {email}\nContraseña temporal: {password}\nEntra en {url}', { email: issued.email, password: issued.password, url: window.location.origin }));
+      alert(t('Copiado. Envíaselo al usuario por un canal privado.'));
     } catch {
       /* el portapapeles puede no estar disponible: el texto queda a la vista */
     }
@@ -61,47 +62,47 @@ export default function Users({ api, user }) {
       <header className="view-header">
         <div>
           <p className="eyebrow">{user.company?.name}</p>
-          <h2>Usuarios</h2>
+          <h2>{t('Usuarios')}</h2>
         </div>
       </header>
 
       {issued && (
         <div className="panel-box highlight">
-          <p className="label">Contraseña temporal de {issued.email} · se muestra una sola vez</p>
+          <p className="label">{t('Contraseña temporal de {email} · se muestra una sola vez', { email: issued.email })}</p>
           <p className="temp-password">{issued.password}</p>
-          <p className="muted">Entrégasela al usuario: la cambiará al entrar.</p>
+          <p className="muted">{t('Entrégasela al usuario: la cambiará al entrar.')}</p>
           <div className="order-actions">
-            <button type="button" className="mini-button edit" onClick={copy}>Copiar acceso</button>
-            <button type="button" className="ghost-button" onClick={() => setIssued(null)}>Listo</button>
+            <button type="button" className="mini-button edit" onClick={copy}>{t('Copiar acceso')}</button>
+            <button type="button" className="ghost-button" onClick={() => setIssued(null)}>{t('Listo')}</button>
           </div>
         </div>
       )}
 
       <div className="panel-box">
-        <h3>Nuevo usuario</h3>
+        <h3>{t('Nuevo usuario')}</h3>
         <form className="order-form" onSubmit={create}>
           <div className="two-columns">
-            <label>Nombre<input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
-            <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+            <label>{t('Nombre')}<input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
+            <label>{t('Email')}<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
           </div>
           <div className="two-columns">
-            <label>Rol
+            <label>{t('Rol')}
               <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                <option value="tecnico">Técnico</option>
-                <option value="admin">Administrador</option>
-                <option value="cliente">Cliente (consulta sus órdenes)</option>
+                <option value="tecnico">{t('Técnico')}</option>
+                <option value="admin">{t('Administrador')}</option>
+                <option value="cliente">{t('Cliente (consulta sus órdenes)')}</option>
               </select>
             </label>
             {form.role === 'cliente' && (
-              <label>Ficha de cliente
+              <label>{t('Ficha de cliente')}
                 <select value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} required>
-                  <option value="">Elige el cliente</option>
+                  <option value="">{t('Elige el cliente')}</option>
                   {clients.map((c) => <option key={c._id} value={c._id}>{c.name}</option>)}
                 </select>
               </label>
             )}
           </div>
-          <button type="submit" className="primary-button">Crear usuario</button>
+          <button type="submit" className="primary-button">{t('Crear usuario')}</button>
         </form>
       </div>
 
@@ -109,17 +110,17 @@ export default function Users({ api, user }) {
         {users.map((u) => (
           <article key={u._id} className="order-card compact">
             <div className="order-card-head">
-              <span className={`status-tag ${u.active ? 'completada' : 'cancelada'}`}>{u.active ? ROLE[u.role] : 'Inactivo'}</span>
-              {u.mustChangePassword && <span className="muted">aún no entra</span>}
+              <span className={`status-tag ${u.active ? 'completada' : 'cancelada'}`}>{t(u.active ? ROLE[u.role] : 'Inactivo')}</span>
+              {u.mustChangePassword && <span className="muted">{t('aún no entra')}</span>}
             </div>
             <h3>{u.name}</h3>
             <small className="muted">{u.email}</small>
             {u._id !== user._id && (
               <div className="order-actions">
-                <button type="button" className="mini-button edit" onClick={() => update(u, { active: !u.active })}>{u.active ? 'Desactivar' : 'Activar'}</button>
+                <button type="button" className="mini-button edit" onClick={() => update(u, { active: !u.active })}>{t(u.active ? 'Desactivar' : 'Activar')}</button>
                 <button type="button" className="mini-button edit" onClick={() => {
-                  if (window.confirm(`¿Generar una contraseña temporal nueva para ${u.email}?`)) update(u, { resetPassword: true });
-                }}>Nueva contraseña</button>
+                  if (window.confirm(t('¿Generar una contraseña temporal nueva para {email}?', { email: u.email }))) update(u, { resetPassword: true });
+                }}>{t('Nueva contraseña')}</button>
               </div>
             )}
           </article>

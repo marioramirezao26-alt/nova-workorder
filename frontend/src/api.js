@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { t } from './i18n';
 
 // En desarrollo, el proxy de Vite envía /api al backend; VITE_API_URL permite apuntar a otro servidor.
 export const API_URL = `${import.meta.env.VITE_API_URL || ''}/api`;
@@ -16,4 +17,4 @@ export const createApi = (token, onSessionLost) => {
 
 // El mensaje de error más útil que devolvió la API.
 export const errorMessage = (error, fallback) =>
-  error.response?.data?.errors?.[0]?.message || error.response?.data?.message || fallback;
+  t(error.response?.data?.errors?.[0]?.message || error.response?.data?.message || fallback);

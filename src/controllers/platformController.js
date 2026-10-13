@@ -29,13 +29,14 @@ const view = async (company) => ({
   status: company.status,
   maxTechnicians: company.maxTechnicians,
   contactEmail: company.contactEmail,
+  lang: company.lang || 'es',
   createdAt: company.createdAt,
   usage: await usage(company),
 });
 
 const createCompany = async (req, res) => {
   try {
-    const { name, adminName, adminEmail, maxTechnicians = null, status = 'activa' } = req.body;
+    const { name, adminName, adminEmail, maxTechnicians = null, status = 'activa', lang = 'es' } = req.body;
     const email = String(adminEmail).toLowerCase();
 
     if (await User.findOne({ email })) {
@@ -45,7 +46,7 @@ const createCompany = async (req, res) => {
     let slug = slugify(name);
     if (await Company.findOne({ slug })) slug = `${slug}-${crypto.randomBytes(3).toString('hex')}`;
 
-    const company = await Company.create({ name, slug, status, maxTechnicians, contactEmail: email });
+    const company = await Company.create({ name, slug, status, maxTechnicians, contactEmail: email, lang });
     const password = temporaryPassword();
     try {
       await User.create({ name: adminName, email, password, role: 'admin', tenant: company._id, mustChangePassword: true });
@@ -85,8 +86,9 @@ const updateCompany = async (req, res) => {
     const company = await Company.findById(req.params.id);
     if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
 
-    const { name, status, maxTechnicians } = req.body;
+    const { name, status, maxTechnicians, lang } = req.body;
     if (name !== undefined) company.name = name;
+    if (lang !== undefined) company.lang = lang;
     if (status !== undefined) company.status = status;
     if (maxTechnicians !== undefined) company.maxTechnicians = maxTechnicians;
     await company.save();

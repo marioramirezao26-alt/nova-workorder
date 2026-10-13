@@ -11,7 +11,7 @@ const publicUser = (user, company) => ({
   role: user.role,
   client: user.client || null,
   mustChangePassword: Boolean(user.mustChangePassword),
-  company: company ? { _id: company._id, name: company.name, status: company.status, branding: publicBranding(company) } : null,
+  company: company ? { _id: company._id, name: company.name, status: company.status, lang: company.lang || 'es', branding: publicBranding(company) } : null,
 });
 
 // El registro público quedó cerrado: cada empresa crea sus usuarios desde «Usuarios», y las empresas nuevas

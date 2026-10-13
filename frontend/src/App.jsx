@@ -9,6 +9,7 @@ import Clients from './views/Clients';
 import Users from './views/Users';
 import Brand from './views/Brand';
 import { applyBrand, logoUrl } from './brand';
+import { getLang, setLang, t, adoptCompanyLang } from './i18n';
 
 const storageKey = 'nova-token';
 
@@ -27,12 +28,22 @@ const MENU = {
   cliente: ['mis'],
 };
 
+// Cambia entre español e inglés; la app se vuelve a pintar con el idioma nuevo.
+function LangSwitch({ onChange, className = 'ghost-button' }) {
+  const next = getLang() === 'en' ? 'es' : 'en';
+  return (
+    <button type="button" className={className} lang={next} onClick={() => { setLang(next); onChange(); }}>
+      {next === 'en' ? 'English' : 'Español'}
+    </button>
+  );
+}
+
 const sectionFromHash = (menu) => {
   const key = window.location.hash.replace('#', '');
   return menu.includes(key) ? key : menu[0];
 };
 
-function Login({ onLogin }) {
+function Login({ onLogin, onLang }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [busy, setBusy] = useState(false);
 
@@ -43,7 +54,7 @@ function Login({ onLogin }) {
       const { data } = await axios.post(`${API_URL}/auth/login`, form);
       onLogin(data);
     } catch (error) {
-      alert(errorMessage(error, 'No se pudo iniciar sesión'));
+      alert(errorMessage(error, t('No se pudo iniciar sesión')));
     } finally {
       setBusy(false);
     }
@@ -54,20 +65,21 @@ function Login({ onLogin }) {
       <div className="auth-hero">
         <img className="hero-logo" src="/logo.svg" alt="" />
         <div className="hero-badge">NOVAWORKORDER</div>
-        <h1>Servicios</h1>
-        <p>Las órdenes de trabajo de tu empresa, en el celular de cada técnico.</p>
+        <h1>{t('Servicios')}</h1>
+        <p>{t('Las órdenes de trabajo de tu empresa, en el celular de cada técnico.')}</p>
         <ul>
-          <li>Cada técnico ve sus órdenes del día</li>
-          <li>Llamar al cliente y abrir el mapa con un toque</li>
-          <li>Iniciar y completar desde el sitio</li>
+          <li>{t('Cada técnico ve sus órdenes del día')}</li>
+          <li>{t('Llamar al cliente y abrir el mapa con un toque')}</li>
+          <li>{t('Iniciar y completar desde el sitio')}</li>
         </ul>
       </div>
       <form className="auth-card" onSubmit={submit}>
-        <h3>Iniciar sesión</h3>
-        <label>Email<input type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
-        <label>Contraseña<input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
-        <button type="submit" className="primary-button" disabled={busy}>{busy ? 'Entrando…' : 'Entrar'}</button>
-        <p className="muted">¿No tienes cuenta? Pídela al administrador de tu empresa. ¿Tu empresa aún no usa NOVAWORKORDER Servicios? <a href="https://novaworkorder.com/#demo">Solicita una demo</a>.</p>
+        <h3>{t('Iniciar sesión')}</h3>
+        <label>{t('Email')}<input type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+        <label>{t('Contraseña')}<input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
+        <button type="submit" className="primary-button" disabled={busy}>{busy ? t('Entrando…') : t('Entrar')}</button>
+        <p className="muted">{t('¿No tienes cuenta? Pídela al administrador de tu empresa.')} {t('¿Tu empresa aún no usa NOVAWORKORDER Servicios?')} <a href={getLang() === 'en' ? 'https://novaworkorder.com/en/#start' : 'https://novaworkorder.com/#demo'}>{t('Solicita una demo')}</a>.</p>
+        <LangSwitch onChange={onLang} />
       </form>
     </div>
   );
@@ -82,7 +94,7 @@ function ChangePassword({ api, user, onDone, onLogout }) {
       await api.put('/auth/password', form);
       onDone();
     } catch (error) {
-      alert(errorMessage(error, 'No se pudo cambiar la contraseña'));
+      alert(errorMessage(error, t('No se pudo cambiar la contraseña')));
     }
   };
 
@@ -91,15 +103,15 @@ function ChangePassword({ api, user, onDone, onLogout }) {
       <div className="auth-hero">
         <img className="hero-logo" src="/logo.svg" alt="" />
         <div className="hero-badge">NOVAWORKORDER</div>
-        <h1>Bienvenido, {user.name}</h1>
-        <p>Antes de empezar, cambia la contraseña temporal que te entregaron.</p>
+        <h1>{t('Bienvenido, {name}', { name: user.name })}</h1>
+        <p>{t('Antes de empezar, cambia la contraseña temporal que te entregaron.')}</p>
       </div>
       <form className="auth-card" onSubmit={submit}>
-        <h3>Nueva contraseña</h3>
-        <label>Contraseña temporal<input type="password" autoComplete="current-password" value={form.currentPassword} required onChange={(e) => setForm({ ...form, currentPassword: e.target.value })} /></label>
-        <label>Nueva contraseña (mínimo 8 caracteres)<input type="password" autoComplete="new-password" minLength={8} value={form.newPassword} required onChange={(e) => setForm({ ...form, newPassword: e.target.value })} /></label>
-        <button type="submit" className="primary-button">Guardar y entrar</button>
-        <button type="button" className="ghost-button" onClick={onLogout}>Salir</button>
+        <h3>{t('Nueva contraseña')}</h3>
+        <label>{t('Contraseña temporal')}<input type="password" autoComplete="current-password" value={form.currentPassword} required onChange={(e) => setForm({ ...form, currentPassword: e.target.value })} /></label>
+        <label>{t('Nueva contraseña (mínimo 8 caracteres)')}<input type="password" autoComplete="new-password" minLength={8} value={form.newPassword} required onChange={(e) => setForm({ ...form, newPassword: e.target.value })} /></label>
+        <button type="submit" className="primary-button">{t('Guardar y entrar')}</button>
+        <button type="button" className="ghost-button" onClick={onLogout}>{t('Salir')}</button>
       </form>
     </div>
   );
@@ -109,12 +121,14 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem(storageKey) || '');
   const [user, setUser] = useState(null);
   const [section, setSection] = useState('');
+  const [, setLangTick] = useState(0);
+  const relang = () => setLangTick((n) => n + 1);
 
   const logout = (reason) => {
     localStorage.removeItem(storageKey);
     setToken('');
     setUser(null);
-    if (reason) alert(reason);
+    if (reason) alert(t(reason));
   };
 
   // Sesión vencida, usuario desactivado o empresa suspendida: volver al inicio (con el motivo, si lo hay).
@@ -122,7 +136,7 @@ function App() {
 
   useEffect(() => {
     if (!token) return;
-    api.get('/auth/profile').then(({ data }) => setUser(data)).catch(() => logout());
+    api.get('/auth/profile').then(({ data }) => { adoptCompanyLang(data.company?.lang); setUser(data); }).catch(() => logout());
   }, [token]);
 
   // «Mi marca»: los colores de la empresa en toda la app; al salir, los de NOVAWORKORDER.
@@ -149,12 +163,13 @@ function App() {
 
   const login = ({ token: nextToken, ...profile }) => {
     localStorage.setItem(storageKey, nextToken);
+    adoptCompanyLang(profile.company?.lang);
     setToken(nextToken);
     setUser(profile);
   };
 
   if (!token || !user) {
-    return token ? <div className="auth-layout"><p className="muted">Cargando…</p></div> : <Login onLogin={login} />;
+    return token ? <div className="auth-layout"><p className="muted">{t('Cargando…')}</p></div> : <Login onLogin={login} onLang={relang} />;
   }
   if (user.mustChangePassword) {
     return <ChangePassword api={api} user={user} onDone={() => setUser({ ...user, mustChangePassword: false })} onLogout={() => logout()} />;
@@ -169,22 +184,23 @@ function App() {
         <div className="sidebar-header">
           <img className="logo" src={logoUrl(user.company)} alt={user.company?.name || 'NOVAWORKORDER'} />
           <div>
-            <h3>Servicios</h3>
+            <h3>{t('Servicios')}</h3>
             <small>{user.company?.name || 'Workorder'}</small>
           </div>
         </div>
         <nav className="nav">
           {menu.map((key) => (
             <button key={key} type="button" className={`nav-item ${current === key ? 'active' : ''}`} onClick={() => go(key)}>
-              <span className="nav-icon">{SECTIONS[key].icon}</span> {SECTIONS[key].label}
+              <span className="nav-icon">{SECTIONS[key].icon}</span> {t(SECTIONS[key].label)}
             </button>
           ))}
         </nav>
         <div className="profile-box">
           <p>{user.name}</p>
           <small>{user.email}</small>
-          <span className="role-badge">{ROLE[user.role] || user.role}</span>
-          <button type="button" className="logout-button" onClick={() => logout()}>Cerrar sesión</button>
+          <span className="role-badge">{t(ROLE[user.role] || user.role)}</span>
+          <LangSwitch onChange={relang} className="logout-button" />
+          <button type="button" className="logout-button" onClick={() => logout()}>{t('Cerrar sesión')}</button>
         </div>
       </aside>
 
@@ -192,9 +208,10 @@ function App() {
         <img className="logo small" src={logoUrl(user.company)} alt={user.company?.name || 'NOVAWORKORDER'} />
         <div className="mobile-title">
           <strong>{user.company?.name || 'NOVAWORKORDER Servicios'}</strong>
-          <small>{user.name} · {ROLE[user.role]}</small>
+          <small>{user.name} · {t(ROLE[user.role])}</small>
         </div>
-        <button type="button" className="ghost-button" onClick={() => logout()}>Salir</button>
+        <LangSwitch onChange={relang} className="ghost-button lang-switch" />
+        <button type="button" className="ghost-button" onClick={() => logout()}>{t('Salir')}</button>
       </header>
 
       <main className="main-panel">
@@ -206,7 +223,7 @@ function App() {
           {menu.map((key) => (
             <button key={key} type="button" className={current === key ? 'active' : ''} onClick={() => go(key)}>
               <span className="nav-icon">{SECTIONS[key].icon}</span>
-              <span>{SECTIONS[key].label}</span>
+              <span>{t(SECTIONS[key].label)}</span>
             </button>
           ))}
         </nav>

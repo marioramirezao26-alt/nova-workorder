@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { Empty, mapsLink } from '../ui';
+import { t } from '../i18n';
 
 const emptyForm = { name: '', email: '', phone: '', company: '', address: '', active: true };
 
@@ -40,17 +41,17 @@ export default function Clients({ api, user }) {
       setEditingId(null);
       load();
     } catch (error) {
-      alert(errorMessage(error, 'No se pudo guardar el cliente'));
+      alert(errorMessage(error, t('No se pudo guardar el cliente')));
     }
   };
 
   const remove = async (client) => {
-    if (!window.confirm(`¿Eliminar a «${client.name}»?`)) return;
+    if (!window.confirm(t('¿Eliminar a «{name}»?', { name: client.name }))) return;
     try {
       await api.delete(`/clients/${client._id}`);
       load();
     } catch (error) {
-      alert(errorMessage(error, 'No se pudo eliminar el cliente'));
+      alert(errorMessage(error, t('No se pudo eliminar el cliente')));
     }
   };
 
@@ -62,46 +63,46 @@ export default function Clients({ api, user }) {
       <header className="view-header">
         <div>
           <p className="eyebrow">{user.company?.name}</p>
-          <h2>Clientes</h2>
+          <h2>{t('Clientes')}</h2>
         </div>
-        {canManage && !showForm && <button type="button" className="primary-button small" onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(true); }}>+ Nuevo cliente</button>}
+        {canManage && !showForm && <button type="button" className="primary-button small" onClick={() => { setEditingId(null); setForm(emptyForm); setShowForm(true); }}>{t('+ Nuevo cliente')}</button>}
       </header>
 
       {showForm && (
         <div className="panel-box">
           <div className="panel-header">
-            <h3>{editingId ? 'Editar cliente' : 'Nuevo cliente'}</h3>
-            <button type="button" className="ghost-button" onClick={() => setShowForm(false)}>Cancelar</button>
+            <h3>{editingId ? t('Editar cliente') : t('Nuevo cliente')}</h3>
+            <button type="button" className="ghost-button" onClick={() => setShowForm(false)}>{t('Cancelar')}</button>
           </div>
           <form className="order-form" onSubmit={save}>
-            <label>Nombre<input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
+            <label>{t('Nombre')}<input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
             <div className="two-columns">
-              <label>Email<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
-              <label>Teléfono<input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
+              <label>{t('Email')}<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+              <label>{t('Teléfono')}<input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
             </div>
-            <label>Empresa (razón social)<input type="text" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></label>
-            <label>Dirección<textarea rows="2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
-            <label>Estado
+            <label>{t('Empresa (razón social)')}<input type="text" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></label>
+            <label>{t('Dirección')}<textarea rows="2" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></label>
+            <label>{t('Estado')}
               <select value={form.active ? 'active' : 'inactive'} onChange={(e) => setForm({ ...form, active: e.target.value === 'active' })}>
-                <option value="active">Activo</option>
-                <option value="inactive">Inactivo</option>
+                <option value="active">{t('Activo')}</option>
+                <option value="inactive">{t('Inactivo')}</option>
               </select>
             </label>
-            <button type="submit" className="primary-button">{editingId ? 'Guardar cambios' : 'Crear cliente'}</button>
+            <button type="submit" className="primary-button">{editingId ? t('Guardar cambios') : t('Crear cliente')}</button>
           </form>
         </div>
       )}
 
       <div className="toolbar">
-        <input type="search" className="search-input" placeholder="Buscar cliente…" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input type="search" className="search-input" placeholder={t('Buscar cliente…')} value={query} onChange={(e) => setQuery(e.target.value)} />
       </div>
 
-      {shown.length === 0 ? <Empty>No hay clientes registrados.</Empty> : (
+      {shown.length === 0 ? <Empty>{t('No hay clientes registrados.')}</Empty> : (
         <div className="card-list">
           {shown.map((client) => (
             <article key={client._id} className="order-card compact">
               <div className="order-card-head">
-                <span className={`status-tag ${client.active ? 'completada' : 'cancelada'}`}>{client.active ? 'Activo' : 'Inactivo'}</span>
+                <span className={`status-tag ${client.active ? 'completada' : 'cancelada'}`}>{t(client.active ? 'Activo' : 'Inactivo')}</span>
               </div>
               <h3>{client.name}</h3>
               {client.company && <small className="muted">{client.company}</small>}
@@ -112,8 +113,8 @@ export default function Clients({ api, user }) {
               </div>
               {canManage && (
                 <div className="order-actions">
-                  <button type="button" className="mini-button edit" onClick={() => openEdit(client)}>Editar</button>
-                  {user.role === 'admin' && <button type="button" className="mini-button delete" onClick={() => remove(client)}>Eliminar</button>}
+                  <button type="button" className="mini-button edit" onClick={() => openEdit(client)}>{t('Editar')}</button>
+                  {user.role === 'admin' && <button type="button" className="mini-button delete" onClick={() => remove(client)}>{t('Eliminar')}</button>}
                 </div>
               )}
             </article>

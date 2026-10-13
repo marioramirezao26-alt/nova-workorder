@@ -60,3 +60,18 @@ test('el inicio de sesión se bloquea tras 10 intentos fallidos', async () => {
   assert.equal((await call('POST', '/auth/login', { body: { email: a.email, password: 'Clave-segura-123' } })).status, 429);
   assert.equal(await login('otro@correo.com', 'x'), undefined);
 });
+
+test('una empresa de Estados Unidos arranca la app en inglés; el idioma se puede cambiar', async () => {
+  const made = await call('POST', '/platform/companies', { platformKey: KEY, body: {
+    name: 'Cool Air LLC', adminName: 'Joe Miller', adminEmail: 'joe@coolair.com', maxTechnicians: 5, lang: 'en' } });
+  assert.equal(made.status, 201);
+  assert.equal(made.data.company.lang, 'en');
+  const first = await call('POST', '/auth/login', { body: { email: 'joe@coolair.com', password: made.data.admin.temporaryPassword } });
+  assert.equal(first.data.company.lang, 'en');
+  assert.equal((await call('GET', '/auth/profile', { as: first.data.token })).data.company.lang, 'en');
+  assert.equal((await call('POST', '/platform/companies', { platformKey: KEY, body: { name: 'X', adminName: 'X', adminEmail: 'x@x.co', lang: 'fr' } })).status, 400);
+  const back = await call('PATCH', `/platform/companies/${made.data.company._id}`, { platformKey: KEY, body: { lang: 'es' } });
+  assert.equal(back.data.lang, 'es');
+  const co = await call('POST', '/platform/companies', { platformKey: KEY, body: { name: 'Frío', adminName: 'L', adminEmail: 'l@frio.co' } });
+  assert.equal(co.data.company.lang, 'es');                                                     // sin decir nada: español
+});
