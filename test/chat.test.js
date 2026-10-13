@@ -95,3 +95,22 @@ test('la solicitud que llega después de hablar con el chat queda marcada como �
   const bySource = Object.fromEntries(list.data.items.map((d) => [d.company, d.source]));
   assert.deepEqual(bySource, { 'Frío Total': 'chat', Web: 'web' });
 });
+
+test('la página de Estados Unidos habla en inglés y con precios en dólares', async () => {
+  let langs = [];
+  salesChat._setProvider(async (messages, lang) => { langs.push(lang); return 'It is $29 per technician per month.'; });
+  const res = await call('POST', '/public/chat', { body: { lang: 'en', messages: [{ role: 'user', content: 'How much?' }] } });
+  assert.equal(res.status, 200);
+  await ask([{ role: 'user', content: '¿Cuánto?' }]);
+  assert.deepEqual(langs, ['en', 'es']);
+  assert.equal((await call('POST', '/public/chat', { body: { lang: 'fr', messages: [{ role: 'user', content: 'x' }] } })).status, 400);
+  assert.equal(salesChat.systemFor('en'), salesChat.SYSTEM_EN);
+  assert.match(salesChat.SYSTEM_EN, /Never invent/);
+  assert.match(salesChat.FACTS_EN, /\$29 USD per technician/);
+  assert.match(salesChat.FACTS_EN, /PayPal/);
+  assert.doesNotMatch(salesChat.FACTS_EN, /COP|Nequi/);
+  salesChat._setProvider(async () => { throw new Error('caído'); });
+  const down = await call('POST', '/public/chat', { body: { lang: 'en', messages: [{ role: 'user', content: 'hi' }] } });
+  assert.equal(down.status, 503);
+  assert.match(down.data.message, /can't answer/);
+});

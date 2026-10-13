@@ -53,3 +53,17 @@ test('«Empieza gratis»: una prueba exige aceptar términos y privacidad; GABY 
   assert.deepEqual(items.map((d) => d.kind), ['prueba', 'demo']);
   assert.ok(items[0].consentAt && !items[1].consentAt);
 });
+
+test('la página de Estados Unidos marca la solicitud en inglés y responde errores en inglés', async () => {
+  const en = { ...demo, lang: 'en', company: 'Cool Air LLC', email: 'joe@coolair.com' };
+  assert.equal((await call('POST', '/public/demo', { body: { ...en, lang: 'fr' } })).status, 400);
+  const bad = await call('POST', '/public/demo', { body: { ...en, email: 'nope' } });
+  assert.equal(bad.status, 400);
+  assert.equal(bad.data.errors[0].message, 'Please enter a valid email');
+  const noConsent = await call('POST', '/public/demo', { body: { ...en, kind: 'prueba' } });
+  assert.match(noConsent.data.message, /accept the terms/);
+  assert.equal((await call('POST', '/public/demo', { body: { ...en, kind: 'prueba', consent: true } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: demo })).status, 201);
+  const items = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
+  assert.deepEqual(items.map((d) => [d.company, d.lang]), [['Cool Air LLC', 'en'], ['Frío Total SAS', 'es']]);
+});

@@ -10,6 +10,9 @@ const demoRequestSchema = new mongoose.Schema(
     phone: { type: String, trim: true, maxlength: 40, default: '' },
     // App que le interesa: servicios (órdenes de trabajo, app.novaworkorder.com) o pedidos (tienda al detal).
     product: { type: String, enum: ['servicios', 'pedidos'], default: 'servicios' },
+    // Idioma de la página donde la pidió: es (Colombia, novaworkorder.com) o en (Estados Unidos, novaworkorder.com/en).
+    // GABY lo usa para atenderla en inglés y en dólares.
+    lang: { type: String, enum: ['es', 'en'], default: 'es' },
     technicians: { type: Number, min: 1, max: 10000, default: null },
     message: { type: String, trim: true, maxlength: 1000, default: '' },
     source: { type: String, trim: true, maxlength: 60, default: 'web' },

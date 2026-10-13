@@ -16,7 +16,9 @@ const chatLimiter = (req, res, next) => {
     return next();
   }
   if (entry.count >= MAX) {
-    return res.status(429).json({ message: 'Hablamos mucho por hoy 😊. Para seguir, déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com.' });
+    return res.status(429).json({ message: req.body && req.body.lang === 'en'
+      ? 'We\'ve talked a lot today 😊. To keep going, leave your details in "Start free" or email us at contacto@novaworkorder.com.'
+      : 'Hablamos mucho por hoy 😊. Para seguir, déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com.' });
   }
   entry.count += 1;
   return next();

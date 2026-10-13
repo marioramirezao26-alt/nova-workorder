@@ -10,7 +10,9 @@ const demoLimiter = (req, res, next) => {
   }
   const entry = hits.get(req.ip) || { count: 0, first: now };
   if (entry.count >= MAX) {
-    return res.status(429).json({ message: 'Ya recibimos varias solicitudes desde aquí. Escríbenos a contacto@novaworkorder.com.' });
+    return res.status(429).json({ message: req.body && req.body.lang === 'en'
+      ? 'We already got several requests from here. Email us at contacto@novaworkorder.com.'
+      : 'Ya recibimos varias solicitudes desde aquí. Escríbenos a contacto@novaworkorder.com.' });
   }
   entry.count += 1;
   hits.set(req.ip, entry);
