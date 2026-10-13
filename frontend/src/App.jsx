@@ -29,11 +29,13 @@ const MENU = {
 };
 
 // Cambia entre español e inglés; la app se vuelve a pintar con el idioma nuevo.
-function LangSwitch({ onChange, className = 'ghost-button' }) {
+// `short`: «EN» / «ES», para la barra del celular, donde no cabe la palabra completa.
+function LangSwitch({ onChange, className = 'ghost-button', short = false }) {
   const next = getLang() === 'en' ? 'es' : 'en';
+  const label = next === 'en' ? 'English' : 'Español';
   return (
-    <button type="button" className={className} lang={next} onClick={() => { setLang(next); onChange(); }}>
-      {next === 'en' ? 'English' : 'Español'}
+    <button type="button" className={className} lang={next} title={label} aria-label={label} onClick={() => { setLang(next); onChange(); }}>
+      {short ? next.toUpperCase() : label}
     </button>
   );
 }
@@ -210,7 +212,7 @@ function App() {
           <strong>{user.company?.name || 'NOVAWORKORDER Servicios'}</strong>
           <small>{user.name} · {t(ROLE[user.role])}</small>
         </div>
-        <LangSwitch onChange={relang} className="ghost-button lang-switch" />
+        <LangSwitch onChange={relang} className="ghost-button lang-switch" short />
         <button type="button" className="ghost-button" onClick={() => logout()}>{t('Salir')}</button>
       </header>
 
