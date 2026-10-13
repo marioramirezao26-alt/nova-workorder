@@ -153,7 +153,7 @@ footer a { color: var(--dim); }
   .split.reverse > :first-child { order: 0; }
   .pains { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .features, .steps { grid-template-columns: 1fr; }
-  .top nav a:not(.btn) { display: none; }
+  .top nav a:not(.btn):not(.lang) { display: none; }
   section { padding: 54px 0; }
 }
 @media (max-width: 520px) {

@@ -3,6 +3,7 @@ const salesChat = require('../utils/salesChat');
 const { colombiaDay } = require('./analyticsController');
 
 const BUSY = 'Ahora no puedo responder. Déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com y te respondemos hoy.';
+const BUSY_EN = 'I can\'t answer right now. Leave your details in "Start free" or email us at contacto@novaworkorder.com and we\'ll reply today.';
 
 // GET /api/public/chat — la página pregunta si muestra la burbuja del chat.
 const chatStatus = (req, res) => res.status(200).json({ enabled: salesChat.enabled() });
@@ -26,18 +27,20 @@ const take = async (first) => {
 // POST /api/public/chat — { messages: [{ role: 'user' | 'assistant', content }] } → { reply }.
 // El historial lo guarda el navegador del visitante; aquí no se guarda lo que escribe.
 const chat = async (req, res) => {
+  const en = req.body.lang === 'en';
+  const busy = en ? BUSY_EN : BUSY;
   try {
-    if (!salesChat.enabled()) return res.status(503).json({ message: BUSY });
+    if (!salesChat.enabled()) return res.status(503).json({ message: busy });
     const messages = salesChat.clean(req.body.messages);
     if (!messages.length || messages[messages.length - 1].role !== 'user') {
-      return res.status(400).json({ message: 'Escribe tu pregunta' });
+      return res.status(400).json({ message: en ? 'Type your question' : 'Escribe tu pregunta' });
     }
     const first = messages.filter((m) => m.role === 'user').length === 1;
-    if (!(await take(first))) return res.status(503).json({ message: BUSY });
-    const reply = await salesChat.reply(messages);
+    if (!(await take(first))) return res.status(503).json({ message: busy });
+    const reply = await salesChat.reply(messages, en ? 'en' : 'es');
     return res.status(200).json({ reply });
   } catch (error) {
-    return res.status(503).json({ message: BUSY });
+    return res.status(503).json({ message: busy });
   }
 };
 
