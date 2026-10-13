@@ -20,6 +20,7 @@ router.post('/companies', [
   body('adminEmail').isEmail().withMessage('El email del administrador no es válido'),
   body('maxTechnicians').optional({ nullable: true }).isInt({ min: 0, max: 10000 }).withMessage('maxTechnicians debe ser un entero'),
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
+  body('lang').optional().isIn(['es', 'en']).withMessage('Idioma inválido: es o en'),
   validateRequest,
 ], createCompany);
 router.get('/companies/:id', validateObjectId, getCompany);
@@ -27,6 +28,7 @@ router.patch('/companies/:id', validateObjectId, [
   body('name').optional().trim().notEmpty().isLength({ max: 150 }),
   body('maxTechnicians').optional({ nullable: true }).isInt({ min: 0, max: 10000 }).withMessage('maxTechnicians debe ser un entero'),
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
+  body('lang').optional().isIn(['es', 'en']).withMessage('Idioma inválido: es o en'),
   validateRequest,
 ], updateCompany);
 

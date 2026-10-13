@@ -1,4 +1,6 @@
 // Piezas compartidas por las pantallas.
+import { locale, t } from './i18n';
+
 export const STATUS = {
   pendiente: 'Pendiente',
   en_proceso: 'En proceso',
@@ -8,17 +10,17 @@ export const STATUS = {
 export const PRIORITY = { baja: 'Baja', media: 'Media', alta: 'Alta', urgente: 'Urgente' };
 export const ROLE = { admin: 'Administrador', tecnico: 'Técnico', cliente: 'Cliente' };
 
-export const StatusTag = ({ status }) => <span className={`status-tag ${status}`}>{STATUS[status] || status}</span>;
+export const StatusTag = ({ status }) => <span className={`status-tag ${status}`}>{t(STATUS[status] || status)}</span>;
 
 export const PriorityTag = ({ priority }) =>
-  priority === 'alta' || priority === 'urgente' ? <span className={`priority-tag ${priority}`}>{PRIORITY[priority]}</span> : null;
+  priority === 'alta' || priority === 'urgente' ? <span className={`priority-tag ${priority}`}>{t(PRIORITY[priority])}</span> : null;
 
 // Fechas de calendario (fecha límite): se muestran tal cual se guardaron, sin correr el día por la zona horaria.
 export const formatDay = (value) =>
-  value ? new Date(value).toLocaleDateString('es-CO', { timeZone: 'UTC', day: 'numeric', month: 'short' }) : '';
+  value ? new Date(value).toLocaleDateString(locale(), { timeZone: 'UTC', day: 'numeric', month: 'short' }) : '';
 
 export const formatDateTime = (value) =>
-  value ? new Date(value).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  value ? new Date(value).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
 export const isOverdue = (order) =>
   order.dueDate && !['completada', 'cancelada'].includes(order.status)

@@ -1,4 +1,5 @@
 import { API_URL } from './api';
+import { t } from './i18n';
 
 // «Mi marca»: los colores de NOVAWORKORDER y las paletas para elegir rápido.
 export const DEFAULT_BRAND = { primary: '#2f78f6', accent: '#63a3ff' };
@@ -26,14 +27,14 @@ export const logoUrl = (company) => (company?.branding?.hasLogo
 // Reduce la imagen a máximo 512 px por lado y la pasa a PNG o WEBP liviano, en el navegador (sin subir el original).
 export const shrinkImage = (file, max = 512) => new Promise((resolve, reject) => {
   if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
-    reject(new Error('Usa una imagen PNG, JPG o WEBP'));
+    reject(new Error(t('Usa una imagen PNG, JPG o WEBP')));
     return;
   }
   const reader = new FileReader();
-  reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
+  reader.onerror = () => reject(new Error(t('No se pudo leer la imagen')));
   reader.onload = () => {
     const img = new Image();
-    img.onerror = () => reject(new Error('La imagen no es válida'));
+    img.onerror = () => reject(new Error(t('La imagen no es válida')));
     img.onload = () => {
       const scale = Math.min(1, max / Math.max(img.width, img.height));
       const canvas = document.createElement('canvas');

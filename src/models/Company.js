@@ -34,6 +34,13 @@ const companySchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    // Idioma de la app para toda la empresa: es (Colombia) o en (Estados Unidos). Cada usuario puede cambiarlo en su
+    // celular; esto es solo el idioma con el que arranca.
+    lang: {
+      type: String,
+      enum: ['es', 'en'],
+      default: 'es',
+    },
     // «Mi marca»: el logo y los colores que la empresa ve en su app (los pone su administrador).
     branding: {
       primary: { type: String, default: null },
