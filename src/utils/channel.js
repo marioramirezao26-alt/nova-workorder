@@ -1,6 +1,7 @@
 // De dónde llegó un visitante de la página de ventas: el `utm_source` del enlace (los posts de GABY lo llevan) o, si
 // no hay, el sitio que lo trajo (referrer). Solo se guarda el nombre del canal, nunca el enlace completo.
-const CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'whatsapp', 'buscador', 'correo', 'referido', 'directo', 'otro'];
+const CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'whatsapp', 'buscador', 'correo', 'producthunt', 'directorio', 'referido',
+  'directo', 'otro'];
 
 const ALIASES = {
   ig: 'instagram', instagram: 'instagram',
@@ -11,6 +12,10 @@ const ALIASES = {
   whatsapp: 'whatsapp', wa: 'whatsapp',
   google: 'buscador', bing: 'buscador', buscador: 'buscador',
   email: 'correo', correo: 'correo', mail: 'correo', brevo: 'correo',
+  producthunt: 'producthunt', ph: 'producthunt',
+  // Directorios de software (G2 y su red: Capterra, GetApp, Software Advice; SaaSworthy)
+  g2: 'directorio', capterra: 'directorio', getapp: 'directorio', softwareadvice: 'directorio', saasworthy: 'directorio',
+  directorio: 'directorio',
 };
 
 const HOSTS = [
@@ -22,6 +27,8 @@ const HOSTS = [
   [/(^|\.)(whatsapp\.com|wa\.me)$/, 'whatsapp'],
   [/(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|yahoo\.com|ecosia\.org)$/, 'buscador'],
   [/(^|\.)(mail\.google\.com|outlook\.live\.com|outlook\.office\.com)$/, 'correo'],
+  [/(^|\.)producthunt\.com$/, 'producthunt'],
+  [/(^|\.)(g2\.com|capterra\.[a-z.]+|getapp\.[a-z.]+|softwareadvice\.[a-z.]+|saasworthy\.com)$/, 'directorio'],
 ];
 
 const fromUtm = (utm) => {
