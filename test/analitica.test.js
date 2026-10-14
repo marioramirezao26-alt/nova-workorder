@@ -24,6 +24,11 @@ test('el canal sale del utm_source o del sitio que trajo al visitante', () => {
   assert.equal(channelOf({ ref: 'https://l.facebook.com/l.php?u=x' }), 'facebook');
   assert.equal(channelOf({ ref: 'https://lnkd.in/abc' }), 'linkedin');
   assert.equal(channelOf({ ref: 'https://www.google.com.co/' }), 'buscador');
+  assert.equal(channelOf({ ref: 'https://www.producthunt.com/posts/novaworkorder' }), 'producthunt');
+  assert.equal(channelOf({ utm: 'producthunt' }), 'producthunt');
+  assert.equal(channelOf({ ref: 'https://www.g2.com/products/novaworkorder/reviews' }), 'directorio');
+  assert.equal(channelOf({ ref: 'https://www.capterra.com/p/1/x/' }), 'directorio');
+  assert.equal(channelOf({ utm: 'saasworthy' }), 'directorio');
   assert.equal(fromReferrer('https://novaworkorder.com/privacidad'), 'directo');
   assert.equal(channelOf({}), 'directo');
   assert.equal(cleanPath('/privacidad.html?x=1'), '/privacidad');
