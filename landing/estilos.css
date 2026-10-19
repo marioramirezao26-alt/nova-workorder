@@ -28,6 +28,19 @@ img { max-width: 100%; height: auto; display: block; }
 .btn.ghost { background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); color: var(--text); }
 .btn.small { padding: 9px 14px; font-size: 0.92rem; }
 .top nav .btn { color: #fff; }
+/* «Ingresar»: el cliente elige a cuál app entra (sin JavaScript; en el celular también se ve) */
+.top .login { position: relative; background: none; border: 0; padding: 0; border-radius: 0; }
+.top .login summary { list-style: none; cursor: pointer; color: var(--text); font-size: 0.95rem; font-weight: 600; padding: 8px 12px;
+  border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.04); white-space: nowrap; }
+.top .login summary::-webkit-details-marker { display: none; }
+.top .login summary::after { content: ' ▾'; float: none; color: var(--dim); font-weight: 400; }
+.top .login[open] summary::after { content: ' ▴'; }
+.top .login[open] summary { border-color: var(--accent); }
+.login-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 250px; display: grid; gap: 6px; padding: 8px;
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45); }
+.top nav .login-menu a { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; color: var(--text); }
+.top nav .login-menu a:hover { background: rgba(79, 150, 255, 0.12); }
+.login-menu span { color: var(--dim); font-size: 0.85rem; }
 
 /* secciones */
 section { padding: 72px 0; }
@@ -153,10 +166,14 @@ footer a { color: var(--dim); }
   .split.reverse > :first-child { order: 0; }
   .pains { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .features, .steps { grid-template-columns: 1fr; }
-  .top nav a:not(.btn):not(.lang) { display: none; }
+  .top nav > a:not(.btn):not(.lang) { display: none; }
   section { padding: 54px 0; }
 }
 @media (max-width: 520px) {
+  .top .wrap, .top nav { gap: 10px; }
+  .top nav > .lang { display: none; }               /* el cambio de idioma sigue en el pie de página */
+  .top .login summary { padding: 7px 10px; }
+  .login-menu { right: -70px; min-width: 230px; }
   .pains { grid-template-columns: 1fr; }
   form.card { grid-template-columns: 1fr; padding: 20px; }
   .app-choice { grid-template-columns: 1fr; }
