@@ -89,6 +89,37 @@ const workOrderSchema = new mongoose.Schema(
     },
       default: null,
     },
+    // Recorrido mientras la orden está en proceso (mapa en vivo): un punto cada minuto como mucho, los últimos 200.
+    // Solo con la empresa de acuerdo y el técnico con su autorización; al completar o cancelar deja de llenarse.
+    trail: {
+      type: [{
+        _id: false,
+        lat: Number,
+        lng: Number,
+        accuracy: Number,
+        at: Date,
+        distanceM: Number,
+        offSite: Boolean,
+      }],
+      default: [],
+      select: false,
+    },
+    // El último punto del recorrido y desde cuándo está lejos del cliente (null si está cerca o no hay datos).
+    lastPoint: {
+      type: {
+      lat: Number,
+      lng: Number,
+      accuracy: Number,
+      at: Date,
+      distanceM: Number,
+      offSite: Boolean,
+    },
+      default: null,
+    },
+    offSiteSince: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

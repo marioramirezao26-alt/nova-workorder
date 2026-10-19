@@ -47,6 +47,12 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Mapa en vivo: dónde va cada técnico mientras tiene una orden en proceso (aparte del anterior; cada técnico
+    // también lo autoriza por separado).
+    liveTracking: {
+      type: Boolean,
+      default: false,
+    },
     // «Mi marca»: el logo y los colores que la empresa ve en su app (los pone su administrador).
     branding: {
       primary: { type: String, default: null },

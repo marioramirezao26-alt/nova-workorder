@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
 import { Empty, PriorityTag, StatusTag, formatDay, formatDateTime, isOverdue, mapsLink } from '../ui';
@@ -22,6 +22,9 @@ export default function MyOrders({ api, user, onUser }) {
   // Ubicación al iniciar y completar: la empresa la activó y este técnico la autorizó (Ley 1581).
   const tracking = isTech && Boolean(user.company?.locationTracking);
   const consented = tracking && Boolean(user.locationConsentAt);
+  // Mapa en vivo: la empresa lo activó y este técnico lo autorizó; solo mientras tiene una orden en proceso.
+  const liveOn = isTech && Boolean(user.company?.liveTracking);
+  const liveConsented = liveOn && Boolean(user.liveConsentAt);
   const [orders, setOrders] = useState([]);
   const [tab, setTab] = useState('activas');
   const [loading, setLoading] = useState(true);
@@ -54,6 +57,32 @@ export default function MyOrders({ api, user, onUser }) {
       alert(errorMessage(error, t('No se pudo actualizar la orden')));
     } finally {
       setBusy(null);
+    }
+  };
+
+  // Mientras haya una orden en proceso, manda dónde va cada minuto (el servidor ignora lo que llegue más seguido).
+  const inProgress = orders.filter((o) => o.status === 'en_proceso').map((o) => o._id).join(',');
+  const lastSent = useRef(0);
+  const [sharing, setSharing] = useState(false);
+  useEffect(() => {
+    if (!liveConsented || !inProgress || !navigator.geolocation) { setSharing(false); return undefined; }
+    const ids = inProgress.split(',');
+    const watch = navigator.geolocation.watchPosition((p) => {
+      if (Date.now() - lastSent.current < 60000) return;
+      lastSent.current = Date.now();
+      const location = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
+      ids.forEach((id) => api.post(`/workorders/${id}/ping`, { location }).catch(() => {}));
+      setSharing(true);
+    }, () => setSharing(false), { enableHighAccuracy: true, maximumAge: 30000, timeout: 20000 });
+    return () => navigator.geolocation.clearWatch(watch);
+  }, [liveConsented, inProgress]);
+
+  const liveConsent = async (accept) => {
+    try {
+      const { data } = await api.put('/auth/live-consent', { accept });
+      onUser?.(data);
+    } catch (error) {
+      alert(errorMessage(error, t('No se pudo guardar tu respuesta')));
     }
   };
 
@@ -92,6 +121,21 @@ export default function MyOrders({ api, user, onUser }) {
       )}
       {consented && (
         <p className="muted">{t('📍 Se registra tu ubicación al iniciar y completar.')} <button type="button" className="link-button" onClick={() => consent(false)}>{t('Retirar autorización')}</button></p>
+      )}
+
+      {liveOn && !liveConsented && (
+        <div className="panel-box highlight">
+          <p className="label">{t('Mapa en vivo mientras trabajas en una orden')}</p>
+          <p>{t('{company} quiere ver en su mapa dónde vas solo mientras tienes una orden «En proceso» (un punto por minuto), para coordinar las visitas. Al completar la orden deja de compartirse. Puedes retirar la autorización cuando quieras.', { company: user.company?.name || '' })}</p>
+          <div className="order-actions">
+            <button type="button" className="mini-button edit" onClick={() => liveConsent(true)}>{t('Autorizo')}</button>
+            <button type="button" className="ghost-button" onClick={() => liveConsent(false)}>{t('Ahora no')}</button>
+          </div>
+        </div>
+      )}
+      {liveConsented && (
+        <p className="muted">{inProgress ? t(sharing ? '🛰 Compartiendo dónde vas mientras la orden está en proceso.' : '🛰 Se compartirá dónde vas mientras la orden esté en proceso (activa el GPS).')
+          : t('🛰 Mapa en vivo autorizado: solo con una orden en proceso.')} <button type="button" className="link-button" onClick={() => liveConsent(false)}>{t('Retirar autorización')}</button></p>
       )}
 
       <div className="segmented-control">

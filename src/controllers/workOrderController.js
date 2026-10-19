@@ -2,7 +2,7 @@ const WorkOrder = require('../models/WorkOrder');
 const Client = require('../models/Client');
 const User = require('../models/User');
 const { companyScope } = require('../middleware/authMiddleware');
-const { parseLocation, stampPoint } = require('../utils/geo');
+const { parseLocation, stampPoint, OFFSITE_METERS } = require('../utils/geo');
 
 // Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
 const orderFilter = (req) => {
@@ -10,6 +10,9 @@ const orderFilter = (req) => {
   if (req.user.role === 'cliente') filter.client = req.user.client || null;
   return filter;
 };
+
+// La ubicación del técnico es para su empresa: un usuario cliente no la ve.
+const hidden = (req) => (req.user.role === 'cliente' ? '-startLocation -endLocation -lastPoint -offSiteSince' : '');
 
 const badRequest = (message) => Object.assign(new Error(message), { statusCode: 400 });
 
@@ -73,7 +76,7 @@ const getWorkOrders = async (req, res) => {
     const { page, limit, skip } = getPageOptions(req);
 
     const [items, total] = await Promise.all([
-      populate(WorkOrder.find(filter))
+      populate(WorkOrder.find(filter).select(hidden(req)))
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -138,7 +141,7 @@ const createWorkOrder = async (req, res) => {
 
 const getWorkOrderById = async (req, res) => {
   try {
-    const workOrder = await populate(WorkOrder.findOne({ $and: [orderFilter(req), { _id: req.params.id }] }));
+    const workOrder = await populate(WorkOrder.findOne({ $and: [orderFilter(req), { _id: req.params.id }] }).select(hidden(req)));
 
     if (!workOrder) {
       return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
@@ -234,13 +237,18 @@ const updateWorkOrderStatus = async (req, res) => {
     if (status === 'en_proceso' && !workOrder.startedAt) workOrder.startedAt = new Date();
     if (status === 'completada') workOrder.completedAt = new Date();
     if (status !== 'completada') workOrder.completedAt = null;
+    if (status !== 'en_proceso') { workOrder.lastPoint = null; workOrder.offSiteSince = null; }   // el mapa en vivo es solo en proceso
     // Ubicación al iniciar y al completar: solo si la empresa la activó y este usuario la autorizó (Ley 1581).
     const loc = parseLocation(req.body.location);
     if (loc && req.company && req.company.locationTracking && req.user.locationConsentAt
         && (status === 'en_proceso' || status === 'completada')) {
       const client = workOrder.client ? await Client.findOne({ _id: workOrder.client, ...companyScope(req) }) : null;
       const point = stampPoint(loc, client && client.location);
-      if (status === 'en_proceso') workOrder.startLocation = point;
+      if (status === 'en_proceso') {
+        workOrder.startLocation = point;
+        workOrder.lastPoint = point;
+        workOrder.offSiteSince = point.offSite ? point.at : null;
+      }
       if (status === 'completada') {
         workOrder.endLocation = point;
         if (client && !(client.location && Number.isFinite(client.location.lat))) {
@@ -261,7 +269,57 @@ const updateWorkOrderStatus = async (req, res) => {
   }
 };
 
+// Mapa en vivo: el celular del técnico manda dónde está cada minuto mientras la orden está «en proceso». Solo se guarda
+// si la empresa activó el mapa en vivo, el técnico lo autorizó (aparte de iniciar y completar) y la orden es suya y está
+// en proceso; nunca fuera de una orden.
+const pingEveryMs = () => (Number.isFinite(Number(process.env.PING_EVERY_SECONDS)) && process.env.PING_EVERY_SECONDS !== ''
+  ? Number(process.env.PING_EVERY_SECONDS) : 30) * 1000;
+const pingWorkOrder = async (req, res) => {
+  try {
+    const loc = parseLocation(req.body.location);
+    if (!loc) return res.status(400).json({ message: 'Ubicación inválida' });
+    if (!(req.company && req.company.liveTracking && req.user.liveConsentAt)) {
+      return res.status(200).json({ stored: false, reason: 'sin_autorizacion' });
+    }
+    const filter = { ...companyScope(req), _id: req.params.id, assignedTo: req.user._id, status: 'en_proceso' };
+    const order = await WorkOrder.findOne(filter).select('client lastPoint offSiteSince');
+    if (!order) return res.status(409).json({ message: 'Solo se comparte la ubicación de una orden tuya en proceso' });
+    const now = Date.now();
+    if (order.lastPoint && order.lastPoint.at && now - new Date(order.lastPoint.at).getTime() < pingEveryMs()) {
+      return res.status(200).json({ stored: false, reason: 'muy_seguido', lastPoint: order.lastPoint });
+    }
+    const client = order.client ? await Client.findOne({ _id: order.client, ...companyScope(req) }).select('location') : null;
+    const point = stampPoint(loc, client && client.location);
+    const offSiteSince = point.offSite ? (order.offSiteSince || point.at) : null;
+    await WorkOrder.updateOne(filter, {
+      $push: { trail: { $each: [point], $slice: -200 } },
+      $set: { lastPoint: point, offSiteSince },
+    });
+    return res.status(200).json({ stored: true, lastPoint: point, offSiteSince });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Error al guardar la ubicación' });
+  }
+};
+
+// Para el administrador: las órdenes en proceso con dónde va cada técnico, el cliente y el recorrido de hoy.
+const liveWorkOrders = async (req, res) => {
+  try {
+    const items = await WorkOrder.find({ ...companyScope(req), status: 'en_proceso' })
+      .select('+trail title priority startedAt dueDate assignedTo client customerName startLocation lastPoint offSiteSince')
+      .populate('assignedTo', 'name')
+      .populate('client', 'name address phone location')
+      .sort({ startedAt: 1 })
+      .limit(100)
+      .lean();
+    return res.status(200).json({ items, offSiteMeters: OFFSITE_METERS(), tracking: Boolean(req.company && req.company.liveTracking) });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || 'Error al cargar el mapa' });
+  }
+};
+
 module.exports = {
+  pingWorkOrder,
+  liveWorkOrders,
   updateWorkOrderStatus,
   getWorkOrders,
   createWorkOrder,

@@ -24,4 +24,17 @@ router.put('/location-tracking', protect, authorize('admin'), [
   }
 });
 
+// Mapa en vivo: dónde va cada técnico mientras tiene una orden en proceso. Lo activa o apaga el administrador.
+router.put('/live-tracking', protect, authorize('admin'), [
+  body('enabled').isBoolean().withMessage('Indica si se activa (true) o no (false)'),
+  validateRequest,
+], async (req, res) => {
+  try {
+    const company = await Company.findByIdAndUpdate(req.company._id, { liveTracking: req.body.enabled }, { new: true });
+    res.status(200).json(publicUser(req.user, company));
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Error al guardar el ajuste' });
+  }
+});
+
 module.exports = router;
