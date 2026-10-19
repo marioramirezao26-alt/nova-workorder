@@ -1,4 +1,7 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+
+const DUMMY_HASH = bcrypt.hashSync('nadie-tiene-esta-clave', 10);
 const Company = require('../models/Company');
 const generateToken = require('../utils/generateToken');
 const { publicBranding } = require('../utils/branding');
@@ -36,8 +39,10 @@ const loginUser = async (req, res) => {
     }
 
     const user = await User.findOne({ email: String(email).toLowerCase() });
+    // Sin usuario igual se compara contra un hash: el tiempo de respuesta no revela qué emails existen.
+    const ok = user ? await user.matchPassword(String(password)) : (await bcrypt.compare(String(password), DUMMY_HASH), false);
 
-    if (!user || !(await user.matchPassword(password))) {
+    if (!user || !ok) {
       recordFailure(req);
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
@@ -58,7 +63,7 @@ const loginUser = async (req, res) => {
     }
 
     clearFailures(req);
-    res.status(200).json({ ...publicUser(user, company), token: generateToken(user._id) });
+    res.status(200).json({ ...publicUser(user, company), token: generateToken(user._id, user.tokenVersion) });
   } catch (error) {
     res.status(500).json({
       message: error.message || 'Error al iniciar sesión',
@@ -109,7 +114,8 @@ const changePassword = async (req, res) => {
     user.mustChangePassword = false;
     await user.save();
 
-    res.status(200).json({ message: 'Contraseña actualizada' });
+    // Los tokens anteriores quedan inválidos: este es el nuevo de esta sesión.
+    res.status(200).json({ message: 'Contraseña actualizada', ...publicUser(user, req.company), token: generateToken(user._id, user.tokenVersion) });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error al cambiar la contraseña' });
   }

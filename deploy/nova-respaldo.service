@@ -4,4 +4,7 @@ After=mongod.service
 
 [Service]
 Type=oneshot
+# Corre como el usuario de la app (no como root) y los respaldos solo los lee ese usuario.
+User=nova
+UMask=0077
 ExecStart=/bin/bash /opt/nova-workorder/deploy/respaldo.sh

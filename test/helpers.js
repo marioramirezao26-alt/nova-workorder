@@ -52,11 +52,16 @@ const company = async (name, { adminEmail, maxTechnicians = null } = {}) => {
   const made = await call('POST', '/platform/companies', { platformKey: KEY, body: { name, adminName: `Admin ${name}`, adminEmail: email, maxTechnicians } });
   if (made.status !== 201) throw new Error(JSON.stringify(made));
   const login = await call('POST', '/auth/login', { body: { email, password: made.data.admin.temporaryPassword } });
-  await call('PUT', '/auth/password', { as: login.data.token, body: { currentPassword: made.data.admin.temporaryPassword, newPassword: 'Clave-segura-123' } });
-  return { id: made.data.company._id, token: login.data.token, email };
+  const changed = await call('PUT', '/auth/password', { as: login.data.token, body: { currentPassword: made.data.admin.temporaryPassword, newPassword: 'Clave-segura-123' } });
+  return { id: made.data.company._id, token: changed.data.token, email };
 };
 
-const login = async (email, password) => (await call('POST', '/auth/login', { body: { email, password } })).data.token;
+// Inicia sesión; con contraseña temporal la cambia primero (el servidor no deja hacer nada más con ella).
+const login = async (email, password) => {
+  const r = (await call('POST', '/auth/login', { body: { email, password } })).data;
+  if (!r.mustChangePassword) return r.token;
+  return (await call('PUT', '/auth/password', { as: r.token, body: { currentPassword: password, newPassword: 'Clave-nueva-456' } })).data.token;
+};
 
 const origin = () => base.replace(/\/api$/, '');
 

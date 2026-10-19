@@ -48,6 +48,7 @@ const getDashboardSummary = async (req, res) => {
     ]);
 
     const recentOrders = await WorkOrder.find(scope)
+      .select(req.user.role === 'cliente' ? '-startLocation -endLocation -lastPoint -offSiteSince' : '')
       .sort({ createdAt: -1 })
       .limit(5)
       .populate('createdBy', 'name email');

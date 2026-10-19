@@ -9,7 +9,7 @@ const router = express.Router();
 
 const loginValidation = [
   body('email').isEmail().withMessage('Debe enviar un email válido'),
-  body('password').notEmpty().withMessage('La contraseña es obligatoria'),
+  body('password').isString().notEmpty().withMessage('La contraseña es obligatoria'),
   validateRequest,
 ];
 

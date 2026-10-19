@@ -62,6 +62,7 @@ ENV
 fi
 (cd "$DEST" && npm ci --omit=dev --silent)
 chown -R nova:nova "$DEST"
+chown -R root:root "$DEST/deploy" && chmod -R go-w "$DEST/deploy"   # lo que root ejecuta no lo puede cambiar la app
 chmod 600 "$DEST/.env"
 
 install -m 644 "$DEST/deploy/nova.service" /etc/systemd/system/nova.service

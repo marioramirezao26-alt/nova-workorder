@@ -58,7 +58,7 @@ const getWorkOrders = async (req, res) => {
     const filter = orderFilter(req);
 
     if (req.query.status && req.query.status !== 'all') {
-      filter.status = req.query.status;
+      filter.status = WorkOrder.schema.path('status').enumValues.includes(String(req.query.status)) ? String(req.query.status) : '__ninguno__';
     }
 
     // ?assigned=me: las órdenes asignadas al usuario (vista «Mis órdenes» del técnico)
@@ -173,6 +173,18 @@ const updateWorkOrder = async (req, res) => {
 
     if (!workOrder) {
       return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
+    }
+
+    // Un técnico solo edita las órdenes que tiene asignadas o que creó, y no cambia su estado (eso va por «Iniciar» y
+    // «Completar»), no se la pasa a otro técnico ni borra el historial de notas.
+    if (req.user.role === 'tecnico') {
+      const mine = [workOrder.assignedTo, workOrder.createdBy].some((id) => id && String(id) === String(req.user._id));
+      if (!mine) return res.status(403).json({ message: 'Solo puedes editar las órdenes que tienes asignadas o que creaste' });
+      const changed = (field, value) => value !== undefined && String(value ?? '') !== String(workOrder[field] ?? '');
+      if (changed('status', status) || changed('notes', notes)
+          || (assignedTo !== undefined && String(assignedTo || '') !== String(workOrder.assignedTo || '') && String(assignedTo || '') !== String(req.user._id))) {
+        return res.status(403).json({ message: 'Como técnico no puedes cambiar el estado, el técnico asignado ni las notas desde aquí' });
+      }
     }
 
     // Solo se cambia lo que viene en el body: así se pueden vaciar campos opcionales
