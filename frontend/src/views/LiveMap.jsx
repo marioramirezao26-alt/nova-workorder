@@ -19,6 +19,8 @@ const stateOf = (o) => {
   if (Date.now() - new Date(p.at).getTime() > STALE_MS) return 'stale';
   return o.offSiteSince ? 'away' : 'ok';
 };
+// Leaflet pinta los tooltips como HTML: los textos van como nodo de texto (un título de orden nunca es código).
+const label = (text) => Object.assign(document.createElement('span'), { textContent: String(text) });
 const hasPoint = (p) => p && Number.isFinite(p.lat) && Number.isFinite(p.lng);
 
 export default function LiveMap({ api, user }) {
@@ -64,7 +66,7 @@ export default function LiveMap({ api, user }) {
       const c = o.client?.location;
       if (hasPoint(c)) {
         L.circleMarker([c.lat, c.lng], { radius: 7, color: COLORS.client, weight: 2, fillOpacity: 0.25 })
-          .bindTooltip(`${o.client.name}`, { direction: 'top' }).addTo(layer.current);
+          .bindTooltip(label(o.client.name), { direction: 'top' }).addTo(layer.current);
         bounds.push([c.lat, c.lng]);
       }
       const trail = [o.startLocation, ...(o.trail || [])].filter(hasPoint).map((p) => [p.lat, p.lng]);
@@ -73,7 +75,7 @@ export default function LiveMap({ api, user }) {
       if (hasPoint(p)) {
         const s = stateOf(o);
         L.circleMarker([p.lat, p.lng], { radius: 9, color: '#fff', weight: 2, fillColor: COLORS[s] || COLORS.ok, fillOpacity: 0.95 })
-          .bindTooltip(`${o.assignedTo?.name || t('Sin técnico')} · ${o.title}`, { direction: 'top' }).addTo(layer.current);
+          .bindTooltip(label(`${o.assignedTo?.name || t('Sin técnico')} · ${o.title}`), { direction: 'top' }).addTo(layer.current);
         bounds.push([p.lat, p.lng]);
       }
     });

@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
     // Las contraseñas temporales (creadas por el administrador o por la plataforma) se cambian al entrar.
+    // Sube cada vez que cambia la contraseña: los tokens con una versión anterior dejan de servir.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
     mustChangePassword: {
       type: Boolean,
       default: false,
@@ -70,6 +75,7 @@ userSchema.pre('save', async function (next) {
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  if (!this.isNew) this.tokenVersion = (this.tokenVersion || 0) + 1;
   next();
 });
 

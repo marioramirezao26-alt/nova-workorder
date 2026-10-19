@@ -27,6 +27,17 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ message: 'Usuario no encontrado o desactivado' });
     }
 
+    // Un token emitido antes del último cambio de contraseña ya no sirve (por ejemplo, uno robado).
+    if ((decoded.v || 0) !== (user.tokenVersion || 0)) {
+      return res.status(401).json({ message: 'Tu contraseña cambió: inicia sesión de nuevo' });
+    }
+
+    // Con la contraseña temporal solo se puede ver el perfil y cambiarla.
+    const path = `${req.baseUrl}${req.path}`;
+    if (user.mustChangePassword && !['/api/auth/password', '/api/auth/profile'].includes(path)) {
+      return res.status(403).json({ message: 'Antes de seguir, cambia la contraseña temporal' });
+    }
+
     const company = await Company.findById(user.tenant);
 
     if (!company) {

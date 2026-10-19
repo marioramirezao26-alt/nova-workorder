@@ -95,8 +95,8 @@ function ChangePassword({ api, user, onDone, onLogout }) {
   const submit = async (e) => {
     e.preventDefault();
     try {
-      await api.put('/auth/password', form);
-      onDone();
+      const { data } = await api.put('/auth/password', form);
+      onDone(data);
     } catch (error) {
       alert(errorMessage(error, t('No se pudo cambiar la contraseña')));
     }
@@ -176,7 +176,7 @@ function App() {
     return token ? <div className="auth-layout"><p className="muted">{t('Cargando…')}</p></div> : <Login onLogin={login} onLang={relang} />;
   }
   if (user.mustChangePassword) {
-    return <ChangePassword api={api} user={user} onDone={() => setUser({ ...user, mustChangePassword: false })} onLogout={() => logout()} />;
+    return <ChangePassword api={api} user={user} onDone={(data) => (data?.token ? login(data) : setUser({ ...user, mustChangePassword: false }))} onLogout={() => logout()} />;
   }
 
   const current = menu.includes(section) ? section : menu[0];
