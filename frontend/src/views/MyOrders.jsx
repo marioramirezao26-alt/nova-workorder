@@ -7,8 +7,21 @@ const ACTIVE = ['pendiente', 'en_proceso'];
 
 // «Mis órdenes»: lo que el técnico tiene asignado, en tarjetas grandes para el celular, con llamar, mapa y
 // botones para iniciar y completar. Un usuario cliente ve aquí las órdenes de su empresa (solo lectura).
-export default function MyOrders({ api, user }) {
+// La ubicación del celular en ese momento (o null si el técnico no da permiso o el GPS no responde en 10 s).
+const currentLocation = () => new Promise((resolve) => {
+  if (!navigator.geolocation) return resolve(null);
+  navigator.geolocation.getCurrentPosition(
+    (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }),
+    () => resolve(null),
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+  );
+});
+
+export default function MyOrders({ api, user, onUser }) {
   const isTech = user.role !== 'cliente';
+  // Ubicación al iniciar y completar: la empresa la activó y este técnico la autorizó (Ley 1581).
+  const tracking = isTech && Boolean(user.company?.locationTracking);
+  const consented = tracking && Boolean(user.locationConsentAt);
   const [orders, setOrders] = useState([]);
   const [tab, setTab] = useState('activas');
   const [loading, setLoading] = useState(true);
@@ -33,13 +46,23 @@ export default function MyOrders({ api, user }) {
     if (status === 'completada' && !window.confirm(t('¿Marcar «{title}» como completada?', { title: order.title }))) return;
     try {
       setBusy(order._id);
-      const { data } = await api.patch(`/workorders/${order._id}/status`, { status, note: notes[order._id] || undefined });
+      const location = consented ? await currentLocation() : null;
+      const { data } = await api.patch(`/workorders/${order._id}/status`, { status, note: notes[order._id] || undefined, location: location || undefined });
       setOrders((prev) => prev.map((o) => (o._id === data._id ? data : o)));
       setNotes((prev) => ({ ...prev, [order._id]: '' }));
     } catch (error) {
       alert(errorMessage(error, t('No se pudo actualizar la orden')));
     } finally {
       setBusy(null);
+    }
+  };
+
+  const consent = async (accept) => {
+    try {
+      const { data } = await api.put('/auth/location-consent', { accept });
+      onUser?.(data);
+    } catch (error) {
+      alert(errorMessage(error, t('No se pudo guardar tu respuesta')));
     }
   };
 
@@ -56,6 +79,20 @@ export default function MyOrders({ api, user }) {
         </div>
         <button type="button" className="ghost-button" onClick={load}>{t('Actualizar')}</button>
       </header>
+
+      {tracking && !consented && (
+        <div className="panel-box highlight">
+          <p className="label">{t('Ubicación al iniciar y completar órdenes')}</p>
+          <p>{t('{company} registra dónde estás solo en el momento en que pulsas «Iniciar» y «Completar», para confirmar la visita al cliente. No se te sigue durante el día. Puedes retirar la autorización cuando quieras.', { company: user.company?.name || '' })}</p>
+          <div className="order-actions">
+            <button type="button" className="mini-button edit" onClick={() => consent(true)}>{t('Autorizo')}</button>
+            <button type="button" className="ghost-button" onClick={() => consent(false)}>{t('Ahora no')}</button>
+          </div>
+        </div>
+      )}
+      {consented && (
+        <p className="muted">{t('📍 Se registra tu ubicación al iniciar y completar.')} <button type="button" className="link-button" onClick={() => consent(false)}>{t('Retirar autorización')}</button></p>
+      )}
 
       <div className="segmented-control">
         <button type="button" className={tab === 'activas' ? 'active' : ''} onClick={() => setTab('activas')}>

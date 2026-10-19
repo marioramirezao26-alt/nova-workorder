@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
-import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDay, isOverdue } from '../ui';
+import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDateTime, formatDay, isOverdue } from '../ui';
 
 const emptyForm = { title: '', description: '', status: 'pendiente', priority: 'media', client: '', assignedTo: '', dueDate: '', notes: '' };
 
@@ -156,6 +156,8 @@ export default function Orders({ api, user }) {
                   <p className="order-card-text">{order.description}</p>
                   {order.notes && <p className="notes-text">{order.notes}</p>}
                   <p className="muted">{t('Creada por {name}', { name: order.createdBy?.name || '—' })}</p>
+                  <Place label={t('Inició')} point={order.startLocation} />
+                  <Place label={t('Completó')} point={order.endLocation} />
                   {canManage && (
                     <div className="order-actions">
                       <button type="button" className="mini-button edit" onClick={() => openEdit(order)}>{t('Editar')}</button>
@@ -169,5 +171,18 @@ export default function Orders({ api, user }) {
         </div>
       )}
     </section>
+  );
+}
+
+// Dónde estaba el técnico al iniciar o completar: enlace al mapa, distancia al cliente y aviso si estaba lejos.
+function Place({ label, point }) {
+  if (!point || !Number.isFinite(point.lat)) return null;
+  const km = point.distanceM >= 1000 ? `${(point.distanceM / 1000).toFixed(1)} km` : `${point.distanceM} m`;
+  return (
+    <p className={point.offSite ? 'muted late' : 'muted'}>
+      📍 {label} {formatDateTime(point.at)} ·{' '}
+      <a className="inline-link" href={`https://www.google.com/maps/search/?api=1&query=${point.lat},${point.lng}`} target="_blank" rel="noreferrer">{t('ver en el mapa')}</a>
+      {point.distanceM != null && <> · {point.offSite ? t('⚠ a {d} del cliente', { d: km }) : t('a {d} del cliente', { d: km })}</>}
+    </p>
   );
 }

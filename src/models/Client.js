@@ -32,6 +32,11 @@ const clientSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Coordenadas del cliente: se aprenden de la primera orden completada con ubicación (`visita`).
+    location: {
+      type: { lat: Number, lng: Number, source: String, at: Date },
+      default: null,
+    },
     // Empresa dueña del dato (multiempresa). No confundir con `company` del cliente, que es su razón social.
     tenant: {
       type: mongoose.Schema.Types.ObjectId,

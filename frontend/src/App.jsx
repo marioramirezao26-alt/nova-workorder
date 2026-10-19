@@ -217,7 +217,7 @@ function App() {
       </header>
 
       <main className="main-panel">
-        <View key={current} api={api} user={user} go={go} onSaved={brandSaved} />
+        <View key={current} api={api} user={user} go={go} onSaved={brandSaved} onUser={setUser} />
       </main>
 
       {menu.length > 1 && (
