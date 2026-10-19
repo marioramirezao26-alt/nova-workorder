@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const { protect } = require('../middleware/authMiddleware');
 const { validateRequest } = require('../middleware/validateRequest');
-const { registerUser, loginUser, getProfile, changePassword } = require('../controllers/authController');
+const { registerUser, loginUser, getProfile, changePassword, setLocationConsent } = require('../controllers/authController');
 const { loginLimiter } = require('../middleware/loginLimiter');
 
 const router = express.Router();
@@ -21,5 +21,11 @@ router.put('/password', protect, [
   body('newPassword').isLength({ min: 8 }).withMessage('La nueva contraseña debe tener al menos 8 caracteres'),
   validateRequest,
 ], changePassword);
+
+// El técnico autoriza o retira el registro de su ubicación al iniciar y cerrar órdenes (Ley 1581).
+router.put('/location-consent', protect, [
+  body('accept').isBoolean().withMessage('Indica si aceptas (true) o no (false)'),
+  validateRequest,
+], setLocationConsent);
 
 module.exports = router;

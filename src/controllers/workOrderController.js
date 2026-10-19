@@ -2,6 +2,7 @@ const WorkOrder = require('../models/WorkOrder');
 const Client = require('../models/Client');
 const User = require('../models/User');
 const { companyScope } = require('../middleware/authMiddleware');
+const { parseLocation, stampPoint } = require('../utils/geo');
 
 // Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
 const orderFilter = (req) => {
@@ -40,7 +41,7 @@ const resolveRefs = async (req, { client, assignedTo }) => {
 const populate = (query) => query
   .populate('createdBy', 'name email role')
   .populate('assignedTo', 'name email role')
-  .populate('client', 'name email phone company address');
+  .populate('client', 'name email phone company address location');
 
 const getPageOptions = (req) => {
   const page = Math.max(1, Number(req.query.page) || 1);
@@ -233,6 +234,21 @@ const updateWorkOrderStatus = async (req, res) => {
     if (status === 'en_proceso' && !workOrder.startedAt) workOrder.startedAt = new Date();
     if (status === 'completada') workOrder.completedAt = new Date();
     if (status !== 'completada') workOrder.completedAt = null;
+    // Ubicación al iniciar y al completar: solo si la empresa la activó y este usuario la autorizó (Ley 1581).
+    const loc = parseLocation(req.body.location);
+    if (loc && req.company && req.company.locationTracking && req.user.locationConsentAt
+        && (status === 'en_proceso' || status === 'completada')) {
+      const client = workOrder.client ? await Client.findOne({ _id: workOrder.client, ...companyScope(req) }) : null;
+      const point = stampPoint(loc, client && client.location);
+      if (status === 'en_proceso') workOrder.startLocation = point;
+      if (status === 'completada') {
+        workOrder.endLocation = point;
+        if (client && !(client.location && Number.isFinite(client.location.lat))) {
+          client.location = { lat: loc.lat, lng: loc.lng, source: 'visita', at: new Date() };    // aprendida en la visita
+          await client.save();
+        }
+      }
+    }
     if (note) {
       const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
       workOrder.notes = `${workOrder.notes ? `${workOrder.notes}\n` : ''}[${stamp} · ${req.user.name}] ${note}`.slice(-5000);

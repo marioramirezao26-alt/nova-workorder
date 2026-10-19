@@ -66,6 +66,29 @@ const workOrderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Dónde estaba el técnico al iniciar y al completar (solo si la empresa lo activó y el técnico lo autorizó).
+    startLocation: {
+      type: {
+      lat: Number,
+      lng: Number,
+      accuracy: Number,
+      at: Date,
+      distanceM: Number,
+      offSite: Boolean,
+    },
+      default: null,
+    },
+    endLocation: {
+      type: {
+      lat: Number,
+      lng: Number,
+      accuracy: Number,
+      at: Date,
+      distanceM: Number,
+      offSite: Boolean,
+    },
+      default: null,
+    },
   },
   {
     timestamps: true,

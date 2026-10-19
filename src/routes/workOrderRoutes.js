@@ -37,6 +37,8 @@ router.delete('/:id', authorize('admin'), validateObjectId, deleteWorkOrder);
 router.patch('/:id/status', authorize('admin', 'tecnico'), validateObjectId, [
   body('status').isIn(['pendiente', 'en_proceso', 'completada', 'cancelada']).withMessage('Estado inválido'),
   body('note').optional().trim().isLength({ max: 500 }).withMessage('La nota no debe superar 500 caracteres'),
+  body('location.lat').optional().isFloat({ min: -90, max: 90 }).withMessage('Latitud inválida'),
+  body('location.lng').optional().isFloat({ min: -180, max: 180 }).withMessage('Longitud inválida'),
   validateRequest,
 ], updateWorkOrderStatus);
 

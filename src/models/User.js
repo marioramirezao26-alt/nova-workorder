@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Cuándo autorizó el técnico que se registre su ubicación al iniciar y cerrar órdenes (null = no autorizó).
+    locationConsentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

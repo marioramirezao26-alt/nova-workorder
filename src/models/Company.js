@@ -41,6 +41,12 @@ const companySchema = new mongoose.Schema(
       enum: ['es', 'en'],
       default: 'es',
     },
+    // Registrar la ubicación del técnico al iniciar y al completar cada orden (lo activa el administrador; cada
+    // técnico además la autoriza en su celular).
+    locationTracking: {
+      type: Boolean,
+      default: false,
+    },
     // «Mi marca»: el logo y los colores que la empresa ve en su app (los pone su administrador).
     branding: {
       primary: { type: String, default: null },

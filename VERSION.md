@@ -2,6 +2,13 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Ubicación al iniciar y completar órdenes
+- El administrador lo activa en «Usuarios» («Registrar la ubicación de los técnicos al iniciar y completar cada orden»).
+- Cada técnico lo autoriza en su celular (Ley 1581 de 2012) y puede retirarlo cuando quiera. Solo se guarda el punto
+  al pulsar «Iniciar» y «Completar», nunca un seguimiento continuo.
+- En cada orden se ve dónde inició y cerró el técnico, con enlace al mapa, a cuántos metros del cliente estaba y un
+  aviso ⚠ si estaba a más de `OFFSITE_METERS` (300 m). Las coordenadas del cliente se aprenden de su primera visita.
+
 ### Cambios de la versión 1.1
 - **Multiempresa:** cada empresa cliente ve solo sus usuarios, clientes, órdenes y tablero.
 - **Corrección de seguridad:** un usuario «cliente» ya no ve todas las órdenes y clientes del sistema, solo los de su ficha.

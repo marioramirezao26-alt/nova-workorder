@@ -6,7 +6,7 @@ import { t } from '../i18n';
 const emptyForm = { name: '', email: '', role: 'tecnico', client: '' };
 
 // Usuarios de la empresa (solo el administrador): crear con contraseña temporal, desactivar, nueva contraseña.
-export default function Users({ api, user }) {
+export default function Users({ api, user, onUser }) {
   const [users, setUsers] = useState([]);
   const [clients, setClients] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -65,6 +65,23 @@ export default function Users({ api, user }) {
           <h2>{t('Usuarios')}</h2>
         </div>
       </header>
+
+      {user.role === 'admin' && (
+        <div className="panel-box">
+          <label className="check-row">
+            <input type="checkbox" checked={Boolean(user.company?.locationTracking)} onChange={async (e) => {
+              try {
+                const { data } = await api.put('/company/location-tracking', { enabled: e.target.checked });
+                onUser?.(data);
+              } catch (error) {
+                alert(errorMessage(error, t('No se pudo guardar el ajuste')));
+              }
+            }} />
+            {t('Registrar la ubicación de los técnicos al iniciar y completar cada orden')}
+          </label>
+          <p className="muted">{t('Cada técnico lo autoriza en su celular (Ley 1581). Solo se guarda el punto en esos dos momentos, no un seguimiento continuo; en cada orden ves a cuántos metros del cliente estaba.')}</p>
+        </div>
+      )}
 
       {issued && (
         <div className="panel-box highlight">

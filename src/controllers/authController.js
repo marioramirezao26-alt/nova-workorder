@@ -11,7 +11,9 @@ const publicUser = (user, company) => ({
   role: user.role,
   client: user.client || null,
   mustChangePassword: Boolean(user.mustChangePassword),
-  company: company ? { _id: company._id, name: company.name, status: company.status, lang: company.lang || 'es', branding: publicBranding(company) } : null,
+  locationConsentAt: user.locationConsentAt || null,
+  company: company ? { _id: company._id, name: company.name, status: company.status, lang: company.lang || 'es', branding: publicBranding(company),
+    locationTracking: Boolean(company.locationTracking) } : null,
 });
 
 // El registro público quedó cerrado: cada empresa crea sus usuarios desde «Usuarios», y las empresas nuevas
@@ -67,6 +69,17 @@ const getProfile = async (req, res) => {
   res.status(200).json(publicUser(req.user, req.company));
 };
 
+// El técnico autoriza (o retira) que se registre su ubicación al iniciar y cerrar órdenes.
+const setLocationConsent = async (req, res) => {
+  try {
+    req.user.locationConsentAt = req.body.accept ? new Date() : null;
+    await req.user.save();
+    res.status(200).json(publicUser(req.user, req.company));
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Error al guardar la autorización' });
+  }
+};
+
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -96,4 +109,5 @@ module.exports = {
   getProfile,
   changePassword,
   publicUser,
+  setLocationConsent,
 };
