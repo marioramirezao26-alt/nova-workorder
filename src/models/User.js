@@ -52,6 +52,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Cuándo autorizó compartir dónde va mientras tiene una orden en proceso (mapa en vivo; null = no autorizó).
+    liveConsentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

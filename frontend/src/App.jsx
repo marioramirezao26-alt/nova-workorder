@@ -8,6 +8,7 @@ import Orders from './views/Orders';
 import Clients from './views/Clients';
 import Users from './views/Users';
 import Brand from './views/Brand';
+import LiveMap from './views/LiveMap';
 import { applyBrand, logoUrl } from './brand';
 import { getLang, setLang, t, adoptCompanyLang } from './i18n';
 
@@ -18,12 +19,13 @@ const SECTIONS = {
   inicio: { label: 'Inicio', icon: '◧', view: Dashboard },
   mis: { label: 'Mis órdenes', icon: '✓', view: MyOrders },
   ordenes: { label: 'Órdenes', icon: '☰', view: Orders },
+  mapa: { label: 'Mapa', icon: '⌖', view: LiveMap },
   clientes: { label: 'Clientes', icon: '◉', view: Clients },
   usuarios: { label: 'Usuarios', icon: '⚙', view: Users },
   marca: { label: 'Mi marca', icon: '★', view: Brand },
 };
 const MENU = {
-  admin: ['inicio', 'ordenes', 'clientes', 'usuarios', 'marca'],
+  admin: ['inicio', 'ordenes', 'mapa', 'clientes', 'usuarios', 'marca'],
   tecnico: ['mis', 'ordenes', 'clientes', 'inicio'],
   cliente: ['mis'],
 };

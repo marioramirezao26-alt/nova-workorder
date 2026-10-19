@@ -9,6 +9,16 @@
 - En cada orden se ve dónde inició y cerró el técnico, con enlace al mapa, a cuántos metros del cliente estaba y un
   aviso ⚠ si estaba a más de `OFFSITE_METERS` (300 m). Las coordenadas del cliente se aprenden de su primera visita.
 
+### Mapa en vivo de los técnicos
+- Es aparte de lo anterior: el administrador lo activa en «Usuarios» («Mapa en vivo…») y cada técnico lo autoriza por
+  separado en su celular; puede retirarlo cuando quiera.
+- Solo mientras el técnico tiene una orden **En proceso**: su celular manda un punto por minuto
+  (`POST /api/workorders/:id/ping`; el servidor ignora lo que llegue antes de `PING_EVERY_SECONDS`, 30 s). Nunca fuera
+  de una orden: al completarla o cancelarla deja de compartirse y desaparece del mapa.
+- El administrador ve «Mapa» (`GET /api/workorders/live`): cada técnico, su cliente, el recorrido desde que inició y
+  ⚠ «Lejos del cliente desde…» si está a más de `OFFSITE_METERS`; «sin señal» si no llega un punto en 10 minutos.
+  Mapa de OpenStreetMap (Leaflet), sin llaves ni costo. Un usuario cliente no ve la ubicación del técnico.
+
 ### Cambios de la versión 1.1
 - **Multiempresa:** cada empresa cliente ve solo sus usuarios, clientes, órdenes y tablero.
 - **Corrección de seguridad:** un usuario «cliente» ya no ve todas las órdenes y clientes del sistema, solo los de su ficha.

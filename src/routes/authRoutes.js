@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const { protect } = require('../middleware/authMiddleware');
 const { validateRequest } = require('../middleware/validateRequest');
-const { registerUser, loginUser, getProfile, changePassword, setLocationConsent } = require('../controllers/authController');
+const { registerUser, loginUser, getProfile, changePassword, setLocationConsent, setLiveConsent } = require('../controllers/authController');
 const { loginLimiter } = require('../middleware/loginLimiter');
 
 const router = express.Router();
@@ -27,5 +27,9 @@ router.put('/location-consent', protect, [
   body('accept').isBoolean().withMessage('Indica si aceptas (true) o no (false)'),
   validateRequest,
 ], setLocationConsent);
+router.put('/live-consent', protect, [
+  body('accept').isBoolean().withMessage('Indica si aceptas (true) o no (false)'),
+  validateRequest,
+], setLiveConsent);
 
 module.exports = router;

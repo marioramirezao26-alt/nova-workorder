@@ -80,6 +80,18 @@ export default function Users({ api, user, onUser }) {
             {t('Registrar la ubicación de los técnicos al iniciar y completar cada orden')}
           </label>
           <p className="muted">{t('Cada técnico lo autoriza en su celular (Ley 1581). Solo se guarda el punto en esos dos momentos, no un seguimiento continuo; en cada orden ves a cuántos metros del cliente estaba.')}</p>
+          <label className="check-row">
+            <input type="checkbox" checked={Boolean(user.company?.liveTracking)} onChange={async (e) => {
+              try {
+                const { data } = await api.put('/company/live-tracking', { enabled: e.target.checked });
+                onUser?.(data);
+              } catch (error) {
+                alert(errorMessage(error, t('No se pudo guardar el ajuste')));
+              }
+            }} />
+            {t('Mapa en vivo: ver dónde va cada técnico mientras tiene una orden en proceso')}
+          </label>
+          <p className="muted">{t('Es otra autorización de cada técnico. Solo mientras la orden está «En proceso», un punto por minuto; al completarla deja de compartirse. Lo ves en «Mapa».')}</p>
         </div>
       )}
 

@@ -10,6 +10,8 @@ const {
   updateWorkOrder,
   deleteWorkOrder,
   updateWorkOrderStatus,
+  pingWorkOrder,
+  liveWorkOrders,
 } = require('../controllers/workOrderController');
 
 const router = express.Router();
@@ -30,6 +32,7 @@ const workOrderValidation = [
 router.use(protect);
 
 router.get('/', authorize('admin', 'tecnico', 'cliente'), getWorkOrders);
+router.get('/live', authorize('admin'), liveWorkOrders);
 router.post('/', authorize('admin', 'tecnico'), workOrderValidation, createWorkOrder);
 router.get('/:id', authorize('admin', 'tecnico', 'cliente'), validateObjectId, getWorkOrderById);
 router.put('/:id', authorize('admin', 'tecnico'), validateObjectId, workOrderValidation, updateWorkOrder);
@@ -41,5 +44,10 @@ router.patch('/:id/status', authorize('admin', 'tecnico'), validateObjectId, [
   body('location.lng').optional().isFloat({ min: -180, max: 180 }).withMessage('Longitud inválida'),
   validateRequest,
 ], updateWorkOrderStatus);
+router.post('/:id/ping', authorize('admin', 'tecnico'), validateObjectId, [
+  body('location.lat').isFloat({ min: -90, max: 90 }).withMessage('Latitud inválida'),
+  body('location.lng').isFloat({ min: -180, max: 180 }).withMessage('Longitud inválida'),
+  validateRequest,
+], pingWorkOrder);
 
 module.exports = router;
