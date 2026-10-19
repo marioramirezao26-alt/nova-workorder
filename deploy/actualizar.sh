@@ -4,10 +4,11 @@
 set -euo pipefail
 TAR="${1:?uso: actualizar.sh /tmp/nova.tar}"
 DEST=/opt/nova-workorder
-bash "$DEST/deploy/respaldo.sh" || echo ">> No se pudo respaldar antes de actualizar (¿primera vez?)"
+runuser -u nova -- bash -c "umask 077; bash $DEST/deploy/respaldo.sh" || echo ">> No se pudo respaldar antes de actualizar (¿primera vez?)"
 tar -xf "$TAR" -C "$DEST" --exclude=.env --exclude=respaldos
 (cd "$DEST" && npm ci --omit=dev --silent)
 chown -R nova:nova "$DEST"
+chown -R root:root "$DEST/deploy" && chmod -R go-w "$DEST/deploy"   # lo que root ejecuta no lo puede cambiar la app
 install -m 644 "$DEST/deploy/nova.service" /etc/systemd/system/nova.service
 install -m 644 "$DEST/deploy/nova-respaldo.service" /etc/systemd/system/nova-respaldo.service
 install -m 644 "$DEST/deploy/nova-respaldo.timer" /etc/systemd/system/nova-respaldo.timer
