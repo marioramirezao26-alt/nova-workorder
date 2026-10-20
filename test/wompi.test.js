@@ -201,6 +201,91 @@ test('con un intento PENDING (PSE, Nequi) no se ofrece pagar otra vez durante 30
   assert.equal((await checkout(token)).status, 200);
 });
 
+test('al volver con un APPROVED cuyo evento aún no llega no se ofrece pagar otra vez: se espera la confirmación', async () => {
+  const { a, slug, q, token } = await setup();
+  await approve(token);
+  const c = (await checkout(token)).params;
+  txs['tx-tarjeta-1'] = txFor(c, 'tx-tarjeta-1', 'APPROVED', { created_at: new Date().toISOString(), merchant: { public_key: KEYS.publicKey } });
+  const back = (await call('GET', `/cotizaciones/${token}/pago/estado?id=tx-tarjeta-1`)).data;
+  assert.deepEqual([back.tx.status, back.quote.payment.status, back.quote.payment.online, back.quote.payment.pending], ['APPROVED', 'pendiente', false, true]);
+  assert.equal((await checkout(token)).status, 409);
+  // el evento firmado la paga
+  await send(slug, txs['tx-tarjeta-1']);
+  assert.deepEqual([(await quoteOf(a, q)).payment.status, (await quoteOf(a, q)).payment.txId], ['pagado', 'tx-tarjeta-1']);
+});
+
+test('un DECLINED atrasado de un intento viejo no borra el PENDING del intento nuevo', async () => {
+  const { slug, token } = await setup();
+  await approve(token);
+  const viejo = (await checkout(token)).params;
+  const nuevo = (await checkout(token)).params;
+  txs['tx-pse-nuevo'] = txFor(nuevo, 'tx-pse-nuevo', 'PENDING', { created_at: new Date().toISOString() });
+  assert.equal((await call('GET', `/cotizaciones/${token}/pago/estado?id=tx-pse-nuevo`)).data.quote.payment.pending, true);
+  await send(slug, txFor(viejo, 'tx-tarjeta-vieja', 'DECLINED', { created_at: new Date(Date.now() - 2 * 60000).toISOString() }));
+  const pub = (await call('GET', `/cotizaciones/${token}`)).data.quote.payment;
+  assert.deepEqual([pub.pending, pub.online, pub.txStatus], [true, false, 'PENDING']);
+  assert.equal((await checkout(token)).status, 409);
+  // el del intento nuevo sí lo resuelve
+  await send(slug, { ...txs['tx-pse-nuevo'], status: 'DECLINED' });
+  assert.equal((await call('GET', `/cotizaciones/${token}`)).data.quote.payment.online, true);
+});
+
+test('un APPROVED repetido o atrasado de la transacción anulada no la vuelve a dejar pagada', async () => {
+  const { a, slug, q, token } = await setup();
+  await approve(token);
+  const tx = txFor((await checkout(token)).params, 'tx-anulada', 'APPROVED', { payment_method_type: 'CARD' });
+  await send(slug, tx);
+  await send(slug, { ...tx, status: 'VOIDED' });
+  await send(slug, tx);                                                    // Wompi reenvía el APPROVED
+  const back = await quoteOf(a, q);
+  assert.deepEqual([back.payment.status, back.payment.amountPaid, back.payment.online], ['pendiente', 0, true]);
+  assert.equal((await actions(a)).filter((x) => x === 'cotizacion.pagada').length, 1);
+  // al revés: el VOIDED llega antes que el reintento del APPROVED
+  const b = await setup('Reintentos SAS');
+  await approve(b.token);
+  const late = txFor((await checkout(b.token)).params, 'tx-invertida', 'APPROVED');
+  await send(b.slug, { ...late, status: 'VOIDED' });
+  await send(b.slug, late);
+  const inv = await quoteOf(b.a, b.q);
+  assert.deepEqual([inv.payment.status, inv.payment.amountPaid], ['pendiente', 0]);
+  assert.ok(!(await actions(b.a)).includes('cotizacion.pagada'));
+});
+
+test('si la oficina quita su marca y Wompi sí cobró aparte, ese pago queda como el de la cotización', async () => {
+  const { a, slug, q, token } = await setup('Devolucion SAS', { keys: PROD });
+  await approve(token);
+  txs['tx-pse-of'] = txFor((await checkout(token)).params, 'tx-pse-of', 'PENDING', { payment_method_type: 'PSE' });
+  await call('GET', `/cotizaciones/${token}/pago/estado?id=tx-pse-of`);
+  assert.equal((await call('POST', `/quotes/${q._id}/payment`, { as: a.token, body: { status: 'pagado' } })).status, 200);
+  await send(slug, { ...txs['tx-pse-of'], status: 'APPROVED' }, PROD.eventsSecret);
+  assert.deepEqual((await quoteOf(a, q)).payment.extra.map((e) => e.txId), ['tx-pse-of']);
+  // el efectivo nunca llegó: la oficina quita su marca y queda el pago de Wompi (no se ofrece pagar otra vez)
+  const undo = await call('POST', `/quotes/${q._id}/payment`, { as: a.token, body: { status: 'pendiente' } });
+  assert.equal(undo.status, 200);
+  const p = undo.data.payment;
+  assert.deepEqual([p.status, p.amountPaid, p.officeAmount, p.method, p.methodType, p.txId, p.extra.length, p.online], ['pagado', 725325, 0, 'wompi', 'PSE', 'tx-pse-of', 0, false]);
+  assert.equal((await checkout(token)).status, 409);
+  assert.equal((await call('POST', `/quotes/${q._id}/payment`, { as: a.token, body: { status: 'pendiente' } })).status, 409);   // ya es de Wompi
+  const bill = factus.buildBill({ factus: { numberingRangeId: 8 } }, await quoteOf(a, q), {}).payment_details;
+  assert.deepEqual(bill.map((x) => [x.payment_form, x.payment_method_code, x.amount]), [['1', '47', '725325.00']]);
+});
+
+test('un anticipo de prueba no se completa con «Registrar el saldo»: primero se quita', async () => {
+  const { a, slug, q, token } = await setup('Sandbox SAS', { deposit: 50 });
+  await approve(token);
+  await send(slug, txFor((await checkout(token)).params, 'tx-sandbox-anticipo', 'APPROVED'));
+  const dep = (await quoteOf(a, q)).payment;
+  assert.deepEqual([dep.status, dep.test, dep.amountPaid], ['anticipo', true, 362663]);
+  const pay = (status) => call('POST', `/quotes/${q._id}/payment`, { as: a.token, body: { status } });
+  const saldo = await pay('pagado');
+  assert.equal(saldo.status, 409);
+  assert.match(saldo.data.message, /prueba/);
+  assert.equal((await quoteOf(a, q)).payment.officeAmount, 0);
+  assert.equal((await pay('pendiente')).data.payment.status, 'pendiente');
+  const full = (await pay('pagado')).data.payment;                         // la oficina cobró el total
+  assert.deepEqual([full.status, full.officeAmount, full.method, full.test], ['pagado', 725325, 'oficina', false]);
+});
+
 test('un segundo pago aprobado no se pierde: queda en la cotización y en la bitácora como posible doble cobro', async () => {
   const { a, slug, q, token } = await setup();
   await approve(token);

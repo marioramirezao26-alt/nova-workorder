@@ -184,15 +184,22 @@ test('otro técnico no comparte el informe de una orden ajena; borrar la orden b
   assert.equal(await files().countDocuments({}), 0);
 });
 
-test('el técnico no saca una orden de «completada» para cambiar fotos o firma; el administrador sí la reabre', async () => {
+test('el técnico no saca una orden de «completada» ni la cambia debajo de la firma; el administrador sí la reabre', async () => {
   const { a, tech, order } = await setup();
   const photo = (await raw('POST', `/workorders/${order._id}/files?kind=antes`, { as: tech, body: JPEG, type: 'image/jpeg' })).data.attachments[0].file;
   await call('POST', `/workorders/${order._id}/signature`, { as: tech, body: { name: 'Carlos Cliente', image: FIRMA } });
-  assert.equal((await call('PATCH', `/workorders/${order._id}/status`, { as: tech, body: { status: 'completada' } })).status, 200);
+  const done = await call('PATCH', `/workorders/${order._id}/status`, { as: tech, body: { status: 'completada' } });
+  assert.equal(done.status, 200);
   const reopen = await call('PATCH', `/workorders/${order._id}/status`, { as: tech, body: { status: 'en_proceso' } });
   assert.equal(reopen.status, 403);
   assert.equal((await call('DELETE', `/workorders/${order._id}/files/${photo}`, { as: tech })).status, 409);
   assert.equal((await call('POST', `/workorders/${order._id}/signature`, { as: tech, body: { name: 'Firma falsa', image: FIRMA } })).status, 409);
+  // tampoco la «completa» otra vez con una nota ni la edita: el informe que firmó el cliente sigue igual
+  assert.equal((await call('PATCH', `/workorders/${order._id}/status`, { as: tech, body: { status: 'completada', note: 'El cliente aceptó el cobro adicional' } })).status, 403);
+  assert.equal((await call('PUT', `/workorders/${order._id}`, { as: tech, body: { title: 'Instalación completa', description: 'Se instalaron 3 equipos nuevos' } })).status, 403);
+  const same = (await call('GET', `/workorders/${order._id}`, { as: a.token })).data;
+  assert.deepEqual([same.title, same.description, same.completedAt], ['Mantenimiento aire', 'Mantenimiento preventivo', done.data.completedAt]);
+  assert.doesNotMatch(same.notes || '', /cobro adicional/);
   const byAdmin = await call('PATCH', `/workorders/${order._id}/status`, { as: a.token, body: { status: 'en_proceso' } });
   assert.equal(byAdmin.status, 200);
   assert.equal(byAdmin.data.completedAt, null);
@@ -276,13 +283,30 @@ test('fotos y firmas al mismo tiempo: no se pisan y no quedan archivos sueltos n
   assert.deepEqual(stored, final.attachments.map((x) => String(x.file)).sort());
   for (const x of final.attachments) assert.equal((await raw('GET', `/workorders/${order._id}/files/${x.file}`, { as: tech })).status, 200);
 
-  // dos firmas a la vez: queda una vigente y no hay firmas sueltas de más
-  const signs = await Promise.all([1, 2].map((n) => call('POST', `/workorders/${order._id}/signature`, { as: tech, body: { name: `Cliente ${n}`, image: FIRMA } })));
-  const ok = signs.filter((r) => r.status === 200).length;
-  assert.ok(ok >= 1 && signs.every((r) => r.status === 200 || r.status === 409));
-  assert.equal(await files().countDocuments({ kind: 'firma' }), ok);
+  // varias firmas a la vez: queda una vigente, y cada otra firma guardada es una que se reemplazó (está en la bitácora
+  // como «reemplazada»); ninguna queda suelta por la carrera
+  const signs = await Promise.all([1, 2, 3].map((n) => call('POST', `/workorders/${order._id}/signature`, { as: tech, body: { name: `Cliente ${n}`, image: FIRMA } })));
+  assert.ok(signs.some((r) => r.status === 200) && signs.every((r) => r.status === 200 || r.status === 409));
   const signed = (await call('GET', `/workorders/${order._id}`, { as: tech })).data.signature;
+  const replaced = (await mongoose.connection.collection('auditlogs').find({ action: 'orden.firma' }).toArray()).map((e) => e.meta && e.meta.reemplazada).filter(Boolean);
+  const kept = (await files().find({ kind: 'firma' }).toArray()).map((f) => String(f._id));
+  assert.deepEqual(kept.sort(), [String(signed.file), ...replaced].sort());
+  assert.equal(kept.length, signs.filter((r) => r.status === 200).length);
   assert.equal((await raw('GET', `/workorders/${order._id}/files/${signed.file}`, { as: tech })).status, 200);
+});
+
+test('las firmas que reemplaza el técnico tienen cupo; al reemplazarla el administrador se borran las anteriores', async () => {
+  const { a, tech, order } = await setup();
+  const signAs = (as, name) => call('POST', `/workorders/${order._id}/signature`, { as, body: { name, image: FIRMA } });
+  for (let n = 1; n <= 5; n += 1) assert.equal((await signAs(tech, `Cliente ${n}`)).status, 200);
+  const over = await signAs(tech, 'Cliente 6');
+  assert.equal(over.status, 409);
+  assert.match(over.data.message, /administrador/);
+  assert.equal(await files().countDocuments({ kind: 'firma' }), 5);
+  const fixed = await signAs(a.token, 'Cliente final');
+  assert.equal(fixed.status, 200);
+  assert.deepEqual((await files().find({ kind: 'firma' }).toArray()).map((f) => String(f._id)), [String(fixed.data.signature.file)]);
+  assert.equal((await signAs(tech, 'Cliente otra vez')).status, 200);       // el cupo vuelve a empezar
 });
 
 test('el enlace del informe se puede cambiar (el anterior deja de servir); las horas van en la zona de la empresa', async () => {

@@ -131,9 +131,19 @@ test('el token se guarda por empresa, ambiente y usuario, y se olvida al conecta
   assert.equal(await factus.token(empresa), 'tok-1');                        // guardado
   assert.equal(await factus.token({ ...empresa, factus: { ...sealed, env: 'produccion' } }), 'tok-2');   // otro ambiente
   assert.equal(await factus.token({ _id: 'empresa-2', factus: { ...sealed, env: 'pruebas' } }), 'tok-3'); // otra empresa
+  assert.equal(await factus.token({ ...empresa, factus: { ...sealed, env: 'pruebas', username: 'otra@empresa.co' } }), 'tok-4');   // otro usuario
   factus.forget('empresa-1');
-  assert.equal(await factus.token(empresa), 'tok-4');
+  assert.equal(await factus.token(empresa), 'tok-5');
   assert.equal(await factus.token({ _id: 'empresa-2', factus: { ...sealed, env: 'pruebas' } }), 'tok-3');
+  // por la API: conectar deja guardado el token que probó las credenciales; cambiar los datos y desconectar lo olvidan
+  const a = await company('Tokens SAS');
+  const enPruebas = { _id: a.id, factus: { ...sealed, env: 'pruebas' } };
+  assert.equal((await call('PUT', '/company/factus', { as: a.token, body: CREDS })).status, 200);       // tok-6
+  assert.equal(await factus.token(enPruebas), 'tok-6');
+  assert.equal((await call('PUT', '/company/factus', { as: a.token, body: PROD })).status, 200);        // tok-7
+  assert.equal(await factus.token(enPruebas), 'tok-8');
+  assert.equal((await call('DELETE', '/company/factus', { as: a.token })).status, 200);
+  assert.equal(await factus.token({ _id: a.id, factus: { ...sealed, env: 'produccion' } }), 'tok-9');
 });
 
 test('un 401 al facturar olvida el token y reintenta una vez; si sigue, no se le culpa a la DIAN', async () => {
@@ -206,6 +216,21 @@ test('una factura de pruebas se marca como tal, no la ve el cliente y no impide 
   assert.equal((await call('PUT', '/company/factus', { as: a.token, body: CREDS })).status, 200);
   assert.equal((await invoice(a, q)).data.invoice.cufe, 'cufe-2');
   assert.equal(bills.length, 2);
+});
+
+test('una factura de antes de guardar el ambiente se reconoce por su número: SETP es de pruebas; otro prefijo, definitiva', async () => {
+  const { a, client, q, token } = await setup();
+  await approve(token);
+  const quotes = mongoose.connection.collection('quotes');
+  await quotes.updateOne({ _id: new mongoose.Types.ObjectId(q._id) }, { $set: { invoice: { number: 'FE-REAL-1', cufe: 'cufe-real', publicUrl: 'https://factus.test/real' } } });
+  assert.equal((await call('GET', `/cotizaciones/${token}`)).data.quote.invoice.number, 'FE-REAL-1');   // el cliente la ve
+  assert.equal((await call('GET', `/quotes/${q._id}`, { as: a.token })).data.invoice.env, 'produccion');
+  assert.equal((await invoice(a, q)).status, 200);
+  assert.equal(bills.length, 0);                                           // no se vuelve a facturar
+  const other = await quoteFor(a, client, { approved: true });
+  await quotes.updateOne({ _id: new mongoose.Types.ObjectId(other.q._id) }, { $set: { invoice: { number: 'SETP990000001', cufe: 'cufe-prueba' } } });
+  assert.equal((await call('GET', `/cotizaciones/${other.token}`)).data.quote.invoice, null);
+  assert.equal((await call('GET', `/quotes/${other.q._id}`, { as: a.token })).data.invoice.env, 'pruebas');
 });
 
 test('a nombre del cliente con NIT, pagada (de contado) y validaciones del comprador', async () => {

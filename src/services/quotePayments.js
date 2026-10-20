@@ -47,18 +47,28 @@ const startedAt = (tx) => {
 };
 
 // Anota el último intento mientras la cotización siga por cobrar. Un PENDING no pisa el estado final que Wompi ya haya
-// dado de esa misma transacción (si el evento llegó antes que la consulta).
-const noteAttempt = (company, quote, tx, status) => Quote.findOneAndUpdate(
-  { tenant: company._id, _id: quote._id, ...UNPAID, ...(status === 'PENDING' ? { $nor: [{ 'payment.txId': String(tx.id || ''), 'payment.txStatus': { $ne: 'PENDING' } }] } : {}) },
-  { $set: { 'payment.txId': String(tx.id || ''), 'payment.txStatus': status, 'payment.txAt': startedAt(tx) } },
-  { new: true }
-);
+// dado de esa misma transacción (si el evento llegó antes que la consulta), y un intento que empezó antes no pisa el
+// PENDING de otro (un DECLINED atrasado de un intento viejo no vuelve a ofrecer pagar con el nuevo en curso).
+const noteAttempt = (company, quote, tx, status) => {
+  const txId = String(tx.id || '');
+  const at = startedAt(tx);
+  return Quote.findOneAndUpdate(
+    {
+      tenant: company._id, _id: quote._id, ...UNPAID,
+      $or: [{ 'payment.txStatus': { $ne: 'PENDING' } }, { 'payment.txId': txId }, { 'payment.txAt': { $lte: at } }],
+      ...(status === 'PENDING' ? { $nor: [{ 'payment.txId': txId, 'payment.txStatus': { $ne: 'PENDING' } }] } : {}),
+    },
+    { $set: { 'payment.txId': txId, 'payment.txStatus': status, 'payment.txAt': at } },
+    { new: true }
+  );
+};
 
 // Aplica a una cotización lo que dice el evento FIRMADO de Wompi sobre una transacción (nunca la consulta pública).
 // - APPROVED: cobra lo que se cobraba en línea (el total queda «pagado»; un anticipo, «anticipo» con su saldo). Si ya
 //   estaba cobrada (por Wompi, por la oficina o por otro intento), no se descarta: queda en payment.extra y en la
 //   bitácora como posible doble cobro para devolver.
 // - VOIDED de la transacción que pagó: se devuelve el pago (queda lo que haya registrado la oficina) y queda en la bitácora.
+//   Un APPROVED repetido o atrasado de una transacción ya anulada no la vuelve a cobrar.
 // - Lo demás (PENDING, DECLINED, ERROR) solo se anota como último intento mientras siga por cobrar.
 // Es idempotente: el mismo evento dos veces no cambia nada.
 const applyTransaction = async (company, tx) => {
@@ -70,9 +80,10 @@ const applyTransaction = async (company, tx) => {
   const where = { tenant: company._id, _id: quote._id };
   const money = `$ ${Number(p.due).toLocaleString('es-CO')}`;
 
-  if (txId && txId === p.txId && p.txStatus === 'APPROVED') {
-    // la que ya pagó: otra vez el mismo evento (o un pago de prueba que la oficina ya quitó) no cambia nada
-    if (status !== 'VOIDED' || p.method !== 'wompi') return quote;
+  if (txId && txId === p.txId && ['APPROVED', 'VOIDED'].includes(p.txStatus)) {
+    // la que ya pagó: otra vez el mismo evento (o un pago de prueba que la oficina ya quitó) no cambia nada; la que Wompi
+    // ya anuló, tampoco (su APPROVED puede llegar repetido, o atrasado después del VOIDED)
+    if (status !== 'VOIDED' || p.txStatus !== 'APPROVED' || p.method !== 'wompi') return quote;
     const office = p.officeAmount || 0;
     const updated = await Quote.findOneAndUpdate({ ...where, 'payment.txId': txId, 'payment.txStatus': 'APPROVED' }, { $set: {
       'payment.status': statusFor(office, quote.total), 'payment.amountPaid': office, 'payment.balance': quote.total - office,
@@ -115,10 +126,13 @@ const applyTransaction = async (company, tx) => {
 };
 
 // Lo que trae el cliente al volver del checkout (?id=), consultado en Wompi: no cambia el pago, que es solo del evento
-// firmado (esa consulta es pública y devuelve transacciones de cualquier comercio). Un PENDING sí se anota, para no
-// ofrecerle pagar de nuevo durante 30 minutos mientras Wompi lo resuelve.
+// firmado (esa consulta es pública y devuelve transacciones de cualquier comercio). Un PENDING, o un APPROVED cuyo evento
+// aún no llega, sí se anota como intento en curso (PENDING), para no ofrecerle pagar de nuevo durante 30 minutos mientras
+// Wompi lo resuelve o lo confirma. Si Wompi dice que la transacción es de otro comercio, no se anota.
 const notePending = async (company, tx) => {
-  if (String((tx && tx.status) || '').toUpperCase() !== 'PENDING') return null;
+  if (!['PENDING', 'APPROVED'].includes(String((tx && tx.status) || '').toUpperCase())) return null;
+  const merchant = tx.merchant && tx.merchant.public_key;
+  if (merchant && merchant !== company.wompi.publicKey) return null;
   const quote = await matching(company, tx);
   return quote ? noteAttempt(company, quote, tx, 'PENDING') : null;
 };

@@ -29,6 +29,7 @@ const noteStamp = (company) => new Intl.DateTimeFormat('sv-SE', {
 const hidden = (req) => (req.user.role === 'cliente' ? '-startLocation -endLocation -lastPoint -offSiteSince' : '');
 
 const badRequest = (message) => Object.assign(new Error(message), { statusCode: 400 });
+const COMPLETED_FOR_ADMIN = 'Una orden completada solo la corrige o la reabre el administrador';
 
 // El cliente y el técnico de una orden tienen que ser de la misma empresa (y el técnico, activo).
 const resolveRefs = async (req, { client, assignedTo }) => {
@@ -198,11 +199,13 @@ const updateWorkOrder = async (req, res) => {
       return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
     }
 
-    // Un técnico solo edita las órdenes que tiene asignadas o que creó, y no cambia su estado (eso va por «Iniciar» y
-    // «Completar»), no se la pasa a otro técnico ni borra el historial de notas.
+    // Un técnico solo edita las órdenes que tiene asignadas o que creó, mientras no estén completadas (una completada solo
+    // la corrige el administrador: el informe ya lleva la firma del cliente), y no cambia su estado (eso va por «Iniciar»
+    // y «Completar»), no se la pasa a otro técnico ni borra el historial de notas.
     if (req.user.role === 'tecnico') {
       const mine = [workOrder.assignedTo, workOrder.createdBy].some((id) => id && String(id) === String(req.user._id));
       if (!mine) return res.status(403).json({ message: 'Solo puedes editar las órdenes que tienes asignadas o que creaste' });
+      if (workOrder.status === 'completada') return res.status(403).json({ message: COMPLETED_FOR_ADMIN });
       const changed = (field, value) => value !== undefined && String(value ?? '') !== String(workOrder[field] ?? '');
       if (changed('status', status) || changed('notes', notes)
           || (assignedTo !== undefined && String(assignedTo || '') !== String(workOrder.assignedTo || '') && String(assignedTo || '') !== String(req.user._id))) {
@@ -284,9 +287,10 @@ const updateWorkOrderStatus = async (req, res) => {
     }
 
     const { status, note } = req.body;
-    // Una orden completada solo la reabre el administrador: el técnico no la saca de ahí para cambiar fotos o firma.
-    if (req.user.role === 'tecnico' && workOrder.status === 'completada' && status !== 'completada') {
-      return res.status(403).json({ message: 'Una orden completada solo la reabre el administrador' });
+    // Una orden completada solo la corrige o la reabre el administrador: el técnico no la saca de ahí para cambiar fotos
+    // o firma, ni la «completa» otra vez (cambiaría la hora de cierre y las notas debajo de la firma del cliente).
+    if (req.user.role === 'tecnico' && workOrder.status === 'completada') {
+      return res.status(403).json({ message: COMPLETED_FOR_ADMIN });
     }
     // Informe de servicio: sin los puntos obligatorios del checklist (ni la firma, si la empresa la pide) no se completa.
     if (status === 'completada' && workOrder.status !== 'completada') {

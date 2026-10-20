@@ -93,7 +93,8 @@ export default function PublicQuote({ token }) {
       {quote.payment?.status === 'anticipo' && <p className="quote-banner ok">{t('✔ Anticipo de {paid} recibido. El saldo de {balance} se acuerda con la empresa.', { paid: money(quote.payment.amountPaid, cur), balance: money(quote.payment.balance, cur) })}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
       {quote.payment?.status === 'pendiente' && data.tx?.status === 'APPROVED' && <p className="quote-banner ok">{t('Confirmando tu pago con Wompi… Si no se actualiza en un momento, recarga esta página.')}</p>}
       {quote.payment?.status === 'pendiente' && ['DECLINED', 'ERROR', 'VOIDED'].includes(data.tx?.status) && !quote.payment.pending && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
-      {quote.payment?.status === 'pendiente' && (data.tx?.status === 'PENDING' || quote.payment.pending) && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
+      {/* un APPROVED sin confirmar también cuenta como intento en curso (no se ofrece pagar), con su propio aviso */}
+      {quote.payment?.status === 'pendiente' && data.tx?.status !== 'APPROVED' && (data.tx?.status === 'PENDING' || quote.payment.pending) && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
       {quote.invoice?.publicUrl && (
         <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })}{quote.invoice.validated === false ? ` (${t('pendiente de validación en la DIAN')})` : ''} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
       )}

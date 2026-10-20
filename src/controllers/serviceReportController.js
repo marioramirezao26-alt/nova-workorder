@@ -14,6 +14,7 @@ const { audit } = require('../utils/audit');
 const MAX_PHOTOS = Number(process.env.MAX_ORDER_PHOTOS) || 12;
 const MAX_PHOTO_BYTES = 400 * 1024;          // el celular la reduce antes de subirla (1280 px, JPEG)
 const MAX_SIGNATURE_BYTES = 60 * 1024;
+const MAX_SIGNATURES = 5;                    // por orden: la vigente y hasta 4 que reemplazó el técnico
 
 const fail = (status, message) => Object.assign(new Error(message), { statusCode: status });
 const reply = (res, error, fallback) => res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : fallback });
@@ -239,8 +240,8 @@ const getFile = async (req, res) => {
 };
 
 // Firma del cliente: { name, image: "data:image/png;base64,…" } dibujada en el celular. Reemplaza la vigente solo si
-// nadie firmó entre tanto. Si la reemplaza el técnico, la anterior se conserva en la orden (queda en la bitácora); solo
-// el administrador la borra al reemplazarla.
+// nadie firmó entre tanto. Si la reemplaza el técnico, la anterior se conserva en la orden (queda en la bitácora), con
+// cupo: con MAX_SIGNATURES guardadas, otro cambio lo hace el administrador, que al reemplazarla borra las anteriores.
 const sign = async (req, res) => {
   try {
     const name = String(req.body.name || '').trim();
@@ -252,6 +253,10 @@ const sign = async (req, res) => {
     if (sniff(data) !== 'image/png') throw fail(400, 'La firma no es válida');
     const order = await findEditable(req);
     const previous = order.signature && order.signature.file;
+    // Las firmas guardadas de la orden, leídas antes de crear la nueva: el cupo del técnico y lo que borra el administrador
+    // (nunca una firma que llegue después de esta lectura).
+    const stored = (await WorkOrderFile.find({ ...companyScope(req), workOrder: order._id, kind: 'firma' }).select('_id').lean()).map((f) => f._id);
+    if (req.user.role !== 'admin' && stored.length >= MAX_SIGNATURES) throw fail(409, 'La firma ya se cambió varias veces: pide al administrador que la corrija');
     const file = await WorkOrderFile.create({ ...companyScope(req), workOrder: order._id, kind: 'firma', type: 'image/png', data, size: data.length, by: req.user._id });
     const updated = await WorkOrder.findOneAndUpdate(
       { ...companyScope(req), _id: order._id, 'signature.file': previous || null },
@@ -262,7 +267,7 @@ const sign = async (req, res) => {
       await WorkOrderFile.deleteOne({ ...companyScope(req), _id: file._id });
       throw fail(409, 'La firma cambió: actualiza la orden');
     }
-    if (previous && req.user.role === 'admin') await WorkOrderFile.deleteOne({ ...companyScope(req), _id: previous });
+    if (req.user.role === 'admin' && stored.length) await WorkOrderFile.deleteMany({ ...companyScope(req), _id: { $in: stored } });
     await audit(req, 'orden.firma', `Registró la firma de ${name} en la orden «${order.title}»`,
       { entityId: order._id, meta: previous ? { reemplazada: String(previous) } : {} });
     res.status(200).json(updated);

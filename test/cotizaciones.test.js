@@ -256,6 +256,20 @@ test('borrar la orden de una cotización la desliga: «Crear la orden» la vuelv
   assert.equal(await mongoose.connection.collection('auditlogs').countDocuments({ action: 'cotizacion.convertir' }), 2);
 });
 
+test('«Crear la orden» varias veces a la vez deja una sola orden y una sola entrada en la bitácora', async () => {
+  const { a, tech, client } = await setup();
+  const q = (await call('POST', '/quotes', { as: tech, body: { client: client._id, title: 'Instalación', items: [ITEMS[2]] } })).data;
+  await call('POST', `/quotes/${q._id}/send`, { as: tech });
+  const first = (await call('POST', `/quotes/${q._id}/approve`, { as: a.token })).data.workOrder._id;
+  await call('DELETE', `/workorders/${first}`, { as: a.token });
+  const made = await Promise.all([1, 2, 3].map(() => call('POST', `/quotes/${q._id}/convert`, { as: a.token })));
+  assert.ok(made.every((r) => r.status === 200));
+  const orders = (await call('GET', '/workorders?limit=50', { as: a.token })).data.items;
+  assert.equal(orders.length, 1);
+  assert.ok(made.every((r) => r.data.workOrder._id === orders[0]._id));
+  assert.equal(await mongoose.connection.collection('auditlogs').countDocuments({ action: 'cotizacion.convertir' }), 1);
+});
+
 // La vista previa del formulario (frontend/src/ui.jsx) repite el cálculo del servidor; se prueba tal cual, sin compilar
 // el JSX que la rodea, igual que el enlace de WhatsApp en informe.test.js.
 const quoteTotals = (() => {

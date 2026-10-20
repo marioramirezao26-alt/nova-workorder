@@ -132,6 +132,7 @@ const EN = {
   'El anticipo ya está pagado: el saldo se acuerda con la empresa': 'The deposit is already paid: the balance is arranged with the company',
   'Wompi está procesando un pago de esta cotización. Espera unos minutos antes de intentarlo de nuevo.': 'Wompi is processing a payment for this quote. Wait a few minutes before trying again.',
   'Este pago lo confirmó Wompi: no se cambia a mano': 'Wompi confirmed this payment: it cannot be changed by hand',
+  'El anticipo es un pago de prueba: quítalo con «Marcar por cobrar» antes de registrar el pago': 'The deposit is a test payment: remove it with “Mark as unpaid” before recording the payment',
   'La empresa debe conectar Wompi de nuevo para recibir pagos': 'The company must connect Wompi again to take payments',
   'Solo se cobra una cotización aprobada': 'Only an approved quote can be charged',
   'Estado de pago inválido': 'Invalid payment status',
@@ -564,7 +565,7 @@ const EN = {
   'Usuario no encontrado': 'User not found',
   'Datos inválidos': 'Invalid data',
   'No tienes permiso para esta acción': "You don't have permission to do this",
-  'Una orden completada solo la reabre el administrador': 'Only an admin can reopen a completed job',
+  'Una orden completada solo la corrige o la reabre el administrador': 'Only an admin can change or reopen a completed job',
   'Falta marcar en el checklist: {items}': 'Checklist items still to check: {items}',
   'Tu empresa pide la firma del cliente antes de completar la orden': 'Your company requires the customer signature before completing the job',
   'Solo puedes llenar el informe de las órdenes que tienes asignadas': 'You can only fill in the report for jobs assigned to you',
@@ -590,6 +591,7 @@ const EN = {
   'Escribe el nombre de quien firma': 'Type the name of the person signing',
   'La firma no es válida': 'The signature is not valid',
   'La firma cambió: actualiza la orden': 'The signature changed: refresh the job',
+  'La firma ya se cambió varias veces: pide al administrador que la corrija': 'The signature was already changed several times: ask an admin to fix it',
 
   // integraciones
   "Integraciones": "Integrations",

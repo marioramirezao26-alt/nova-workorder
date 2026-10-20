@@ -26,7 +26,10 @@ const endOfDay = (day) => new Date(`${day}T23:59:59.999-05:00`);
 const defaultValidUntil = () => endOfDay(colombiaDay(new Date(Date.now() + DEFAULT_VALID_DAYS * 86400000)));
 const expired = (q) => q.status === 'enviada' && q.validUntil < new Date();
 // Solo la factura de producción es definitiva; la de pruebas no tiene validez fiscal ni impide facturar en producción.
-const testInvoice = (inv) => Boolean(inv && inv.cufe && inv.env !== 'produccion');
+// Una factura de antes de guardar el ambiente (sin env) se reconoce por su número: SETP es el prefijo del set de pruebas
+// de la DIAN (habilitación); con otro prefijo es de producción.
+const invoiceEnv = (inv) => inv.env || (inv.number && !/^SETP/i.test(inv.number) ? 'produccion' : 'pruebas');
+const testInvoice = (inv) => Boolean(inv && inv.cufe && invoiceEnv(inv) !== 'produccion');
 const shownStatus = (q) => (expired(q) ? 'vencida' : q.status);
 
 // Lo que se cobra en línea (el fijado, o el que se fijaría hoy) y si el cliente puede pagarlo ahora mismo: aprobada, en
@@ -45,6 +48,7 @@ const view = (q, req) => {
   const o = typeof q.toObject === 'function' ? q.toObject() : { ...q };
   const own = ['admin', 'cliente'].includes(req.user.role) || String((o.createdBy && o.createdBy._id) || o.createdBy) === String(req.user._id);
   if (!own) delete o.publicToken;
+  if (o.invoice && o.invoice.cufe && !o.invoice.env) o.invoice = { ...o.invoice, env: invoiceEnv(o.invoice) };
   if (testInvoice(o.invoice) && req.user.role !== 'admin') delete o.invoice;
   return { ...o, status: shownStatus(q), expired: expired(q), payment: { ...(o.payment || {}), online: onlinePayment(q, req.company).online } };
 };
@@ -224,7 +228,7 @@ const reopenQuote = async (req, res) => {
 };
 
 // La orden de trabajo que sale de una cotización aprobada (una sola: si ya existe, no se crea otra), con el título en el
-// idioma de la empresa (lo ven el técnico, los reportes y el webhook).
+// idioma de la empresa (lo ven el técnico, los reportes y el webhook). `created` dice si la creó esta petición.
 const createOrderFrom = async (quote) => {
   const client = await Client.findOne({ tenant: quote.tenant, _id: quote.client });
   const company = await Company.findById(quote.tenant).select('lang');
@@ -244,11 +248,11 @@ const createOrderFrom = async (quote) => {
   const linked = await Quote.findOneAndUpdate({ tenant: quote.tenant, _id: quote._id, workOrder: null }, { $set: { workOrder: order._id } }, { new: true });
   if (!linked) {                                     // otra petición ya la había creado: se queda la primera
     await WorkOrder.deleteOne({ tenant: quote.tenant, _id: order._id });
-    return Quote.findOne({ tenant: quote.tenant, _id: quote._id });
+    return { quote: await Quote.findOne({ tenant: quote.tenant, _id: quote._id }), created: false };
   }
   const populated = await WorkOrder.findOne({ tenant: quote.tenant, _id: order._id }).populate('client', 'name').populate('assignedTo', 'name');
   await webhooks.emit(quote.tenant, 'orden.creada', webhooks.orderPayload(populated));
-  return linked;
+  return { quote: linked, created: true };
 };
 
 // Aprobar o rechazar, una sola vez: el cambio se condiciona a que siga «enviada» y vigente (dos clics no aprueban dos veces).
@@ -262,7 +266,7 @@ const decide = async (quote, { approve, name, note, via }) => {
     if (fresh && expired(fresh)) throw fail(409, 'La cotización ya venció. Pide a la empresa que te envíe una nueva.');
     throw fail(409, 'La cotización ya tiene una respuesta');
   }
-  return approve ? createOrderFrom(updated) : updated;
+  return approve ? (await createOrderFrom(updated)).quote : updated;
 };
 
 // Aprobación de la oficina (el cliente aprobó por teléfono o en persona).
@@ -287,8 +291,9 @@ const convertQuote = async (req, res) => {
       await Quote.updateOne({ tenant: quote.tenant, _id: quote._id, workOrder: quote.workOrder }, { $set: { workOrder: null } });
       quote.workOrder = null;
     }
-    const done = quote.workOrder ? quote : await createOrderFrom(quote);
-    if (!quote.workOrder && done.workOrder) {
+    // Solo anota la petición que enlazó la orden: con dos «Crear la orden» a la vez, la otra no la creó.
+    const { quote: done, created } = quote.workOrder ? { quote, created: false } : await createOrderFrom(quote);
+    if (created) {
       await audit(req, 'cotizacion.convertir', `Creó la orden de la cotización #${quote.number}`, { entityId: quote._id, meta: { workOrder: String(done.workOrder) } });
     }
     res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id })), req));
@@ -438,17 +443,34 @@ const setPayment = async (req, res) => {
     const p = quote.payment;
     const paid = req.body.status === 'pagado';
     if (paid && p.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
+    // El saldo de un anticipo de prueba no es lo que falta (el anticipo no es plata real): primero se quita el de prueba.
+    if (paid && p.test) throw fail(409, 'El anticipo es un pago de prueba: quítalo con «Marcar por cobrar» antes de registrar el pago');
     if (!paid && p.method === 'wompi' && !p.test && !p.officeAmount && p.status !== 'pendiente') throw fail(409, 'Este pago lo confirmó Wompi: no se cambia a mano');
     const online = p.method === 'wompi' && !p.test ? Math.max(0, (p.amountPaid || 0) - (p.officeAmount || 0)) : 0;   // lo que pagó Wompi
     const set = paid
       ? { 'payment.status': 'pagado', 'payment.amountPaid': quote.total, 'payment.balance': 0, 'payment.officeAmount': quote.total - online, 'payment.method': online ? 'wompi' : 'oficina', 'payment.paidAt': new Date() }
       : { 'payment.status': statusFor(online, quote.total), 'payment.amountPaid': online, 'payment.balance': quote.total - online, 'payment.officeAmount': 0, 'payment.method': online ? 'wompi' : '', ...(online ? {} : { 'payment.paidAt': null }) };
     if (!online) Object.assign(set, { 'payment.test': false, 'payment.methodType': '' });
+    // Si la oficina quita lo suyo y Wompi sí cobró aparte (un pago real que llegó con la cotización ya marcada y quedó
+    // como posible doble cobro), ese pasa a ser el pago: no se devuelve la plata buena ni se le cobra otra vez al cliente.
+    const real = !paid && !online && (p.extra || []).find((e) => e.status === 'APPROVED' && !e.test);
+    if (real) {
+      const amount = Math.min(real.amount, quote.total);
+      Object.assign(set, {
+        'payment.status': statusFor(amount, quote.total), 'payment.amountPaid': amount, 'payment.balance': quote.total - amount,
+        'payment.method': 'wompi', 'payment.methodType': real.methodType || '', 'payment.txId': real.txId, 'payment.txStatus': 'APPROVED',
+        'payment.paidAt': real.at || new Date(),
+      });
+    }
     const same = p.status === 'pendiente' ? UNPAID : { 'payment.status': p.status };    // si Wompi la cambió mientras tanto, no se pisa
-    const done = await Quote.updateOne({ ...companyScope(req), _id: quote._id, ...same }, { $set: set });
+    const done = await Quote.updateOne(
+      { ...companyScope(req), _id: quote._id, ...same, ...(real ? { 'payment.extra': { $elemMatch: { txId: real.txId, status: 'APPROVED' } } } : {}) },
+      { $set: set, ...(real ? { $pull: { 'payment.extra': { txId: real.txId } } } : {}) }
+    );
     if (!done.matchedCount) throw fail(409, 'La cotización cambió mientras tanto. Actualiza la lista.');
-    await audit(req, 'cotizacion.pago', paid && online ? `Registró como pagado el saldo de la cotización #${quote.number}`
-      : `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
+    await audit(req, 'cotizacion.pago', real ? `Quitó el pago que registró la oficina en la cotización #${quote.number}: queda el que cobró Wompi (${real.txId})`
+      : paid && online ? `Registró como pagado el saldo de la cotización #${quote.number}`
+        : `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
     res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo guardar el pago');

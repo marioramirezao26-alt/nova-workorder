@@ -24,10 +24,11 @@
   `payment_details` por medio: tarjeta 48; PSE, transferencia, Nequi o Daviplata 47; lo que registró la oficina,
   efectivo 10; otro medio de Wompi, ZZZ. Si no (por cobrar, con anticipo o con un pago de prueba), a crédito a 30 días
   (`due_date`) por lo que falta, con ZZZ, y el anticipo pagado en `prepayment_details` con la fecha en que se recibió.
-- **Pruebas y producción:** la factura guarda su ambiente. Solo la de producción es definitiva; la de pruebas se le
-  muestra al administrador como «PRUEBA, sin validez fiscal», no la ve el cliente (ni en su enlace ni en su portal) y,
-  cuando la empresa pasa a producción, la cotización se factura de verdad. Se guarda también si la DIAN ya la validó
-  (`is_validated`); si no, se muestra «pendiente de validación en la DIAN».
+- **Pruebas y producción:** la factura guarda su ambiente (las de antes de guardarlo se reconocen por el número: SETP,
+  el prefijo del set de pruebas de la DIAN, es de pruebas; otro prefijo, de producción). Solo la de producción es
+  definitiva; la de pruebas se le muestra al administrador como «PRUEBA, sin validez fiscal», no la ve el cliente (ni
+  en su enlace ni en su portal) y, cuando la empresa pasa a producción, la cotización se factura de verdad. Se guarda
+  también si la DIAN ya la validó (`is_validated`); si no, se muestra «pendiente de validación en la DIAN».
 - **No se factura dos veces:** con la factura de producción no se vuelve a enviar, y la referencia `NWO-COT-<id>` hace
   que Factus devuelva la misma factura si se reintenta. En ese caso la cotización guarda el comprador de la factura que
   devolvió Factus y, si no es el que se pidió, avisa que para cambiarlo hay que anularla con nota crédito. Si Factus o
@@ -46,7 +47,9 @@
   empresa). Solo cotizaciones en pesos (por la moneda de la cotización, no por el idioma que tenga hoy la empresa) y con
   valor. El valor se fija al primer intento. El enlace al checkout va con la firma de integridad, y cada intento lleva
   una referencia distinta (`NWO-<cotización>-<sufijo>`) porque Wompi no repite referencias. Mientras el último intento
-  siga PENDING en Wompi (PSE, Nequi…; menos de 30 minutos) no se ofrece pagar otra vez.
+  siga PENDING en Wompi (PSE, Nequi…; menos de 30 minutos) no se ofrece pagar otra vez; tampoco si el cliente vuelve
+  con un pago aprobado cuyo evento aún no llega (se espera la confirmación), y el rechazo atrasado de un intento
+  anterior no destraba el que sigue en curso.
 - **El pago cambia solo con el evento firmado** de Wompi (`/api/wompi/<empresa>/eventos`, la URL que se pega en el
   panel de Wompi), si la referencia es de esa empresa y el valor y la moneda cuadran. Al volver del checkout la página
   solo muestra lo que dice Wompi («confirmando tu pago…») y vuelve a consultar unas veces: esa consulta es pública y
@@ -57,10 +60,12 @@
   con él (con un anticipo va a crédito, con el anticipo aparte). Un pago aprobado
   que llega con la cotización ya cobrada (dos pestañas, o la oficina ya la había marcado) queda en la cotización y en
   «Actividad» como posible doble cobro para devolver. Si Wompi anula (VOIDED) la transacción que pagó, el pago se
-  devuelve y queda en «Actividad». Un pago con las llaves de pruebas queda marcado «(prueba)», no se factura de
-  contado y la oficina lo puede quitar.
+  devuelve y queda en «Actividad»; un APPROVED repetido o atrasado de esa transacción no la vuelve a cobrar. Un pago
+  con las llaves de pruebas queda marcado «(prueba)», no se factura de contado y la oficina lo puede quitar (un
+  anticipo de prueba se quita antes de registrar el pago: su saldo no es lo que falta).
 - La oficina puede marcarla pagada a mano (efectivo, transferencia), registrar el saldo de un anticipo y quitar lo que
-  registró si fue un error, sin cambiar lo que se cobra en línea; lo que confirmó Wompi no se cambia a mano. Si hay un
+  registró si fue un error, sin cambiar lo que se cobra en línea; lo que confirmó Wompi no se cambia a mano. Si quita
+  su marca y Wompi sí había cobrado aparte (el posible doble cobro), ese pago queda como el de la cotización. Si hay un
   pago de Wompi en proceso, avisa antes de marcarla. El usuario cliente tiene «Pagar en línea» en su portal.
   Cubierto por `test/wompi.test.js`.
 
@@ -78,7 +83,8 @@
   bitácora guarda además la IP y el navegador desde donde se respondió.
 - **Al aprobarse se crea la orden de trabajo** (pendiente, con el cliente y lo cotizado, en el idioma de la empresa),
   una sola vez, y sale el webhook `orden.creada`. El administrador también puede marcarla «Aprobada por teléfono». Si
-  se borra la orden, la cotización queda sin orden y «Crear la orden» la vuelve a crear (queda en «Actividad»).
+  se borra la orden, la cotización queda sin orden y «Crear la orden» la vuelve a crear (queda en «Actividad» una sola
+  vez, aunque se pulse en dos pestañas a la vez).
 - Volver a borrador para corregirla o reenviarla tras un rechazo o vencimiento; el enlace no muestra borradores. Al
   reenviarla sale un enlace nuevo: el anterior (o una página abierta desde antes) ya no la muestra ni la aprueba.
 - El técnico maneja sus cotizaciones; el administrador, todas; un usuario cliente ve las suyas (sin borradores).
@@ -96,11 +102,13 @@
   al abrir el informe.
 - **Firma del cliente** con el dedo en la pantalla, con el nombre de quien recibe. El administrador puede exigirla
   para que el técnico complete la orden («Checklists» → «Pedir la firma del cliente…»). Si el técnico la reemplaza, la
-  anterior se conserva; solo el administrador la borra al reemplazarla. Una firma muy larga se guarda más pequeña y,
-  si aún no cabe (60 KB), se pide firmar más simple.
+  anterior se conserva (hasta 5 firmas guardadas por orden; después la cambia el administrador); al reemplazarla el
+  administrador se borran las anteriores. Una firma muy larga se guarda más pequeña y, si aún no cabe (60 KB), se pide
+  firmar más simple.
 - **No se completa** una orden sin los puntos obligatorios del checklist (ni sin firma, si la empresa la pide), tampoco
   desde «Editar» ni al crear una orden ya completada; la fecha de cierre siempre queda. Una orden completada solo la
-  reabre el administrador: el técnico ya no le cambia fotos ni firma.
+  corrige o la reabre el administrador: el técnico ya no le cambia fotos, firma, notas, hora de cierre ni datos (y no
+  ve «Editar» en ella).
 - **Informe público** en `/informe/<llave>`: el técnico o el administrador lo comparten por WhatsApp o copiando el
   enlace. El cliente lo ve sin cuenta y lo guarda en PDF con «Descargar PDF». Muestra la marca de la empresa, el estado,
   el checklist, las fotos, las notas y la firma; nunca la ubicación del técnico ni datos internos. Solo sirve las fotos y
