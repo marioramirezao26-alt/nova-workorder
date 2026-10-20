@@ -9,6 +9,10 @@ const FILTERS = ['todas', 'borrador', 'enviada', 'aprobada', 'rechazada', 'venci
 const FILTER_LABEL = { todas: 'Todas', borrador: 'Borradores', enviada: 'Enviadas', aprobada: 'Aprobadas', rechazada: 'Rechazadas', vencida: 'Vencidas' };
 const colombiaDay = (offsetDays = 0) => new Date(Date.now() - 5 * 3600000 + offsetDays * 86400000).toISOString().slice(0, 10);
 const newItem = (currency) => ({ description: '', qty: 1, unitPrice: '', taxRate: currency === 'USD' ? 0 : 19 });
+// El estado del último intento en Wompi, en palabras (Wompi lo manda en inglés).
+const TX_LABEL = { PENDING: 'en proceso', APPROVED: 'aprobado', DECLINED: 'rechazado', VOIDED: 'anulado', ERROR: 'con error' };
+const PAY_TAG = { pagado: 'Pagada', anticipo: 'Anticipo' };
+const testMark = (p) => (p?.test ? ` ${t('(prueba)')}` : '');
 
 function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
   const [clients, setClients] = useState([]);
@@ -172,7 +176,13 @@ export default function Quotes({ api, user, go }) {
   const approve = (q) => window.confirm(t('¿El cliente aprobó la cotización #{n} por fuera del enlace (teléfono, en persona)? Se creará la orden de trabajo.', { n: q.number }))
     && act(async () => replace((await api.post(`/quotes/${q._id}/approve`, { note: t('Aprobada por la oficina') })).data), 'No se pudo aprobar la cotización');
   const convert = (q) => act(async () => replace((await api.post(`/quotes/${q._id}/convert`)).data), 'No se pudo crear la orden');
-  const setPaid = (q, paid) => (!paid || window.confirm(t('¿Marcar la cotización #{n} como pagada (efectivo, transferencia)?', { n: q.number })))
+  // Con un intento de Wompi en curso se advierte: si también se aprueba, queda como cobro de más para devolver.
+  const setPaid = (q, paid) => (!paid || window.confirm([
+    q.payment?.txStatus === 'PENDING' ? t('Wompi tiene un pago en proceso de esta cotización: si también se aprueba, quedará como un cobro de más para devolver.') : '',
+    q.payment?.status === 'anticipo'
+      ? t('¿Registrar como pagado el saldo de {balance} de la cotización #{n} (efectivo, transferencia)?', { n: q.number, balance: money(q.payment.balance, q.currency) })
+      : t('¿Marcar la cotización #{n} como pagada (efectivo, transferencia)?', { n: q.number }),
+  ].filter(Boolean).join('\n\n')))
     && act(async () => replace((await api.post(`/quotes/${q._id}/payment`, { status: paid ? 'pagado' : 'pendiente' })).data), 'No se pudo guardar el pago');
   const remove = (q) => window.confirm(t('¿Borrar la cotización #{n}?', { n: q.number }))
     && act(async () => { await api.delete(`/quotes/${q._id}`); setItems((prev) => prev.filter((x) => x._id !== q._id)); }, 'No se pudo borrar la cotización');
@@ -217,7 +227,7 @@ export default function Quotes({ api, user, go }) {
               <button type="button" className="card-button" onClick={() => setSelected(selected === q._id ? null : q._id)}>
                 <div className="order-card-head">
                   <QuoteTag status={q.status} />
-                  {q.status === 'aprobada' && <span className={`status-tag ${q.payment?.status === 'pagado' ? 'q-aprobada' : 'q-vencida'}`}>{t(q.payment?.status === 'pagado' ? 'Pagada' : 'Por cobrar')}</span>}
+                  {q.status === 'aprobada' && <span className={`status-tag ${q.payment?.status === 'pagado' ? 'q-aprobada' : 'q-vencida'}`}>{t(PAY_TAG[q.payment?.status] || 'Por cobrar')}{testMark(q.payment)}</span>}
                   <span className="due">#{q.number} · {t('válida hasta {d}', { d: formatDay(new Date(new Date(q.validUntil).getTime() - 5 * 3600000)) })}</span>
                 </div>
                 <h3>{q.title}</h3>
@@ -242,9 +252,14 @@ export default function Quotes({ api, user, go }) {
                   )}
                   {q.status === 'aprobada' && (
                     <p className="muted">{q.payment?.status === 'pagado'
-                      ? t(q.payment.method === 'wompi' ? 'Pagada con Wompi el {d}' : 'Marcada como pagada el {d}', { d: formatDateTime(q.payment.paidAt) })
-                      : q.payment?.txStatus ? t('Por cobrar · último intento en Wompi: {s}', { s: q.payment.txStatus }) : t('Por cobrar')}</p>
+                      ? t(q.payment.method === 'wompi' && !q.payment.officeAmount ? 'Pagada con Wompi el {d}' : 'Marcada como pagada el {d}', { d: formatDateTime(q.payment.paidAt) })
+                      : q.payment?.status === 'anticipo'
+                        ? t('Anticipo de {paid} recibido · saldo {balance}', { paid: money(q.payment.amountPaid, q.currency), balance: money(q.payment.balance, q.currency) })
+                        : q.payment?.txStatus ? t('Por cobrar · último intento en Wompi: {s}', { s: t(TX_LABEL[q.payment.txStatus] || q.payment.txStatus) }) : t('Por cobrar')}{testMark(q.payment)}</p>
                   )}
+                  {user.role === 'admin' && (q.payment?.extra || []).filter((e) => e.status === 'APPROVED').map((e) => (
+                    <p key={e.txId} className="error">{t('Wompi aprobó otro pago de {amount} ({id}) con la cotización ya cobrada: posible doble cobro. Devuélvelo desde tu panel de Wompi.', { amount: money(e.amount, q.currency), id: e.txId })}{e.test ? ` ${t('(prueba)')}` : ''}</p>
+                  ))}
                   {q.status === 'aprobada' && (invoicing || q.invoice?.cufe) && user.role === 'admin' && <InvoiceBox api={api} quote={q} onDone={replace} />}
                   {q.workOrder && <p><button type="button" className="link-button" onClick={() => go?.('ordenes')}>{t('Orden creada: {title}', { title: q.workOrder.title })}</button></p>}
 
@@ -260,6 +275,9 @@ export default function Quotes({ api, user, go }) {
                   {user.role === 'cliente' && q.publicToken && ['enviada'].includes(q.status) && (
                     <a className="primary-button" href={`/cotizacion/${q.publicToken}`}>{t('Revisar y aprobar')}</a>
                   )}
+                  {user.role === 'cliente' && q.publicToken && q.payment?.online && (
+                    <a className="primary-button" href={`/cotizacion/${q.publicToken}`}>{t('Pagar en línea')}</a>
+                  )}
 
                   {editable(q) && (
                     <div className="order-actions">
@@ -267,8 +285,9 @@ export default function Quotes({ api, user, go }) {
                       {['borrador', 'enviada'].includes(q.status) && <button type="button" className="mini-button edit" disabled={busy} onClick={() => send(q)}>{t(q.status === 'borrador' ? 'Enviar al cliente' : 'Compartir enlace')}</button>}
                       {['enviada', 'vencida', 'rechazada'].includes(q.status) && <button type="button" className="ghost-button" disabled={busy} onClick={() => reopen(q)}>{t('Volver a borrador')}</button>}
                       {user.role === 'admin' && q.status === 'enviada' && <button type="button" className="ghost-button" disabled={busy} onClick={() => approve(q)}>{t('Aprobada por teléfono')}</button>}
-                      {user.role === 'admin' && q.status === 'aprobada' && q.payment?.status !== 'pagado' && <button type="button" className="ghost-button" disabled={busy} onClick={() => setPaid(q, true)}>{t('Marcar pagada')}</button>}
-                      {user.role === 'admin' && q.status === 'aprobada' && q.payment?.status === 'pagado' && q.payment.method !== 'wompi' && <button type="button" className="ghost-button" disabled={busy} onClick={() => setPaid(q, false)}>{t('Marcar por cobrar')}</button>}
+                      {user.role === 'admin' && q.status === 'aprobada' && q.payment?.status !== 'pagado' && <button type="button" className="ghost-button" disabled={busy} onClick={() => setPaid(q, true)}>{t(q.payment?.status === 'anticipo' ? 'Registrar el saldo' : 'Marcar pagada')}</button>}
+                      {/* lo que confirmó Wompi no se quita a mano; lo que registró la oficina o un pago de prueba, sí */}
+                      {user.role === 'admin' && q.status === 'aprobada' && q.payment && q.payment.status !== 'pendiente' && (q.payment.method !== 'wompi' || q.payment.officeAmount > 0 || q.payment.test) && <button type="button" className="ghost-button" disabled={busy} onClick={() => setPaid(q, false)}>{t('Marcar por cobrar')}</button>}
                       {user.role === 'admin' && q.status === 'aprobada' && !q.workOrder && <button type="button" className="mini-button edit" disabled={busy} onClick={() => convert(q)}>{t('Crear la orden')}</button>}
                       {user.role === 'admin' && q.status !== 'aprobada' && <button type="button" className="mini-button delete" disabled={busy} onClick={() => remove(q)}>{t('Eliminar')}</button>}
                     </div>

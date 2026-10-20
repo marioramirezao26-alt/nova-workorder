@@ -25,11 +25,25 @@ export default function PublicQuote({ token }) {
     document.title = `${t('Cotización')} #${d.quote.number} · ${d.company.name}`;
     setData(d);
   };
-  // Al volver del checkout, Wompi agrega ?id=<transacción>: se consulta y se muestra cómo quedó el pago.
+  // Al volver del checkout, Wompi agrega ?id=<transacción>: se muestra lo que dice Wompi de ella (d.tx). El pago lo
+  // confirma su evento firmado, que llega aparte: mientras tanto se vuelve a consultar unas veces.
   const txId = new URLSearchParams(window.location.search).get('id');
+  const statusUrl = txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base;
+  const [tries, setTries] = useState(0);
   const load = (url) => axios.get(url).then(({ data: d }) => show(d))
     .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
-  useEffect(() => { load(txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base); }, [token]);
+  useEffect(() => { load(statusUrl); }, [token]);
+  useEffect(() => {
+    if (!txId || tries >= 6 || data?.quote.payment?.status !== 'pendiente' || !['APPROVED', 'PENDING'].includes(data?.tx?.status)) return undefined;
+    const timer = setTimeout(() => { setTries((n) => n + 1); load(statusUrl); }, 5000);
+    return () => clearTimeout(timer);
+  }, [data]);
+  // Si vuelve con «Atrás» desde el checkout, el navegador restaura la página tal cual: el botón no puede quedar ocupado.
+  useEffect(() => {
+    const restored = (e) => { if (e.persisted) setBusy(false); };
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
 
   const answer = async (approve) => {
     try {
@@ -75,9 +89,11 @@ export default function PublicQuote({ token }) {
       </header>
 
       {quote.status === 'aprobada' && <p className="quote-banner ok">{t('✔ Aprobada por {name} el {d}. La empresa ya tiene tu orden de trabajo.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
-      {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}</p>}
-      {txId && quote.payment?.status !== 'pagado' && ['DECLINED', 'ERROR', 'VOIDED'].includes(quote.payment?.txStatus) && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
-      {txId && quote.payment?.status !== 'pagado' && quote.payment?.txStatus === 'PENDING' && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
+      {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
+      {quote.payment?.status === 'anticipo' && <p className="quote-banner ok">{t('✔ Anticipo de {paid} recibido. El saldo de {balance} se acuerda con la empresa.', { paid: money(quote.payment.amountPaid, cur), balance: money(quote.payment.balance, cur) })}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
+      {quote.payment?.status === 'pendiente' && data.tx?.status === 'APPROVED' && <p className="quote-banner ok">{t('Confirmando tu pago con Wompi… Si no se actualiza en un momento, recarga esta página.')}</p>}
+      {quote.payment?.status === 'pendiente' && ['DECLINED', 'ERROR', 'VOIDED'].includes(data.tx?.status) && !quote.payment.pending && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
+      {quote.payment?.status === 'pendiente' && (data.tx?.status === 'PENDING' || quote.payment.pending) && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
       {quote.invoice?.publicUrl && (
         <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
       )}

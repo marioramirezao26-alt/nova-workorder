@@ -70,10 +70,13 @@ const buildBill = (company, quote, buyer) => {
     const base = Number(it.price) * Number(it.quantity);
     return sum + Math.round(base * (1 + Number(it.taxes[0].rate) / 100) * 100) / 100;
   }, 0);
-  // Pagada: de contado, por el medio con que se pagó. Sin pagar: a crédito, a 30 días.
-  const paid = quote.payment && quote.payment.status === 'pagado';
+  // Pagada del todo: de contado, por el medio con que se pagó (en Wompi: tarjeta 48, consignación en efectivo 10, lo
+  // demás —PSE, Nequi, Bancolombia— transferencia 47). Sin pagar, con solo el anticipo o con un pago de prueba de Wompi:
+  // a crédito, a 30 días.
+  const paid = quote.payment && quote.payment.status === 'pagado' && !quote.payment.test;
+  const wompiCode = { '': '48', CARD: '48', BANCOLOMBIA_COLLECT: '10' }[(quote.payment && quote.payment.methodType) || ''] || '47';
   const payment = paid
-    ? { payment_form: '1', payment_method_code: quote.payment.method === 'wompi' ? '48' : '10' }
+    ? { payment_form: '1', payment_method_code: quote.payment.method === 'wompi' ? wompiCode : '10' }
     : { payment_form: '2', payment_method_code: '10', payment_due_date: colombiaDate(30) };
   return {
     reference_code: `NWO-COT-${quote._id}`,

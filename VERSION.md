@@ -9,8 +9,8 @@
   cifrados y nunca se devuelven. No aplica a empresas en dólares.
 - **El administrador factura una cotización aprobada** desde «Cotizaciones»: a consumidor final o a nombre del cliente
   (NIT con dígito de verificación, cédula, cédula de extranjería o pasaporte). Van los renglones con su precio sin IVA y
-  su tarifa (la DIAN solo acepta 0 %, 5 % y 19 %: otra tarifa no se envía), de contado si ya está pagada o a crédito a
-  30 días si no, y la diferencia de redondeo en `cash_rounding_amount`.
+  su tarifa (la DIAN solo acepta 0 %, 5 % y 19 %: otra tarifa no se envía), de contado si ya está pagada del todo (un
+  pago de prueba de Wompi no cuenta) o a crédito a 30 días si no, y la diferencia de redondeo en `cash_rounding_amount`.
 - **No se factura dos veces:** con CUFE no se vuelve a enviar, y la referencia `NWO-COT-<id>` hace que Factus devuelva
   la misma factura si se reintenta. Si Factus o la DIAN rechazan, el error queda en la cotización para corregir y
   reintentar. El cliente descarga la factura desde el enlace de su cotización. Cubierto por `test/factura.test.js`.
@@ -21,13 +21,25 @@
   `JWT_SECRET`) y nunca salen de la API. Las tres llaves deben ser del mismo ambiente (pruebas o producción). No aplica a
   empresas en dólares.
 - **El cliente paga la cotización aprobada** desde su misma página: el total o un anticipo (30 % a 100 %, lo elige la
-  empresa). El valor se fija al primer intento. El enlace al checkout va con la firma de integridad, y cada intento
-  lleva una referencia distinta (`NWO-<cotización>-<sufijo>`) porque Wompi no repite referencias.
-- **Queda pagada solo cuando Wompi lo confirma:** por el evento firmado (`/api/wompi/<empresa>/eventos`, la URL que se
-  pega en el panel de Wompi) o consultando la transacción cuando el cliente vuelve del checkout. Cuenta solo si la
-  referencia es de esa empresa y el valor y la moneda cuadran; un intento rechazado posterior no la devuelve a pendiente.
-- La oficina puede marcarla pagada a mano (efectivo, transferencia) y devolverla a «por cobrar»; un pago confirmado por
-  Wompi no se cambia a mano. Cubierto por `test/wompi.test.js`.
+  empresa). Solo cotizaciones en pesos (por la moneda de la cotización, no por el idioma que tenga hoy la empresa) y con
+  valor. El valor se fija al primer intento. El enlace al checkout va con la firma de integridad, y cada intento lleva
+  una referencia distinta (`NWO-<cotización>-<sufijo>`) porque Wompi no repite referencias. Mientras el último intento
+  siga PENDING en Wompi (PSE, Nequi…; menos de 30 minutos) no se ofrece pagar otra vez.
+- **El pago cambia solo con el evento firmado** de Wompi (`/api/wompi/<empresa>/eventos`, la URL que se pega en el
+  panel de Wompi), si la referencia es de esa empresa y el valor y la moneda cuadran. Al volver del checkout la página
+  solo muestra lo que dice Wompi («confirmando tu pago…») y vuelve a consultar unas veces: esa consulta es pública y
+  Wompi devuelve transacciones de cualquier comercio, así que nunca marca el pago. Funciona también con las cotizaciones
+  de antes de Wompi, que no tienen el campo del pago.
+- **Estados del pago:** por cobrar, anticipo (se pagó el anticipo; queda el saldo) y pagada, con lo pagado y el saldo.
+  Se guarda el medio de Wompi (tarjeta, PSE, Nequi, Bancolombia…) y la factura va de contado con él. Un pago aprobado
+  que llega con la cotización ya cobrada (dos pestañas, o la oficina ya la había marcado) queda en la cotización y en
+  «Actividad» como posible doble cobro para devolver. Si Wompi anula (VOIDED) la transacción que pagó, el pago se
+  devuelve y queda en «Actividad». Un pago con las llaves de pruebas queda marcado «(prueba)», no se factura de
+  contado y la oficina lo puede quitar.
+- La oficina puede marcarla pagada a mano (efectivo, transferencia), registrar el saldo de un anticipo y quitar lo que
+  registró si fue un error, sin cambiar lo que se cobra en línea; lo que confirmó Wompi no se cambia a mano. Si hay un
+  pago de Wompi en proceso, avisa antes de marcarla. El usuario cliente tiene «Pagar en línea» en su portal.
+  Cubierto por `test/wompi.test.js`.
 
 ### Cotizaciones (Mejora 3, primera parte)
 - **Cotizaciones** (sección nueva para el administrador y los técnicos): cliente, renglones (descripción, cantidad,

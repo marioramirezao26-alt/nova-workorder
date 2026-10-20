@@ -41,15 +41,29 @@ const quoteSchema = new mongoose.Schema(
     decidedVia: { type: String, enum: ['', 'cliente', 'oficina'], default: '' },
     decisionNote: { type: String, default: '', maxlength: 500 },
     workOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrder', default: null },
-    // El cobro de una cotización aprobada: cuánto se cobra (todo o el anticipo, fijado al primer intento), su estado,
-    // la última transacción de Wompi y cómo se pagó (wompi, o «oficina» si la empresa lo marcó a mano).
+    // El cobro de una cotización aprobada: cuánto se cobra en línea (todo o el anticipo, fijado al primer intento), su
+    // estado (pendiente, anticipo: falta el saldo, o pagado), lo pagado y el saldo, cuánto de eso registró la oficina a
+    // mano, cómo se pagó (wompi, o «oficina» si solo lo marcó la empresa) y la última transacción de Wompi.
     payment: {
       due: { type: Number, default: null },
-      status: { type: String, enum: ['pendiente', 'pagado'], default: 'pendiente' },
+      status: { type: String, enum: ['pendiente', 'anticipo', 'pagado'], default: 'pendiente' },
+      amountPaid: { type: Number, default: 0 },
+      balance: { type: Number, default: null },
+      officeAmount: { type: Number, default: 0 },
       method: { type: String, enum: ['', 'wompi', 'oficina'], default: '' },
+      methodType: { type: String, default: '' },                 // el medio en Wompi: CARD, PSE, NEQUI… (para la factura)
+      test: { type: Boolean, default: false },                   // pagado con las llaves de pruebas: no es plata real
       txId: { type: String, default: '' },
       txStatus: { type: String, default: '' },
+      txAt: { type: Date, default: null },                       // cuándo empezó ese intento (para no cobrar dos veces)
       paidAt: { type: Date, default: null },
+      // Pagos aprobados por Wompi que llegaron con la cotización ya cobrada: posible doble cobro para devolver.
+      extra: {
+        type: [new mongoose.Schema({
+          txId: String, amount: Number, status: String, methodType: String, test: Boolean, at: Date,
+        }, { _id: false })],
+        default: [],
+      },
     },
     // Factura electrónica DIAN (Factus): número, CUFE y representación gráfica; o el último error al intentarlo.
     invoice: {
