@@ -17,7 +17,8 @@ const publicUser = (user, company) => ({
   locationConsentAt: user.locationConsentAt || null,
   liveConsentAt: user.liveConsentAt || null,
   company: company ? { _id: company._id, name: company.name, status: company.status, lang: company.lang || 'es', branding: publicBranding(company),
-    locationTracking: Boolean(company.locationTracking), liveTracking: Boolean(company.liveTracking) } : null,
+    locationTracking: Boolean(company.locationTracking), liveTracking: Boolean(company.liveTracking),
+    requireSignature: Boolean(company.requireSignature) } : null,
 });
 
 // El registro público quedó cerrado: cada empresa crea sus usuarios desde «Usuarios», y las empresas nuevas

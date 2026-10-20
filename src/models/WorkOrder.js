@@ -119,6 +119,37 @@ const workOrderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Informe de servicio (Mejora 1): el checklist copiado de una plantilla, las fotos y la firma del cliente.
+    checklistName: { type: String, default: '' },
+    checklist: {
+      type: [{
+        _id: false,
+        label: { type: String, required: true },
+        required: { type: Boolean, default: false },
+        done: { type: Boolean, default: false },
+        note: { type: String, default: '', maxlength: 300 },
+      }],
+      default: [],
+    },
+    attachments: {
+      type: [{
+        file: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrderFile', required: true },
+        kind: { type: String, enum: ['antes', 'despues'], required: true },
+        at: { type: Date, default: Date.now },
+      }],
+      default: [],
+    },
+    // Quién firmó al recibir el servicio (nombre escrito por el cliente) y el archivo con el trazo.
+    signature: {
+      type: {
+        name: String,
+        signedAt: Date,
+        file: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrderFile' },
+      },
+      default: null,
+    },
+    // Llave del enlace público del informe (/informe/<token>): se crea al compartirlo; sin ella no hay informe público.
+    reportToken: { type: String, default: undefined },
   },
   {
     timestamps: true,
@@ -132,6 +163,7 @@ workOrderSchema.index({ tenant: 1, status: 1, createdAt: -1 });
 workOrderSchema.index({ tenant: 1, assignedTo: 1, status: 1 });
 workOrderSchema.index({ tenant: 1, client: 1, createdAt: -1 });
 workOrderSchema.index({ tenant: 1, completedAt: -1 });
+workOrderSchema.index({ reportToken: 1 }, { unique: true, sparse: true });
 
 // Defensa en profundidad: toda consulta de órdenes debe acotar por empresa (tenant) o fallar ruidosamente.
 workOrderSchema.plugin(require('./tenantGuard'));

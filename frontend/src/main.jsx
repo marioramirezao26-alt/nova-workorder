@@ -1,10 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import PublicReport from './views/PublicReport';
 import './styles.css';
+
+// /informe/<llave>: el informe de servicio público, sin sesión.
+const report = window.location.pathname.match(/^\/informe\/([A-Za-z0-9_-]+)\/?$/);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    {report ? <PublicReport token={report[1]} /> : <App />}
   </React.StrictMode>
 );

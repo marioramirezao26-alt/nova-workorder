@@ -37,4 +37,17 @@ router.put('/live-tracking', protect, authorize('admin'), [
   }
 });
 
+// Informe de servicio: exigir la firma del cliente para que el técnico complete una orden.
+router.put('/require-signature', protect, authorize('admin'), [
+  body('enabled').isBoolean().withMessage('Indica si se activa (true) o no (false)'),
+  validateRequest,
+], async (req, res) => {
+  try {
+    const company = await Company.findByIdAndUpdate(req.company._id, { requireSignature: req.body.enabled }, { new: true });
+    res.status(200).json(publicUser(req.user, company));
+  } catch (error) {
+    res.status(500).json({ message: error.message || 'Error al guardar el ajuste' });
+  }
+});
+
 module.exports = router;

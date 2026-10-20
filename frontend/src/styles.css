@@ -997,3 +997,58 @@ p.late { color: #ff9e9e; font-weight: 600; }
 
 /* Integraciones: llaves, secretos y direcciones largas no rompen el ancho del celular. */
 .secret-value { overflow-wrap: anywhere; word-break: break-all; }
+
+/* ---- Informe de servicio (checklist, fotos, firma) ---- */
+.service-report { border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 10px; padding-top: 8px; }
+.service-report > summary { cursor: pointer; font-weight: 600; }
+.service-report .small { font-size: 0.85em; font-weight: 400; }
+.checklist { display: grid; gap: 6px; margin: 10px 0; }
+.check-item { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+.check-item { text-align: left; }
+.check-item input[type='checkbox'] { width: 22px; height: 22px; accent-color: var(--brand); }
+.check-item.done span { opacity: 0.75; }
+.check-item .check-note, .check-item small { grid-column: 2; }
+.req { color: #ffb4a8; }
+.photo-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin: 10px 0; }
+.photo { position: relative; margin: 0; }
+.photo-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; display: block; background: rgba(255, 255, 255, 0.06); }
+.photo-img.placeholder { display: block; }
+.photo figcaption { font-size: 0.75em; opacity: 0.7; }
+.photo-remove { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.6); color: #fff; cursor: pointer; }
+.signature-pad { display: grid; gap: 8px; margin: 10px 0; }
+.signature-canvas { width: 100%; height: 170px; background: #fff; border-radius: 10px; touch-action: none; }
+.signature-box { display: grid; gap: 4px; margin: 10px 0; }
+.signature-img { max-width: 260px; width: 100%; background: #fff; border-radius: 8px; }
+label.switch-row { display: flex; flex-direction: row; justify-content: flex-start; text-align: left; gap: 10px; align-items: center; margin: 0 0 16px; }
+label.switch-row input { width: auto; margin: 0; }
+.checklist-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+.checklist-row .inline { display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.checklist-preview { margin: 6px 0 10px; padding-left: 18px; }
+
+/* El informe público: hoja clara, legible e imprimible (Guardar como PDF). */
+.report-page { max-width: 820px; margin: 0 auto; padding: 24px 16px 48px; background: #fff; color: #17202b; min-height: 100%; }
+.report-page .muted { color: #5b6573; }
+.report-head { display: flex; gap: 16px; align-items: center; border-bottom: 3px solid var(--brand); padding-bottom: 14px; margin-bottom: 18px; }
+.report-head > div { flex: 1; }
+.report-head h1 { margin: 0; font-size: 1.5rem; }
+.report-head .eyebrow { margin: 0; color: var(--brand); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.8rem; font-weight: 700; }
+.report-logo { max-height: 56px; max-width: 140px; object-fit: contain; }
+.report-section { margin-bottom: 20px; break-inside: avoid; }
+.report-section h2 { margin: 0 0 4px; }
+.report-section h3 { margin: 0 0 8px; font-size: 1.05rem; color: #2b3644; }
+.report-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px 16px; margin: 12px 0 0; }
+.report-facts dt { font-size: 0.75rem; text-transform: uppercase; color: #5b6573; }
+.report-facts dd { margin: 0; }
+.report-checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.report-checklist .done span { color: #1a8a4b; }
+.report-checklist .todo { color: #8a5a00; }
+.report-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.report-photos img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; border: 1px solid #e3e7ec; }
+.report-notes { white-space: pre-wrap; }
+.report-signature img { max-width: 280px; width: 100%; border-bottom: 1px solid #17202b; }
+.report-foot { border-top: 1px solid #e3e7ec; padding-top: 10px; text-align: center; }
+@media print {
+  body { background: #fff; }
+  .no-print { display: none !important; }
+  .report-page { padding: 0; max-width: none; }
+}

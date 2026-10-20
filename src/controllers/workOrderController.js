@@ -5,6 +5,8 @@ const { companyScope } = require('../middleware/authMiddleware');
 const { parseLocation, stampPoint, OFFSITE_METERS } = require('../utils/geo');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
+const WorkOrderFile = require('../models/WorkOrderFile');
+const { completionProblem } = require('./serviceReportController');
 
 // Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
 const orderFilter = (req) => {
@@ -226,6 +228,7 @@ const deleteWorkOrder = async (req, res) => {
 
     const title = workOrder.title;
     await workOrder.deleteOne();
+    await WorkOrderFile.deleteMany({ ...companyScope(req), workOrder: workOrder._id });   // sus fotos y su firma
 
     await audit(req, 'orden.borrar', `Borró la orden «${title}»`, { entityId: workOrder._id });
     await webhooks.emit(req.user.tenant, 'orden.borrada', webhooks.orderPayload(workOrder));
@@ -254,6 +257,11 @@ const updateWorkOrderStatus = async (req, res) => {
     }
 
     const { status, note } = req.body;
+    // Informe de servicio: sin los puntos obligatorios del checklist (ni la firma, si la empresa la pide) no se completa.
+    if (status === 'completada' && workOrder.status !== 'completada') {
+      const problem = completionProblem(workOrder, req.company, req.user.role);
+      if (problem) return res.status(409).json({ message: problem });
+    }
     workOrder.status = status;
     if (status === 'en_proceso' && !workOrder.startedAt) workOrder.startedAt = new Date();
     if (status === 'completada') workOrder.completedAt = new Date();

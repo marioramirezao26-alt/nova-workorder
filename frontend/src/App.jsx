@@ -12,6 +12,7 @@ import LiveMap from './views/LiveMap';
 import Activity from './views/Activity';
 import Reports from './views/Reports';
 import Integrations from './views/Integrations';
+import Checklists from './views/Checklists';
 import { applyBrand, logoUrl } from './brand';
 import { getLang, setLang, t, adoptCompanyLang } from './i18n';
 
@@ -27,11 +28,12 @@ const SECTIONS = {
   usuarios: { label: 'Usuarios', icon: '⚙', view: Users },
   reportes: { label: 'Reportes', icon: '▦', view: Reports },
   actividad: { label: 'Actividad', icon: '≋', view: Activity },
+  checklists: { label: 'Checklists', icon: '☑', view: Checklists },
   integraciones: { label: 'Integraciones', icon: '⇄', view: Integrations },
   marca: { label: 'Mi marca', icon: '★', view: Brand },
 };
 const MENU = {
-  admin: ['inicio', 'ordenes', 'mapa', 'clientes', 'usuarios', 'reportes', 'actividad', 'integraciones', 'marca'],
+  admin: ['inicio', 'ordenes', 'mapa', 'clientes', 'checklists', 'usuarios', 'reportes', 'actividad', 'integraciones', 'marca'],
   tecnico: ['mis', 'ordenes', 'clientes', 'inicio'],
   cliente: ['mis'],
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
+import ServiceReport from './ServiceReport';
 import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDateTime, formatDay, isOverdue } from '../ui';
 
 const emptyForm = { title: '', description: '', status: 'pendiente', priority: 'media', client: '', assignedTo: '', dueDate: '', notes: '' };
@@ -158,6 +159,9 @@ export default function Orders({ api, user }) {
                   <p className="muted">{t('Creada por {name}', { name: order.createdBy?.name || '—' })}</p>
                   <Place label={t('Inició')} point={order.startLocation} />
                   <Place label={t('Completó')} point={order.endLocation} />
+                  <ServiceReport api={api} order={order}
+                    editable={order.status !== 'cancelada' && (user.role === 'admin' || (user.role === 'tecnico' && order.status !== 'completada' && order.assignedTo?._id === user._id))}
+                    onChange={(next) => setOrders((prev) => prev.map((o) => (o._id === next._id ? { ...o, ...next, client: o.client, assignedTo: o.assignedTo, createdBy: o.createdBy } : o)))} />
                   {canManage && (
                     <div className="order-actions">
                       <button type="button" className="mini-button edit" onClick={() => openEdit(order)}>{t('Editar')}</button>
