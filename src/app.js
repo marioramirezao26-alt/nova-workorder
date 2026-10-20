@@ -15,6 +15,9 @@ const publicRoutes = require('./routes/publicRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const integrationRoutes = require('./routes/integrationRoutes');
+const v1Routes = require('./routes/v1Routes');
+const webhooks = require('./utils/webhooks');
 
 dotenv.config();
 
@@ -60,6 +63,8 @@ app.use('/api/public', publicRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/integrations', integrationRoutes);
+app.use('/api/v1', v1Routes);                      // API pública con llave de empresa (docs/API.md)
 
 // En producción el mismo proceso sirve la interfaz compilada (frontend/dist): un solo origen, sin CORS.
 const dist = path.join(__dirname, '..', 'frontend', 'dist');
@@ -98,11 +103,13 @@ const startServer = async () => {
     const server = app.listen(PORT, HOST, () => {
       console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
     });
+    webhooks.startWorker();                                     // cola de avisos a los sistemas de cada empresa
 
     // Apagado ordenado (reinicio, despliegue o escalado): deja de recibir, termina lo que está en curso y cierra la base.
     const shutdown = (signal) => {
       console.log(`${signal}: cerrando el servidor…`);
       server.close(async () => {
+        await webhooks.stopWorker().catch(() => {});
         await mongoose.disconnect().catch(() => {});
         process.exit(0);
       });

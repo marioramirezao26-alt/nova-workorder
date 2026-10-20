@@ -39,6 +39,7 @@
   los totales (creadas y completadas) en un rango de fechas, con descarga a CSV (`GET /api/reports/orders.csv`). Las fechas
   se interpretan en hora de Colombia. Cubierto por `test/reporteria.test.js`.
 - **Lista para varias instancias:** los límites (inicio de sesión, chat, demo, visitas) viven en la base con caducidad automática, no en la memoria del proceso; `/api/health` responde 503 si la base no contesta; apagado ordenado con SIGTERM; pool de conexiones ajustable (`MONGO_POOL_SIZE`, 20) e índices compuestos de las consultas de órdenes. Cubierto por `test/escala.test.js`.
+- **Integraciones:** llaves de API por empresa (`/api/v1`, lectura o escritura; solo se guarda su huella) y webhooks firmados (HMAC-SHA256) de órdenes creadas, editadas, con cambio de estado o borradas, con cola en la base y reintentos. Se manejan en «Integraciones»; guía en `docs/API.md`. Cubierto por `test/integraciones.test.js`.
 - **Pruebas automáticas** (`npm test`, MongoDB en memoria) y CI en GitHub.
 - **Migración** de bases 1.0: `npm run migrate`.
 
