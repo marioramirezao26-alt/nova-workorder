@@ -95,7 +95,7 @@ export default function PublicQuote({ token }) {
       {quote.payment?.status === 'pendiente' && ['DECLINED', 'ERROR', 'VOIDED'].includes(data.tx?.status) && !quote.payment.pending && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
       {quote.payment?.status === 'pendiente' && (data.tx?.status === 'PENDING' || quote.payment.pending) && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
       {quote.invoice?.publicUrl && (
-        <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
+        <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })}{quote.invoice.validated === false ? ` (${t('pendiente de validación en la DIAN')})` : ''} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
       )}
       {quote.payment?.online && (
         <section className="report-section quote-decision no-print">
@@ -123,7 +123,7 @@ export default function PublicQuote({ token }) {
           <thead><tr><th>{t('Descripción')}</th><th className="num">{t('Cant.')}</th><th className="num wide">{t('Precio unitario')}</th><th className="num wide">{t(cur === 'USD' ? 'Impuesto' : 'IVA')}</th><th className="num">{t('Valor')}</th></tr></thead>
           <tbody>
             {quote.items.map((i, n) => (
-              <tr key={n}><td>{i.description}</td><td className="num">{i.qty}</td><td className="num wide">{money(i.unitPrice, cur)}</td><td className="num wide">{i.taxRate} %</td><td className="num">{money(i.amount, cur)}</td></tr>
+              <tr key={n}><td>{i.description}</td><td className="num">{i.qty}</td><td className="num wide">{money(i.unitPrice, cur)}</td><td className="num wide">{i.excluded ? t('Excluido') : `${i.taxRate} %`}</td><td className="num">{money(i.amount, cur)}</td></tr>
             ))}
           </tbody>
           <tfoot>

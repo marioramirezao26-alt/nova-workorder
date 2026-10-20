@@ -25,6 +25,8 @@ const reply = (res, error, fallback) => res.status(error.statusCode || 500).json
 const endOfDay = (day) => new Date(`${day}T23:59:59.999-05:00`);
 const defaultValidUntil = () => endOfDay(colombiaDay(new Date(Date.now() + DEFAULT_VALID_DAYS * 86400000)));
 const expired = (q) => q.status === 'enviada' && q.validUntil < new Date();
+// Solo la factura de producción es definitiva; la de pruebas no tiene validez fiscal ni impide facturar en producción.
+const testInvoice = (inv) => Boolean(inv && inv.cufe && inv.env !== 'produccion');
 const shownStatus = (q) => (expired(q) ? 'vencida' : q.status);
 
 // Lo que se cobra en línea (el fijado, o el que se fijaría hoy) y si el cliente puede pagarlo ahora mismo: aprobada, en
@@ -38,10 +40,12 @@ const onlinePayment = (quote, company) => {
 
 // La llave del enlace (con ella se aprueba sin sesión) solo la reciben el administrador, quien armó la cotización y el
 // usuario cliente de la ficha; a otro técnico de la empresa no le llega.
+// Una factura de pruebas (sin validez fiscal) solo la ve el administrador.
 const view = (q, req) => {
   const o = typeof q.toObject === 'function' ? q.toObject() : { ...q };
   const own = ['admin', 'cliente'].includes(req.user.role) || String((o.createdBy && o.createdBy._id) || o.createdBy) === String(req.user._id);
   if (!own) delete o.publicToken;
+  if (testInvoice(o.invoice) && req.user.role !== 'admin') delete o.invoice;
   return { ...o, status: shownStatus(q), expired: expired(q), payment: { ...(o.payment || {}), online: onlinePayment(q, req.company).online } };
 };
 
@@ -80,7 +84,8 @@ const buildItems = (raw, currency) => {
     qty: Math.round(Number(i && i.qty) * 100) / 100,          // dos decimales, y se valida ya redondeada (0,004 queda en 0)
     unitPrice: Number(i && i.unitPrice),
     taxRate: i && i.taxRate !== undefined && i.taxRate !== '' ? Number(i.taxRate) : (currency === 'COP' ? 19 : 0),
-  }));
+    excluded: currency === 'COP' && Boolean(i && i.excluded),   // excluido de IVA: va al 0 %
+  })).map((i) => (i.excluded ? { ...i, taxRate: 0 } : i));
   if (!items.length || items.length > 50) throw fail(400, 'La cotización lleva entre 1 y 50 renglones');
   items.forEach((i, n) => {
     if (!i.description) throw fail(400, `Escribe la descripción del renglón ${n + 1}`);
@@ -314,7 +319,7 @@ const publicView = async (quote, company) => {
       number: quote.number,
       title: quote.title,
       notes: quote.notes,
-      items: quote.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate, amount: i.amount, tax: i.tax })),
+      items: quote.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate, excluded: Boolean(i.excluded), amount: i.amount, tax: i.tax })),
       currency: quote.currency,
       subtotal: quote.subtotal,
       tax: quote.tax,
@@ -325,8 +330,9 @@ const publicView = async (quote, company) => {
       client: client ? { name: client.name, company: client.company || '' } : null,
       decidedAt: quote.decidedAt,
       decidedBy: quote.decidedBy,
-      // La factura electrónica, cuando ya tiene CUFE (para descargarla).
-      invoice: quote.invoice && quote.invoice.cufe ? { number: quote.invoice.number, publicUrl: quote.invoice.publicUrl } : null,
+      // La factura electrónica de producción, cuando ya tiene CUFE (para descargarla); la de pruebas no se muestra.
+      invoice: quote.invoice && quote.invoice.cufe && !testInvoice(quote.invoice)
+        ? { number: quote.invoice.number, publicUrl: quote.invoice.publicUrl, validated: quote.invoice.validated !== false } : null,
       // El cobro: cuánto se cobra en línea, lo pagado y el saldo, si se puede pagar ahora mismo y si hay un intento de
       // Wompi en curso; «test» si se pagó con las llaves de pruebas.
       payment: {
@@ -449,26 +455,41 @@ const setPayment = async (req, res) => {
   }
 };
 
-// Factura electrónica DIAN de una cotización aprobada: a consumidor final o a nombre del cliente (cédula, NIT…). Si ya
-// tiene CUFE no se vuelve a facturar; si falla, queda anotado el error para reintentar (Factus no duplica: misma referencia).
+// Factura electrónica DIAN de una cotización aprobada (en pesos): a consumidor final o a nombre del cliente (cédula,
+// NIT…). Con la de producción no se vuelve a facturar; con una de pruebas tampoco mientras la empresa siga en pruebas,
+// pero al pasar a producción se factura de verdad. Si falla, queda anotado el error para reintentar (Factus no duplica:
+// misma referencia). Si Factus devuelve una factura ya hecha a otro comprador, se guarda la de Factus y se avisa.
 const invoiceQuote = async (req, res) => {
   try {
     const quote = await findQuote(req);
-    if (quote.invoice && quote.invoice.cufe) return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
+    const current = () => populate(Quote.findOne({ ...companyScope(req), _id: quote._id }));
+    if (quote.invoice && quote.invoice.cufe && !testInvoice(quote.invoice)) return res.status(200).json(view(await current(), req));
     if (quote.status !== 'aprobada') throw fail(409, 'Solo se factura una cotización aprobada');
+    if (quote.currency !== 'COP') throw fail(409, 'Solo se facturan ante la DIAN cotizaciones en pesos');
     const company = await Company.findById(req.company._id).select('+factus.clientSecretSealed +factus.passwordSealed');
     if (!factus.connected(company)) throw fail(409, 'Conecta la factura electrónica en «Integraciones» primero');
+    const env = company.factus.env === 'produccion' ? 'produccion' : 'pruebas';
+    if (quote.invoice && quote.invoice.cufe && env === 'pruebas') return res.status(200).json(view(await current(), req));
     const buyer = factus.buyerFrom(req.body.buyer);
+    let notice = '';
     try {
       const result = await factus.emit(company, factus.buildBill(company, quote, buyer));
-      await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { invoice: { ...result, buyerName: buyer.names || buyer.company || '', at: new Date(), error: '' } } });
-      await audit(req, 'cotizacion.factura', `Facturó la cotización #${quote.number} (${result.number})`, { entityId: quote._id, meta: { invoice: result.number } });
+      const buyerName = result.buyerName || buyer.names || buyer.company || '';
+      const buyerId = result.buyerId || buyer.identification;
+      if (buyerId !== buyer.identification) {
+        notice = `Factus ya tenía la factura ${result.number} de esta cotización, a nombre de ${buyerName} (${buyerId}). Para cambiar el comprador hay que anularla con una nota crédito.`;
+      }
+      await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { invoice: {
+        number: result.number, cufe: result.cufe, publicUrl: result.publicUrl, qr: result.qr, env, validated: result.validated,
+        buyerName, buyerId, at: new Date(), error: '',
+      } } });
+      await audit(req, 'cotizacion.factura', `Facturó la cotización #${quote.number} (${result.number}${env === 'pruebas' ? ', de pruebas' : ''})`, { entityId: quote._id, meta: { invoice: result.number, env } });
     } catch (error) {
       if (!(error instanceof factus.FactusError)) throw error;
       await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { 'invoice.error': error.message, 'invoice.at': new Date() } });
       return res.status(502).json({ message: error.message });
     }
-    return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
+    return res.status(200).json({ ...view(await current(), req), ...(notice ? { notice } : {}) });
   } catch (error) {
     return reply(res, error, 'No se pudo facturar la cotización');
   }

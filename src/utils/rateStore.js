@@ -40,11 +40,11 @@ const peek = async (key) => {
 
 const clear = (key) => RateLimit.deleteOne({ _id: key });
 
-// Middleware de límite simple: `max` peticiones por IP cada `windowMs`. Si la base no responde, deja pasar (un límite
-// caído no debe tumbar la app) y lo deja anotado en el log.
-const limiter = ({ name, windowMs, max, onLimit }) => async (req, res, next) => {
+// Middleware de límite simple: `max` peticiones por IP (o por lo que diga `key`) cada `windowMs`. Si la base no responde,
+// deja pasar (un límite caído no debe tumbar la app) y lo deja anotado en el log.
+const limiter = ({ name, windowMs, max, onLimit, key = (req) => req.ip }) => async (req, res, next) => {
   try {
-    if (await hit(`${name}|${req.ip}`, windowMs) > max) return onLimit(req, res);
+    if (await hit(`${name}|${key(req)}`, windowMs) > max) return onLimit(req, res);
   } catch (error) {
     console.error(`Límite ${name} sin base: ${error.message}`);
   }

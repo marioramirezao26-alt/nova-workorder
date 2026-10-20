@@ -155,7 +155,16 @@ router.get('/factus', protect, authorize('admin'), async (req, res) => {
   res.status(200).json(factusView(await Company.findById(req.company._id)));
 });
 
-router.put('/factus', protect, authorize('admin'), wompiLimiter, [
+// Intentos de conectar Factus: su propio cupo y por empresa (no gasta el de Wompi ni el de otra empresa en la misma red).
+const factusLimiter = limiter({
+  name: 'factus-conectar',
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  key: (req) => String(req.company._id),
+  onLimit: (req, res) => res.status(429).json({ message: 'Demasiados intentos. Espera un rato y vuelve a intentarlo.' }),
+});
+
+router.put('/factus', protect, authorize('admin'), factusLimiter, [
   body('env').isIn(['pruebas', 'produccion']).withMessage('Elige pruebas o producción'),
   body('clientId').trim().notEmpty().withMessage('Falta el client_id de Factus').isLength({ max: 120 }),
   body('clientSecret').trim().notEmpty().withMessage('Falta el client_secret de Factus').isLength({ max: 200 }),
@@ -168,8 +177,9 @@ router.put('/factus', protect, authorize('admin'), wompiLimiter, [
     if (req.company.lang === 'en') return res.status(400).json({ message: 'La factura electrónica DIAN es para empresas en Colombia' });
     const company = await Company.findById(req.company._id);
     company.factus = { env: req.body.env, ...factus.sealCredentials(req.body), numberingRangeId: req.body.numberingRangeId, connectedAt: new Date() };
+    factus.forget(company._id);                          // los tokens de antes no prueban nada
     try {
-      await factus.token(company);                       // si no da token, no se guarda nada
+      await factus.token(company, { fresh: true });      // si no da token, no se guarda nada
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
@@ -186,6 +196,7 @@ router.delete('/factus', protect, authorize('admin'), async (req, res) => {
     const company = await Company.findById(req.company._id);
     company.factus = { env: 'pruebas', clientId: '', clientSecretSealed: '', username: '', passwordSealed: '', numberingRangeId: null, connectedAt: null };
     await company.save();
+    factus.forget(company._id);
     await audit(req, 'empresa.factus', 'Desconectó la factura electrónica');
     res.status(200).json(factusView(company));
   } catch (error) {

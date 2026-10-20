@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
-import { Empty, QuoteTag, formatDateTime, formatDay, money, quoteTotals, whatsappLink } from '../ui';
+import { Empty, QuoteTag, formatDateTime, formatDay, money, nitDv, quoteTotals, whatsappLink } from '../ui';
 
 // «Cotizaciones»: se arman en borrador, se envían al cliente con un enlace (WhatsApp o copiado) y el cliente la aprueba
 // o la rechaza sin cuenta. Al aprobarse se crea la orden de trabajo. Un usuario cliente ve aquí las suyas.
@@ -24,7 +24,7 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
 
   const save = async (e) => {
     e.preventDefault();
-    const body = { ...form, items: form.items.map((i) => ({ description: i.description, qty: Number(i.qty), unitPrice: Number(i.unitPrice), taxRate: Number(i.taxRate) })) };
+    const body = { ...form, items: form.items.map((i) => ({ description: i.description, qty: Number(i.qty), unitPrice: Number(i.unitPrice), taxRate: Number(i.taxRate), excluded: Boolean(i.excluded) })) };
     try {
       setBusy(true);
       const { data } = initial?._id ? await api.put(`/quotes/${initial._id}`, body) : await api.post('/quotes', body);
@@ -55,10 +55,13 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
             {currency === 'USD' ? (
               <input type="number" min="0" max="30" step="any" aria-label={t('Impuesto %')} value={item.taxRate} onChange={(e) => setItem(n, { taxRate: e.target.value })} />
             ) : (
-              <select aria-label={t('IVA')} value={item.taxRate} onChange={(e) => setItem(n, { taxRate: e.target.value })}>
+              // al 0 % es exento; «excluido» (art. 476 E.T.) va también al 0 % pero la factura lo marca aparte
+              <select aria-label={t('IVA')} value={item.excluded ? 'excluido' : String(item.taxRate)}
+                onChange={(e) => setItem(n, e.target.value === 'excluido' ? { taxRate: 0, excluded: true } : { taxRate: e.target.value, excluded: false })}>
                 <option value="19">19 %</option>
                 <option value="5">5 %</option>
-                <option value="0">{t('Sin IVA')}</option>
+                <option value="0">{t('0 % (exento)')}</option>
+                <option value="excluido">{t('Excluido de IVA')}</option>
               </select>
             )}
             <button type="button" className="link-button" aria-label={t('Quitar')} disabled={form.items.length === 1} onClick={() => setForm({ ...form, items: form.items.filter((_, k) => k !== n) })}>×</button>
@@ -81,28 +84,63 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
   );
 }
 
-// Facturar una cotización aprobada (solo el administrador, con Factus conectado): a consumidor final o a nombre del cliente.
-function InvoiceBox({ api, quote, onDone }) {
+// El número del comprador. NIT y cédula: solo dígitos (los puntos se quitan); al NIT se le deja el guion para separar el
+// DV si viene pegado («900.123.456-8»). Cédula de extranjería y pasaporte: letras y números.
+const ALPHANUMERIC = ['CE', 'PP'];
+const cleanId = (docType, value) => (ALPHANUMERIC.includes(docType)
+  ? value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  : value.replace(docType === 'NIT' ? /[^\d-]/g : /\D/g, ''));
+const idOk = (docType, value) => (ALPHANUMERIC.includes(docType) ? /^[A-Z0-9]{3,20}$/ : /^\d{5,15}$/).test(value);
+
+// Facturar una cotización aprobada (solo el administrador, con Factus conectado): a consumidor final o a nombre del
+// cliente, después de confirmar. Una factura de pruebas se muestra como tal y, cuando la empresa ya está en producción,
+// se puede facturar de verdad.
+function InvoiceBox({ api, quote, env, onDone }) {
   const [open, setOpen] = useState(false);
-  const [buyer, setBuyer] = useState({ docType: 'NIT', identification: '', dv: '', name: quote.client?.company || quote.client?.name || '', email: quote.client?.email || '' });
+  const [buyer, setBuyer] = useState({ docType: 'NIT', identification: '', dv: '', country: 'CO', name: quote.client?.company || quote.client?.name || '', email: quote.client?.email || '' });
   const [busy, setBusy] = useState(false);
+  const setId = (value) => {
+    const id = cleanId(buyer.docType, value);
+    const withDv = buyer.docType === 'NIT' && /^(\d+)-(\d)$/.exec(id);
+    setBuyer({ ...buyer, identification: withDv ? withDv[1] : id, ...(withDv ? { dv: withDv[2] } : {}) });
+  };
+  const nit = buyer.docType === 'NIT' && idOk('NIT', buyer.identification);
+  const dvBad = nit && buyer.dv !== '' && nitDv(buyer.identification) !== buyer.dv;
   const emit = async (withBuyer) => {
+    const paid = quote.payment?.status === 'pagado' && !quote.payment.test;
+    const who = withBuyer ? `${buyer.name.trim()} (${buyer.docType} ${buyer.identification}${buyer.docType === 'NIT' && buyer.dv ? `-${buyer.dv}` : ''})` : t('consumidor final');
+    const ask = [
+      !withBuyer && buyer.identification ? t('Escribiste el documento {id}, pero la factura saldrá a consumidor final.', { id: buyer.identification }) : '',
+      t('¿Emitir la factura electrónica de la cotización #{n} a {who} por {total}, {form}?', { n: quote.number, who, total: money(quote.total, quote.currency), form: t(paid ? 'de contado' : 'a crédito a 30 días') }),
+      t(env === 'produccion' ? 'Cuando la DIAN la valide, solo se anula con una nota crédito.' : 'Es de pruebas: no tiene validez fiscal.'),
+    ];
+    if (!window.confirm(ask.filter(Boolean).join('\n\n'))) return;
     try {
       setBusy(true);
-      onDone((await api.post(`/quotes/${quote._id}/invoice`, withBuyer ? { buyer } : {})).data);
+      const body = withBuyer ? { buyer: { ...buyer, dv: buyer.docType === 'NIT' ? buyer.dv : '', country: ALPHANUMERIC.includes(buyer.docType) ? buyer.country : 'CO' } } : {};
+      const { data } = await api.post(`/quotes/${quote._id}/invoice`, body);
+      onDone(data);
       setOpen(false);
+      if (data.notice) alert(data.notice);
     } catch (error) {
       alert(errorMessage(error, t('No se pudo facturar la cotización')));
     } finally {
       setBusy(false);
     }
   };
-  if (quote.invoice?.cufe) {
-    return <p className="muted">{t('Factura {n}', { n: quote.invoice.number })}{quote.invoice.buyerName ? ` · ${quote.invoice.buyerName}` : ''} · <a className="inline-link" href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('ver PDF')}</a></p>;
-  }
+  const inv = quote.invoice;
+  const test = Boolean(inv?.cufe) && inv.env !== 'produccion';
+  const made = inv?.cufe ? (
+    <p className="muted">{t('Factura {n}', { n: inv.number })}{inv.buyerName ? ` · ${inv.buyerName}` : ''}
+      {test && <> · <strong className="late">{t('PRUEBA, sin validez fiscal')}</strong></>}
+      {inv.validated === false && ` · ${t('pendiente de validación en la DIAN')}`}
+      {' · '}<a className="inline-link" href={inv.publicUrl} target="_blank" rel="noreferrer">{t('ver PDF')}</a></p>
+  ) : null;
+  if (inv?.cufe && !(test && env === 'produccion')) return made;
   return (
     <div className="invoice-box">
-      {quote.invoice?.error && <p className="muted late">{t('Último intento: {e}', { e: quote.invoice.error })}</p>}
+      {made}
+      {inv?.error && <p className="muted late">{t('Último intento: {e}', { e: inv.error })}</p>}
       {!open ? (
         <div className="order-actions">
           <button type="button" className="mini-button edit" disabled={busy} onClick={() => setOpen(true)}>{t('Facturar (DIAN)')}</button>
@@ -111,17 +149,27 @@ function InvoiceBox({ api, quote, onDone }) {
         <div className="form-grid">
           <div className="grid2">
             <label>{t('Documento')}
-              <select value={buyer.docType} onChange={(e) => setBuyer({ ...buyer, docType: e.target.value })}>
+              <select value={buyer.docType} onChange={(e) => setBuyer({ ...buyer, docType: e.target.value, dv: '', identification: cleanId(e.target.value, buyer.identification) })}>
                 <option value="NIT">NIT</option><option value="CC">{t('Cédula')}</option><option value="CE">{t('Cédula de extranjería')}</option><option value="PP">{t('Pasaporte')}</option>
               </select>
             </label>
-            <label>{t('Número')}<input inputMode="numeric" value={buyer.identification} onChange={(e) => setBuyer({ ...buyer, identification: e.target.value.replace(/\D/g, '') })} /></label>
+            <label>{t('Número')}<input inputMode={ALPHANUMERIC.includes(buyer.docType) ? 'text' : 'numeric'} maxLength={20} value={buyer.identification} onChange={(e) => setId(e.target.value)} /></label>
           </div>
-          {buyer.docType === 'NIT' && <label>{t('Dígito de verificación')}<input inputMode="numeric" maxLength={1} value={buyer.dv} onChange={(e) => setBuyer({ ...buyer, dv: e.target.value.replace(/\D/g, '') })} /></label>}
+          {buyer.identification && !idOk(buyer.docType, buyer.identification) && (
+            <p className="muted small late">{t(ALPHANUMERIC.includes(buyer.docType) ? 'De 3 a 20 letras o números.' : buyer.docType === 'NIT' ? 'De 5 a 15 dígitos, sin el DV (va en su campo).' : 'De 5 a 15 dígitos.')}</p>
+          )}
+          {buyer.docType === 'NIT' && (
+            <label>{t('Dígito de verificación')}<input inputMode="numeric" maxLength={1} value={buyer.dv} onChange={(e) => setBuyer({ ...buyer, dv: e.target.value.replace(/\D/g, '') })} /></label>
+          )}
+          {dvBad && <p className="error">{t('El dígito de verificación no corresponde a ese NIT: revisa el número.')}</p>}
+          {nit && buyer.dv === '' && <p className="muted small">{t('Si lo dejas vacío, Factus lo calcula ({dv}).', { dv: nitDv(buyer.identification) })}</p>}
+          {ALPHANUMERIC.includes(buyer.docType) && (
+            <label>{t('País (código de dos letras)')}<input maxLength={2} value={buyer.country} onChange={(e) => setBuyer({ ...buyer, country: e.target.value.toUpperCase().replace(/[^A-Z]/g, '') })} /></label>
+          )}
           <label>{t('Nombre o razón social')}<input maxLength={120} value={buyer.name} onChange={(e) => setBuyer({ ...buyer, name: e.target.value })} /></label>
           <label>{t('Correo para la factura')}<input type="email" value={buyer.email} onChange={(e) => setBuyer({ ...buyer, email: e.target.value })} /></label>
           <div className="order-actions">
-            <button type="button" className="primary-button" disabled={busy || !buyer.identification || !buyer.name.trim()} onClick={() => emit(true)}>{busy ? t('Facturando…') : t('Facturar a este nombre')}</button>
+            <button type="button" className="primary-button" disabled={busy || !idOk(buyer.docType, buyer.identification) || dvBad || !buyer.name.trim()} onClick={() => emit(true)}>{busy ? t('Facturando…') : t('Facturar a este nombre')}</button>
             <button type="button" className="ghost-button" disabled={busy} onClick={() => emit(false)}>{t('A consumidor final')}</button>
             <button type="button" className="ghost-button" onClick={() => setOpen(false)}>{t('Cancelar')}</button>
           </div>
@@ -140,9 +188,9 @@ export default function Quotes({ api, user, go }) {
   const [form, setForm] = useState(null);
   const [links, setLinks] = useState({});
   const [busy, setBusy] = useState(false);
-  const [invoicing, setInvoicing] = useState(false);
+  const [factusInfo, setFactusInfo] = useState(null);           // conectado y en qué ambiente
   useEffect(() => {
-    if (user.role === 'admin') api.get('/company/factus').then(({ data }) => setInvoicing(Boolean(data.connected))).catch(() => {});
+    if (user.role === 'admin') api.get('/company/factus').then(({ data }) => setFactusInfo(data)).catch(() => {});
   }, []);
 
   const load = async () => {
@@ -209,7 +257,7 @@ export default function Quotes({ api, user, go }) {
       {form && (
         <QuoteForm key={form._id || 'nueva'} api={api} currency={form.currency || currency} onCancel={() => setForm(null)} onSaved={saved}
           initial={form._id ? { _id: form._id, client: form.client?._id || form.client, title: form.title, notes: form.notes, validUntil: new Date(new Date(form.validUntil).getTime() - 5 * 3600000).toISOString().slice(0, 10),
-            items: form.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate })) } : null} />
+            items: form.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate, excluded: Boolean(i.excluded) })) } : null} />
       )}
 
       <div className="segmented-control wrap">
@@ -238,7 +286,7 @@ export default function Quotes({ api, user, go }) {
                   <table className="quote-table">
                     <tbody>
                       {q.items.map((i, n) => (
-                        <tr key={n}><td>{i.qty} × {i.description}</td><td className="num">{money(i.amount, q.currency)}</td></tr>
+                        <tr key={n}><td>{i.qty} × {i.description}{i.excluded ? ` · ${t('excluido de IVA')}` : ''}</td><td className="num">{money(i.amount, q.currency)}</td></tr>
                       ))}
                       <tr className="sum"><td>{t('Subtotal')}</td><td className="num">{money(q.subtotal, q.currency)}</td></tr>
                       <tr className="sum"><td>{t(q.currency === 'USD' ? 'Impuesto' : 'IVA')}</td><td className="num">{money(q.tax, q.currency)}</td></tr>
@@ -260,7 +308,10 @@ export default function Quotes({ api, user, go }) {
                   {user.role === 'admin' && (q.payment?.extra || []).filter((e) => e.status === 'APPROVED').map((e) => (
                     <p key={e.txId} className="error">{t('Wompi aprobó otro pago de {amount} ({id}) con la cotización ya cobrada: posible doble cobro. Devuélvelo desde tu panel de Wompi.', { amount: money(e.amount, q.currency), id: e.txId })}{e.test ? ` ${t('(prueba)')}` : ''}</p>
                   ))}
-                  {q.status === 'aprobada' && (invoicing || q.invoice?.cufe) && user.role === 'admin' && <InvoiceBox api={api} quote={q} onDone={replace} />}
+                  {/* la factura DIAN es en pesos: una cotización en dólares no se factura aquí */}
+                  {q.status === 'aprobada' && q.currency === 'COP' && (factusInfo?.connected || q.invoice?.cufe) && user.role === 'admin' && (
+                    <InvoiceBox api={api} quote={q} env={factusInfo?.connected ? factusInfo.env : ''} onDone={replace} />
+                  )}
                   {q.workOrder && <p><button type="button" className="link-button" onClick={() => go?.('ordenes')}>{t('Orden creada: {title}', { title: q.workOrder.title })}</button></p>}
 
                   {/* solo mientras está enviada: al volver a borrador la llave cambia y ese enlace ya no abre */}

@@ -67,5 +67,13 @@ export const quoteTotals = (items, currency) => {
   return { subtotal: round(subtotal, currency), tax: round(tax, currency), total: round(subtotal + tax, currency) };
 };
 
+// Dígito de verificación de un NIT: el mismo algoritmo de la DIAN (módulo 11) que valida el servidor
+// (src/services/factus.js), para avisar en el formulario antes de facturar.
+export const nitDv = (nit) => {
+  const weights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+  const r = String(nit).replace(/\D/g, '').split('').reverse().reduce((sum, d, k) => sum + Number(d) * weights[k], 0) % 11;
+  return String(r > 1 ? 11 - r : r);
+};
+
 export const QUOTE_STATUS = { borrador: 'Borrador', enviada: 'Enviada', aprobada: 'Aprobada', rechazada: 'Rechazada', vencida: 'Vencida' };
 export const QuoteTag = ({ status }) => <span className={`status-tag q-${status}`}>{t(QUOTE_STATUS[status] || status)}</span>;

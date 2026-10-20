@@ -11,6 +11,7 @@ const itemSchema = new mongoose.Schema(
     qty: { type: Number, required: true, min: 0.01, max: 100000 },
     unitPrice: { type: Number, required: true, min: 0, max: 10000000000 },
     taxRate: { type: Number, default: 0, min: 0, max: 30 },          // IVA (19 %, 5 %…) o impuesto sobre la venta, en %
+    excluded: { type: Boolean, default: false },                       // excluido de IVA (va al 0 %; al 0 % sin marca es exento)
     amount: { type: Number, required: true },                          // cantidad × precio, redondeado
     tax: { type: Number, required: true },
   },
@@ -65,13 +66,18 @@ const quoteSchema = new mongoose.Schema(
         default: [],
       },
     },
-    // Factura electrónica DIAN (Factus): número, CUFE y representación gráfica; o el último error al intentarlo.
+    // Factura electrónica DIAN (Factus): número, CUFE y representación gráfica, el ambiente (solo la de producción es
+    // definitiva: la de pruebas no tiene validez fiscal), si la DIAN ya la validó y el comprador con que quedó en Factus;
+    // o el último error al intentarlo.
     invoice: {
       number: { type: String, default: '' },
       cufe: { type: String, default: '' },
       publicUrl: { type: String, default: '' },
       qr: { type: String, default: '' },
+      env: { type: String, enum: ['', 'pruebas', 'produccion'], default: '' },
+      validated: { type: Boolean, default: true },
       buyerName: { type: String, default: '' },
+      buyerId: { type: String, default: '' },
       at: { type: Date, default: null },
       error: { type: String, default: '' },
     },

@@ -5,15 +5,37 @@
 ### Factura electrónica DIAN con Factus (Mejora 3, tercera parte)
 - **Cada empresa conecta SU cuenta de Factus** (proveedor tecnológico autorizado por la DIAN) en «Integraciones»:
   ambiente (pruebas/habilitación o producción), client_id, client_secret, usuario, contraseña y el id del rango de
-  numeración. Las credenciales se prueban pidiendo un token antes de guardarlas; el secreto y la contraseña quedan
-  cifrados y nunca se devuelven. No aplica a empresas en dólares.
-- **El administrador factura una cotización aprobada** desde «Cotizaciones»: a consumidor final o a nombre del cliente
-  (NIT con dígito de verificación, cédula, cédula de extranjería o pasaporte). Van los renglones con su precio sin IVA y
-  su tarifa (la DIAN solo acepta 0 %, 5 % y 19 %: otra tarifa no se envía), de contado si ya está pagada del todo (un
-  pago de prueba de Wompi no cuenta) o a crédito a 30 días si no, y la diferencia de redondeo en `cash_rounding_amount`.
-- **No se factura dos veces:** con CUFE no se vuelve a enviar, y la referencia `NWO-COT-<id>` hace que Factus devuelva
-  la misma factura si se reintenta. Si Factus o la DIAN rechazan, el error queda en la cotización para corregir y
-  reintentar. El cliente descarga la factura desde el enlace de su cotización. Cubierto por `test/factura.test.js`.
+  numeración. Al conectar o cambiar los datos SIEMPRE se pide un token nuevo antes de guardarlos; el secreto y la
+  contraseña quedan cifrados y nunca se devuelven. No aplica a empresas en dólares. Conectar tiene su propio cupo de
+  intentos por empresa (10 por hora), aparte del de Wompi.
+- **El token** se guarda en memoria por empresa, ambiente y usuario hasta que vence (`expires_in`) y se olvida al
+  conectar, cambiar los datos o desconectar. Si Factus responde 401 al facturar, se pide otro y se reintenta una vez;
+  si sigue, el error dice que Factus no aceptó la sesión (no que la DIAN rechazó la factura).
+- **El administrador factura una cotización aprobada en pesos** desde «Cotizaciones», con confirmación (a quién, por
+  cuánto, de contado o a crédito): a consumidor final o a nombre del cliente. NIT sin DV ni guion (si se pega
+  «900.123.456-8», el formulario separa el DV); el DV es opcional (Factus lo calcula) y, si se escribe, se valida con el
+  algoritmo de la DIAN en el formulario y en el servidor. Al cambiar el tipo de documento se limpia el DV, y el DV
+  solo se envía con NIT. Cédula de extranjería y pasaporte aceptan letras, con el país del comprador (CO por defecto).
+- **Los renglones** van con su precio unitario sin IVA y su tarifa (la DIAN solo acepta 0 %, 5 % y 19 %: otra tarifa
+  no se envía). Un renglón se puede marcar «Excluido de IVA» (va al 0 % con `is_excluded: true`); al 0 % sin marca es
+  exento. La diferencia de redondeo va en `cash_rounding_amount`; si pasa de ±500 (el límite de Factus) la factura no
+  se envía y se explica por qué.
+- **Forma y medio de pago:** de contado solo si está pagada del todo y no es un pago de prueba, con un renglón de
+  `payment_details` por medio: tarjeta 48; PSE, transferencia, Nequi o Daviplata 47; lo que registró la oficina,
+  efectivo 10; otro medio de Wompi, ZZZ. Si no (por cobrar, con anticipo o con un pago de prueba), a crédito a 30 días
+  (`due_date`) por lo que falta, con ZZZ, y el anticipo pagado en `prepayment_details` con la fecha en que se recibió.
+- **Pruebas y producción:** la factura guarda su ambiente. Solo la de producción es definitiva; la de pruebas se le
+  muestra al administrador como «PRUEBA, sin validez fiscal», no la ve el cliente (ni en su enlace ni en su portal) y,
+  cuando la empresa pasa a producción, la cotización se factura de verdad. Se guarda también si la DIAN ya la validó
+  (`is_validated`); si no, se muestra «pendiente de validación en la DIAN».
+- **No se factura dos veces:** con la factura de producción no se vuelve a enviar, y la referencia `NWO-COT-<id>` hace
+  que Factus devuelva la misma factura si se reintenta. En ese caso la cotización guarda el comprador de la factura que
+  devolvió Factus y, si no es el que se pidió, avisa que para cambiarlo hay que anularla con nota crédito. Si Factus o
+  la DIAN rechazan, el error queda en la cotización para corregir y reintentar. El cliente descarga la factura desde el
+  enlace de su cotización. Cubierto por `test/factura.test.js`.
+- **Caso abierto:** si Factus responde 409 (quedó una factura pendiente de envío a la DIAN con esa referencia), la app
+  lo explica y no hace nada más. La salida es borrarla en Factus (DELETE por referencia) y volver a facturar; no se
+  automatizó porque no se ha probado contra Factus.
 
 ### Cobro con Wompi (Mejora 3, segunda parte)
 - **Cada empresa conecta SU cuenta de Wompi** en «Integraciones» (solo el administrador). La llave pública se comprueba
@@ -31,7 +53,8 @@
   Wompi devuelve transacciones de cualquier comercio, así que nunca marca el pago. Funciona también con las cotizaciones
   de antes de Wompi, que no tienen el campo del pago.
 - **Estados del pago:** por cobrar, anticipo (se pagó el anticipo; queda el saldo) y pagada, con lo pagado y el saldo.
-  Se guarda el medio de Wompi (tarjeta, PSE, Nequi, Bancolombia…) y la factura va de contado con él. Un pago aprobado
+  Se guarda el medio de Wompi (tarjeta, PSE, Nequi, Bancolombia…) y la factura de una pagada del todo va de contado
+  con él (con un anticipo va a crédito, con el anticipo aparte). Un pago aprobado
   que llega con la cotización ya cobrada (dos pestañas, o la oficina ya la había marcado) queda en la cotización y en
   «Actividad» como posible doble cobro para devolver. Si Wompi anula (VOIDED) la transacción que pagó, el pago se
   devuelve y queda en «Actividad». Un pago con las llaves de pruebas queda marcado «(prueba)», no se factura de
@@ -43,7 +66,7 @@
 
 ### Cotizaciones (Mejora 3, primera parte)
 - **Cotizaciones** (sección nueva para el administrador y los técnicos): cliente, renglones (descripción, cantidad,
-  precio unitario e IVA 19 %, 5 % o sin IVA; en las empresas de Estados Unidos, dólares con centavos y un impuesto en %),
+  precio unitario e IVA 19 %, 5 %, 0 % (exento) o excluido; en las empresas de Estados Unidos, dólares con centavos y un impuesto en %),
   condiciones y fecha de validez (15 días por defecto, hasta el final de ese día en Colombia). El servidor calcula los
   totales; nunca usa los que mande el navegador. Redondeo comercial sin errores de punto flotante (85 × 9,5 % da 8,08
   dólares), igual en la vista previa; el impuesto en dólares admite tres decimales (8,875 %). Numeradas por empresa
