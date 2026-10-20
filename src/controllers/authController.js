@@ -43,12 +43,12 @@ const loginUser = async (req, res) => {
     const ok = user ? await user.matchPassword(String(password)) : (await bcrypt.compare(String(password), DUMMY_HASH), false);
 
     if (!user || !ok) {
-      recordFailure(req);
+      await recordFailure(req);
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
     if (!user.active) {
-      recordFailure(req);
+      await recordFailure(req);
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
@@ -62,7 +62,7 @@ const loginUser = async (req, res) => {
       return res.status(402).json({ message: 'La cuenta de tu empresa está suspendida. Escríbenos para reactivarla.' });
     }
 
-    clearFailures(req);
+    await clearFailures(req);
     res.status(200).json({ ...publicUser(user, company), token: generateToken(user._id, user.tokenVersion) });
   } catch (error) {
     res.status(500).json({

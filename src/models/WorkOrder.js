@@ -37,7 +37,6 @@ const workOrderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Company',
       required: [true, 'La empresa es obligatoria'],
-      index: true,
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
@@ -125,6 +124,14 @@ const workOrderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Índices de las consultas reales (todas empiezan por la empresa): listados por estado y fecha, «mis órdenes» del
+// técnico, las órdenes de un cliente, el mapa en vivo y los reportes por fecha de cierre.
+workOrderSchema.index({ tenant: 1, createdAt: -1 });
+workOrderSchema.index({ tenant: 1, status: 1, createdAt: -1 });
+workOrderSchema.index({ tenant: 1, assignedTo: 1, status: 1 });
+workOrderSchema.index({ tenant: 1, client: 1, createdAt: -1 });
+workOrderSchema.index({ tenant: 1, completedAt: -1 });
 
 // Defensa en profundidad: toda consulta de órdenes debe acotar por empresa (tenant) o fallar ruidosamente.
 workOrderSchema.plugin(require('./tenantGuard'));

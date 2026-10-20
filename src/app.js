@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
@@ -36,10 +37,16 @@ app.use((req, res, next) => {
 app.use('/api/company/branding', express.json({ limit: '500kb' }));
 app.use(express.json({ limit: '100kb' }));
 
-app.get('/api/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    message: 'NOVAWORKORDER Servicios funcionando correctamente',
+// Salud honesta: responde 200 solo si la base contesta; si no, 503, para que el balanceador saque esta instancia.
+app.get('/api/health', async (req, res) => {
+  let db = false;
+  if (mongoose.connection.readyState === 1) {
+    db = await mongoose.connection.db.admin().ping().then(() => true, () => false);
+  }
+  res.status(db ? 200 : 503).json({
+    status: db ? 'ok' : 'degradado',
+    db: db ? 'ok' : 'sin conexión',
+    message: db ? 'NOVAWORKORDER Servicios funcionando correctamente' : 'La base de datos no responde',
   });
 });
 
@@ -88,9 +95,21 @@ const startServer = async () => {
     const PORT = process.env.PORT || 5000;
     const HOST = process.env.HOST || '0.0.0.0';             // en el servidor: 127.0.0.1 (lo publica Caddy)
 
-    app.listen(PORT, HOST, () => {
+    const server = app.listen(PORT, HOST, () => {
       console.log(`Servidor corriendo en http://${HOST}:${PORT}`);
     });
+
+    // Apagado ordenado (reinicio, despliegue o escalado): deja de recibir, termina lo que está en curso y cierra la base.
+    const shutdown = (signal) => {
+      console.log(`${signal}: cerrando el servidor…`);
+      server.close(async () => {
+        await mongoose.disconnect().catch(() => {});
+        process.exit(0);
+      });
+      setTimeout(() => process.exit(1), 10000).unref();          // si algo se queda colgado, sale a los 10 s
+    };
+    process.once('SIGTERM', () => shutdown('SIGTERM'));
+    process.once('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
     console.error('No se pudo iniciar el servidor:', error.message);
     process.exit(1);
