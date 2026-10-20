@@ -27,10 +27,9 @@ export default function PublicQuote({ token }) {
   };
   // Al volver del checkout, Wompi agrega ?id=<transacción>: se consulta y se muestra cómo quedó el pago.
   const txId = new URLSearchParams(window.location.search).get('id');
-  useEffect(() => {
-    axios.get(txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base).then(({ data: d }) => show(d))
-      .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
-  }, [token]);
+  const load = (url) => axios.get(url).then(({ data: d }) => show(d))
+    .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
+  useEffect(() => { load(txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base); }, [token]);
 
   const answer = async (approve) => {
     try {
@@ -39,6 +38,9 @@ export default function PublicQuote({ token }) {
       show(d);
     } catch (err) {
       alert(t(err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'No se pudo registrar tu respuesta'));
+      // Ya tenía respuesta, venció, la volvieron a borrador o falló a medias: se muestra cómo quedó de verdad.
+      const status = err.response?.status;
+      if (status === 404 || status === 409 || status >= 500) load(base);
     } finally {
       setBusy(false);
     }

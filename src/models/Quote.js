@@ -31,7 +31,8 @@ const quoteSchema = new mongoose.Schema(
     total: { type: Number, required: true },
     validUntil: { type: Date, required: true },
     status: { type: String, enum: STATUSES, default: 'borrador' },
-    // Llave del enlace público: se crea al enviarla por primera vez y luego es siempre la misma.
+    // Llave del enlace público: se crea al enviarla y se mantiene mientras siga enviada. Al volver a borrador se borra y
+    // al reenviarla sale otra: el enlace anterior deja de servir.
     publicToken: { type: String, default: undefined },
     sentAt: { type: Date, default: null },
     // La decisión: cuándo, quién (el nombre que escribió el cliente o el usuario de la oficina), por dónde y su nota.

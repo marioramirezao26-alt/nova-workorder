@@ -51,7 +51,11 @@ export const money = (value, currency = 'COP') => new Intl.NumberFormat(currency
 }).format(Number(value) || 0);
 
 // Los mismos totales que calcula el servidor (cada renglón redondeado y luego sumado), para verlos mientras se escribe.
-const round = (v, currency) => (currency === 'USD' ? Math.round((Number(v) + Number.EPSILON) * 100) / 100 : Math.round(Number(v)));
+// El mismo redondeo de src/utils/money.js: sin el ruido del punto flotante (85 × 9,5 % = 8,08, no 8,07).
+const round = (v, currency) => {
+  const scale = currency === 'USD' ? 100 : 1;
+  return Math.round(Number((Number(v) * scale).toPrecision(15))) / scale;
+};
 export const quoteTotals = (items, currency) => {
   let subtotal = 0;
   let tax = 0;

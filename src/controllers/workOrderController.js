@@ -6,6 +6,7 @@ const { parseLocation, stampPoint, OFFSITE_METERS } = require('../utils/geo');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
 const WorkOrderFile = require('../models/WorkOrderFile');
+const Quote = require('../models/Quote');
 // Lo que ve cada rol (orderFilter): las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
 const { completionProblem, orderFilter, timeZoneOf } = require('./serviceReportController');
 
@@ -253,6 +254,8 @@ const deleteWorkOrder = async (req, res) => {
     const title = workOrder.title;
     await workOrder.deleteOne();
     await WorkOrderFile.deleteMany({ ...companyScope(req), workOrder: workOrder._id });   // sus fotos y su firma
+    // La cotización de la que salió queda sin orden: «Crear la orden» la vuelve a crear.
+    if (workOrder.quote) await Quote.updateOne({ ...companyScope(req), _id: workOrder.quote, workOrder: workOrder._id }, { $set: { workOrder: null } });
 
     await audit(req, 'orden.borrar', `Borró la orden «${title}»`, { entityId: workOrder._id });
     await webhooks.emit(req.user.tenant, 'orden.borrada', webhooks.orderPayload(workOrder));

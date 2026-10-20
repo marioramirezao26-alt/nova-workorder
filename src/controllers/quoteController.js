@@ -27,8 +27,12 @@ const defaultValidUntil = () => endOfDay(colombiaDay(new Date(Date.now() + DEFAU
 const expired = (q) => q.status === 'enviada' && q.validUntil < new Date();
 const shownStatus = (q) => (expired(q) ? 'vencida' : q.status);
 
-const view = (q) => {
+// La llave del enlace (con ella se aprueba sin sesión) solo la reciben el administrador, quien armó la cotización y el
+// usuario cliente de la ficha; a otro técnico de la empresa no le llega.
+const view = (q, req) => {
   const o = typeof q.toObject === 'function' ? q.toObject() : { ...q };
+  const own = ['admin', 'cliente'].includes(req.user.role) || String((o.createdBy && o.createdBy._id) || o.createdBy) === String(req.user._id);
+  if (!own) delete o.publicToken;
   return { ...o, status: shownStatus(q), expired: expired(q) };
 };
 
@@ -64,17 +68,16 @@ const findOwn = async (req) => {
 const buildItems = (raw, currency) => {
   const items = (Array.isArray(raw) ? raw : []).map((i) => ({
     description: String((i && i.description) || '').trim().slice(0, 200),
-    qty: Number(i && i.qty),
+    qty: Math.round(Number(i && i.qty) * 100) / 100,          // dos decimales, y se valida ya redondeada (0,004 queda en 0)
     unitPrice: Number(i && i.unitPrice),
     taxRate: i && i.taxRate !== undefined && i.taxRate !== '' ? Number(i.taxRate) : (currency === 'COP' ? 19 : 0),
   }));
   if (!items.length || items.length > 50) throw fail(400, 'La cotización lleva entre 1 y 50 renglones');
   items.forEach((i, n) => {
     if (!i.description) throw fail(400, `Escribe la descripción del renglón ${n + 1}`);
-    if (!(Number.isFinite(i.qty) && i.qty > 0 && i.qty <= 100000)) throw fail(400, `Cantidad inválida en el renglón ${n + 1}`);
+    if (!(Number.isFinite(i.qty) && i.qty >= 0.01 && i.qty <= 100000)) throw fail(400, `Cantidad inválida en el renglón ${n + 1}`);
     if (!(Number.isFinite(i.unitPrice) && i.unitPrice >= 0 && i.unitPrice <= 10000000000)) throw fail(400, `Precio inválido en el renglón ${n + 1}`);
     if (!(Number.isFinite(i.taxRate) && i.taxRate >= 0 && i.taxRate <= 30)) throw fail(400, `Impuesto inválido en el renglón ${n + 1}`);
-    i.qty = Math.round(i.qty * 100) / 100;
   });
   const t = totals(items, currency);
   return { items: t.lines, subtotal: t.subtotal, tax: t.tax, total: t.total };
@@ -99,7 +102,7 @@ const listQuotes = async (req, res) => {
       filter.$or = [{ title: rx }, ...(/^#?\d+$/.test(q) ? [{ number: Number(q.replace('#', '')) }] : [])];
     }
     const items = await populate(Quote.find(filter).sort({ createdAt: -1 }).limit(Math.min(Number(req.query.limit) || 50, 200)));
-    res.status(200).json({ items: items.map(view) });
+    res.status(200).json({ items: items.map((q) => view(q, req)) });
   } catch (error) {
     reply(res, error, 'No se pudieron cargar las cotizaciones');
   }
@@ -108,7 +111,7 @@ const listQuotes = async (req, res) => {
 const getQuote = async (req, res) => {
   try {
     const quote = await findQuote(req);
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo cargar la cotización');
   }
@@ -132,7 +135,7 @@ const createQuote = async (req, res) => {
       createdBy: req.user._id,
     });
     await audit(req, 'cotizacion.crear', `Creó la cotización #${quote.number} «${quote.title}»`, { entityId: quote._id });
-    res.status(201).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(201).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo crear la cotización');
   }
@@ -150,7 +153,7 @@ const updateQuote = async (req, res) => {
     if (req.body.items !== undefined) Object.assign(quote, buildItems(req.body.items, quote.currency));
     await quote.save();
     await audit(req, 'cotizacion.editar', `Editó la cotización #${quote.number}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo guardar la cotización');
   }
@@ -181,38 +184,42 @@ const sendQuote = async (req, res) => {
       await audit(req, 'cotizacion.enviar', `Envió la cotización #${quote.number}`, { entityId: quote._id });
     }
     await quote.save();
-    res.status(200).json({ path: `/cotizacion/${quote.publicToken}`, quote: view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))) });
+    res.status(200).json({ path: `/cotizacion/${quote.publicToken}`, quote: view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req) });
   } catch (error) {
     reply(res, error, 'No se pudo enviar la cotización');
   }
 };
 
-// Volver a borrador (para corregirla o reenviarla después de un rechazo o de vencerse).
+// Volver a borrador (para corregirla o reenviarla después de un rechazo o de vencerse). La llave se borra: al reenviarla
+// sale otra, y el enlace anterior (o una página abierta desde antes) ya no la muestra ni la aprueba con lo que cambió.
 const reopenQuote = async (req, res) => {
   try {
     const quote = await findOwn(req);
     if (!['enviada', 'rechazada'].includes(quote.status)) throw fail(409, 'Solo una cotización enviada o rechazada vuelve a borrador');
     const updated = await Quote.findOneAndUpdate(
       { ...companyScope(req), _id: quote._id, status: quote.status },
-      { $set: { status: 'borrador', decidedAt: null, decidedBy: '', decidedVia: '', decisionNote: '' } },
+      { $set: { status: 'borrador', decidedAt: null, decidedBy: '', decidedVia: '', decisionNote: '' }, $unset: { publicToken: 1 } },
       { new: true }
     );
     if (!updated) throw fail(409, 'La cotización cambió mientras tanto. Actualiza la lista.');
     await audit(req, 'cotizacion.reabrir', `Volvió a borrador la cotización #${quote.number}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo volver a borrador');
   }
 };
 
-// La orden de trabajo que sale de una cotización aprobada (una sola: si ya existe, no se crea otra).
+// La orden de trabajo que sale de una cotización aprobada (una sola: si ya existe, no se crea otra), con el título en el
+// idioma de la empresa (lo ven el técnico, los reportes y el webhook).
 const createOrderFrom = async (quote) => {
   const client = await Client.findOne({ tenant: quote.tenant, _id: quote.client });
+  const company = await Company.findById(quote.tenant).select('lang');
+  const en = Boolean(company && company.lang === 'en');
   const lines = quote.items.map((i) => `- ${i.qty} × ${i.description}`).join('\n');
   const order = await WorkOrder.create({
     tenant: quote.tenant,
-    title: `Cotización #${quote.number}: ${quote.title}`.slice(0, 200),
-    description: `Trabajo aprobado en la cotización #${quote.number}.\n${lines}`.slice(0, 2000),
+    title: `${en ? 'Quote' : 'Cotización'} #${quote.number}: ${quote.title}`.slice(0, 200),
+    description: `${en ? `Work approved in quote #${quote.number}.` : `Trabajo aprobado en la cotización #${quote.number}.`}\n${lines}`.slice(0, 2000),
     status: 'pendiente',
     priority: 'media',
     client: client ? client._id : null,
@@ -250,19 +257,27 @@ const approveQuote = async (req, res) => {
     const quote = await findOwn(req);
     const done = await decide(quote, { approve: true, name: req.user.name, note: req.body.note, via: 'oficina' });
     await audit(req, 'cotizacion.aprobar', `Marcó como aprobada la cotización #${quote.number}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo aprobar la cotización');
   }
 };
 
-// Si la orden no se alcanzó a crear al aprobar (un fallo de la base), se crea aquí.
+// Si la orden no se alcanzó a crear al aprobar (un fallo de la base) o se borró después, se crea aquí.
 const convertQuote = async (req, res) => {
   try {
     const quote = await findOwn(req);
     if (quote.status !== 'aprobada') throw fail(409, 'Solo una cotización aprobada se convierte en orden');
+    if (quote.workOrder && !(await WorkOrder.exists({ tenant: quote.tenant, _id: quote.workOrder }))) {
+      // la orden enlazada ya no existe (se borró sin desligarla): se desliga y se crea otra
+      await Quote.updateOne({ tenant: quote.tenant, _id: quote._id, workOrder: quote.workOrder }, { $set: { workOrder: null } });
+      quote.workOrder = null;
+    }
     const done = quote.workOrder ? quote : await createOrderFrom(quote);
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id }))));
+    if (!quote.workOrder && done.workOrder) {
+      await audit(req, 'cotizacion.convertir', `Creó la orden de la cotización #${quote.number}`, { entityId: quote._id, meta: { workOrder: String(done.workOrder) } });
+    }
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo crear la orden');
   }
@@ -335,6 +350,8 @@ const publicDecision = (approve) => async (req, res) => {
       await AuditLog.create({
         tenant: quote.tenant, user: null, userName: `Cliente: ${name}`, action: approve ? 'cotizacion.aprobada' : 'cotizacion.rechazada',
         summary: `${name} ${approve ? 'aprobó' : 'rechazó'} la cotización #${quote.number} desde el enlace`, entityId: quote._id,
+        // el nombre lo escribe quien tenga el enlace: la IP y el navegador quedan como constancia de dónde vino
+        meta: { ip: req.ip || '', userAgent: String(req.get('user-agent') || '').slice(0, 300) },
       });
     } catch {
       // la bitácora es secundaria
@@ -394,7 +411,7 @@ const setPayment = async (req, res) => {
       ...(paid && !(quote.payment && quote.payment.due) ? { 'payment.due': quote.total } : {}),
     } });
     await audit(req, 'cotizacion.pago', `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo guardar el pago');
   }
@@ -405,7 +422,7 @@ const setPayment = async (req, res) => {
 const invoiceQuote = async (req, res) => {
   try {
     const quote = await findQuote(req);
-    if (quote.invoice && quote.invoice.cufe) return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    if (quote.invoice && quote.invoice.cufe) return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
     if (quote.status !== 'aprobada') throw fail(409, 'Solo se factura una cotización aprobada');
     const company = await Company.findById(req.company._id).select('+factus.clientSecretSealed +factus.passwordSealed');
     if (!factus.connected(company)) throw fail(409, 'Conecta la factura electrónica en «Integraciones» primero');
@@ -419,7 +436,7 @@ const invoiceQuote = async (req, res) => {
       await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { 'invoice.error': error.message, 'invoice.at': new Date() } });
       return res.status(502).json({ message: error.message });
     }
-    return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     return reply(res, error, 'No se pudo facturar la cotización');
   }

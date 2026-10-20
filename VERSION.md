@@ -33,13 +33,19 @@
 - **Cotizaciones** (sección nueva para el administrador y los técnicos): cliente, renglones (descripción, cantidad,
   precio unitario e IVA 19 %, 5 % o sin IVA; en las empresas de Estados Unidos, dólares con centavos y un impuesto en %),
   condiciones y fecha de validez (15 días por defecto, hasta el final de ese día en Colombia). El servidor calcula los
-  totales; nunca usa los que mande el navegador. Numeradas por empresa (#1, #2…).
-- **Enviar:** pasa a «enviada» y da un enlace (`/cotizacion/<llave>`) para mandarlo por WhatsApp o copiarlo.
+  totales; nunca usa los que mande el navegador. Redondeo comercial sin errores de punto flotante (85 × 9,5 % da 8,08
+  dólares), igual en la vista previa; el impuesto en dólares admite tres decimales (8,875 %). Numeradas por empresa
+  (#1, #2…).
+- **Enviar:** pasa a «enviada» y da un enlace (`/cotizacion/<llave>`) para mandarlo por WhatsApp o copiarlo. La llave
+  solo la reciben el administrador, quien armó la cotización y el usuario cliente de la ficha (otro técnico no).
 - **El cliente la aprueba sin cuenta** escribiendo su nombre y marcando que acepta, o la rechaza con un motivo
-  opcional. Una sola respuesta (dos clics no aprueban dos veces) y nunca después de vencida. Queda en «Actividad».
-- **Al aprobarse se crea la orden de trabajo** (pendiente, con el cliente y lo cotizado), una sola vez, y sale el
-  webhook `orden.creada`. El administrador también puede marcarla «Aprobada por teléfono».
-- Volver a borrador para corregirla o reenviarla tras un rechazo o vencimiento; el enlace no muestra borradores.
+  opcional. Una sola respuesta (dos clics no aprueban dos veces) y nunca después de vencida. Queda en «Actividad»; la
+  bitácora guarda además la IP y el navegador desde donde se respondió.
+- **Al aprobarse se crea la orden de trabajo** (pendiente, con el cliente y lo cotizado, en el idioma de la empresa),
+  una sola vez, y sale el webhook `orden.creada`. El administrador también puede marcarla «Aprobada por teléfono». Si
+  se borra la orden, la cotización queda sin orden y «Crear la orden» la vuelve a crear (queda en «Actividad»).
+- Volver a borrador para corregirla o reenviarla tras un rechazo o vencimiento; el enlace no muestra borradores. Al
+  reenviarla sale un enlace nuevo: el anterior (o una página abierta desde antes) ya no la muestra ni la aprueba.
 - El técnico maneja sus cotizaciones; el administrador, todas; un usuario cliente ve las suyas (sin borradores).
   Cubierto por `test/cotizaciones.test.js`.
 

@@ -45,11 +45,11 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
         <div className="quote-line head"><span>{t('Descripción')}</span><span>{t('Cant.')}</span><span>{t('Precio unitario')}</span><span>{t(currency === 'USD' ? 'Impuesto %' : 'IVA')}</span><span /></div>
         {form.items.map((item, n) => (
           <div key={n} className="quote-line">
-            <input required maxLength={200} aria-label={t('Descripción')} value={item.description} onChange={(e) => setItem(n, { description: e.target.value })} />
+            <input required maxLength={200} aria-label={t('Descripción')} placeholder={t('Descripción')} value={item.description} onChange={(e) => setItem(n, { description: e.target.value })} />
             <input required type="number" min="0.01" step="0.01" aria-label={t('Cant.')} value={item.qty} onChange={(e) => setItem(n, { qty: e.target.value })} />
             <input required type="number" min="0" step={currency === 'USD' ? '0.01' : '1'} aria-label={t('Precio unitario')} value={item.unitPrice} onChange={(e) => setItem(n, { unitPrice: e.target.value })} />
             {currency === 'USD' ? (
-              <input type="number" min="0" max="30" step="0.01" aria-label={t('Impuesto %')} value={item.taxRate} onChange={(e) => setItem(n, { taxRate: e.target.value })} />
+              <input type="number" min="0" max="30" step="any" aria-label={t('Impuesto %')} value={item.taxRate} onChange={(e) => setItem(n, { taxRate: e.target.value })} />
             ) : (
               <select aria-label={t('IVA')} value={item.taxRate} onChange={(e) => setItem(n, { taxRate: e.target.value })}>
                 <option value="19">19 %</option>
@@ -194,8 +194,10 @@ export default function Quotes({ api, user, go }) {
         {canWrite && !form && <button type="button" className="primary-button" onClick={() => setForm({})}>{t('Nueva cotización')}</button>}
       </header>
 
+      {/* Con key, cada cotización arranca su propio formulario (si no, «Editar» en otra guardaría lo de la anterior), y al
+          editar se usa la moneda de la cotización, no la que tenga la empresa hoy. */}
       {form && (
-        <QuoteForm api={api} currency={currency} onCancel={() => setForm(null)} onSaved={saved}
+        <QuoteForm key={form._id || 'nueva'} api={api} currency={form.currency || currency} onCancel={() => setForm(null)} onSaved={saved}
           initial={form._id ? { _id: form._id, client: form.client?._id || form.client, title: form.title, notes: form.notes, validUntil: new Date(new Date(form.validUntil).getTime() - 5 * 3600000).toISOString().slice(0, 10),
             items: form.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate })) } : null} />
       )}
@@ -246,7 +248,8 @@ export default function Quotes({ api, user, go }) {
                   {q.status === 'aprobada' && (invoicing || q.invoice?.cufe) && user.role === 'admin' && <InvoiceBox api={api} quote={q} onDone={replace} />}
                   {q.workOrder && <p><button type="button" className="link-button" onClick={() => go?.('ordenes')}>{t('Orden creada: {title}', { title: q.workOrder.title })}</button></p>}
 
-                  {links[q._id] && (
+                  {/* solo mientras está enviada: al volver a borrador la llave cambia y ese enlace ya no abre */}
+                  {links[q._id] && q.status === 'enviada' && (
                     <div className="order-actions">
                       <a className="mini-button edit" href={whatsappLink(q.client?.phone, t('Hola {name}, te comparto la cotización #{n} «{title}» por {total}. Puedes revisarla y aprobarla aquí: {url}', { name: q.client?.name || '', n: q.number, title: q.title, total: money(q.total, q.currency), url: links[q._id] }), user.company?.lang)} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
                       <a className="ghost-button" href={links[q._id]} target="_blank" rel="noreferrer">{t('Ver como el cliente')}</a>
