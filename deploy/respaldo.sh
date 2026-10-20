@@ -4,6 +4,8 @@ set -euo pipefail
 DIR=/opt/nova-workorder/respaldos
 mkdir -p "$DIR"
 chmod 700 "$DIR"
+# Trabaja dentro de la carpeta de respaldos: si se lanza desde /root (un usuario sin acceso), `find` no falla al volver.
+cd "$DIR"
 STAMP=$(date +%Y-%m-%d_%H%M)
 # La misma conexión de la app (con usuario y contraseña si MongoDB pide autenticación); nunca se imprime.
 URI=$(grep -E '^MONGODB_URI=' /opt/nova-workorder/.env 2>/dev/null | head -1 | cut -d= -f2- || true)
