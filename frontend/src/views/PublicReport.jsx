@@ -3,10 +3,11 @@ import axios from 'axios';
 import { API_URL } from '../api';
 import { applyBrand } from '../brand';
 import { adoptCompanyLang, locale, t } from '../i18n';
+import { STATUS } from '../ui';
 
 // Informe de servicio público (/informe/<llave>): lo abre el cliente sin cuenta. «Descargar PDF» usa la impresión
-// del navegador (Guardar como PDF), con una hoja pensada para imprimir.
-const when = (value) => (value ? new Date(value).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' }) : '—');
+// del navegador (Guardar como PDF), con una hoja pensada para imprimir. Las horas van en la zona de la empresa.
+const when = (value, timeZone) => (value ? new Date(value).toLocaleString(locale(), { dateStyle: 'medium', timeStyle: 'short', timeZone: timeZone || 'America/Bogota' }) : '—');
 
 export default function PublicReport({ token }) {
   const [report, setReport] = useState(null);
@@ -25,6 +26,7 @@ export default function PublicReport({ token }) {
   if (!report) return <div className="report-page"><p className="muted">{t('Cargando…')}</p></div>;
 
   const { company, order } = report;
+  const at = (value) => when(value, company.timeZone);
   const file = (id) => `${API_URL}/informes/${encodeURIComponent(token)}/archivos/${id}`;
   const logo = company.branding?.hasLogo ? `${API_URL}/public/logo/${company.id}?v=${company.branding.logoVersion}` : null;
   const before = order.photos.filter((p) => p.kind === 'antes');
@@ -48,8 +50,9 @@ export default function PublicReport({ token }) {
           <div><dt>{t('Cliente')}</dt><dd>{order.client?.name || order.customerName || '—'}{order.client?.company ? ` · ${order.client.company}` : ''}</dd></div>
           {order.client?.address && <div><dt>{t('Dirección')}</dt><dd>{order.client.address}</dd></div>}
           <div><dt>{t('Técnico')}</dt><dd>{order.technician || '—'}</dd></div>
-          <div><dt>{t('Hora de inicio')}</dt><dd>{when(order.startedAt)}</dd></div>
-          <div><dt>{t('Cierre')}</dt><dd>{order.completedAt ? when(order.completedAt) : t('En curso')}</dd></div>
+          <div><dt>{t('Estado')}</dt><dd>{t(STATUS[order.status] || order.status)}</dd></div>
+          <div><dt>{t('Hora de inicio')}</dt><dd>{at(order.startedAt)}</dd></div>
+          {order.status === 'completada' && <div><dt>{t('Cierre')}</dt><dd>{at(order.completedAt)}</dd></div>}
         </dl>
       </section>
 
@@ -88,7 +91,7 @@ export default function PublicReport({ token }) {
         {order.signature ? (
           <div className="report-signature">
             <img src={file(order.signature.id)} alt={t('Firma')} />
-            <p>{order.signature.name} · {when(order.signature.signedAt)}</p>
+            <p>{order.signature.name} · {at(order.signature.signedAt)}</p>
           </div>
         ) : <p className="muted">{t('Sin firma del cliente.')}</p>}
       </section>

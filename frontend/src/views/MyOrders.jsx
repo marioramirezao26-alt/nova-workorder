@@ -167,7 +167,7 @@ export default function MyOrders({ api, user, onUser }) {
                 </div>
               )}
               {order.notes && <details className="notes"><summary>{t('Notas')}</summary><p>{order.notes}</p></details>}
-              <ServiceReport api={api} order={order} editable={isTech && ACTIVE.includes(order.status)}
+              <ServiceReport api={api} user={user} order={order} editable={isTech && ACTIVE.includes(order.status)}
                 onChange={(next) => setOrders((prev) => prev.map((o) => (o._id === next._id ? { ...o, ...next, client: o.client, assignedTo: o.assignedTo, createdBy: o.createdBy } : o)))} />
               {!isTech && order.assignedTo && <p className="muted">{t('Técnico: {name}', { name: order.assignedTo.name })}</p>}
               {order.completedAt && <p className="muted">{t('Completada {when}', { when: formatDateTime(order.completedAt) })}</p>}

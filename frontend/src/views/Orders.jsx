@@ -159,7 +159,7 @@ export default function Orders({ api, user }) {
                   <p className="muted">{t('Creada por {name}', { name: order.createdBy?.name || '—' })}</p>
                   <Place label={t('Inició')} point={order.startLocation} />
                   <Place label={t('Completó')} point={order.endLocation} />
-                  <ServiceReport api={api} order={order}
+                  <ServiceReport api={api} user={user} order={order}
                     editable={order.status !== 'cancelada' && (user.role === 'admin' || (user.role === 'tecnico' && order.status !== 'completada' && order.assignedTo?._id === user._id))}
                     onChange={(next) => setOrders((prev) => prev.map((o) => (o._id === next._id ? { ...o, ...next, client: o.client, assignedTo: o.assignedTo, createdBy: o.createdBy } : o)))} />
                   {canManage && (

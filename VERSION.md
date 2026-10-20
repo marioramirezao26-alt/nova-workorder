@@ -46,16 +46,30 @@
 ### Informe de servicio (Mejora 1)
 - **Checklists por tipo de servicio:** el administrador arma plantillas en «Checklists» (hasta 40 puntos; los marcados
   con * son obligatorios). El técnico elige la plantilla en la orden y la marca desde el celular, con una nota por punto.
-  La orden guarda una copia: si la plantilla cambia después, la orden sigue diciendo lo que se revisó.
+  La orden guarda una copia: si la plantilla cambia después, la orden sigue diciendo lo que se revisó. Una plantilla
+  elegida por error se quita con «Cambiar checklist». Las marcas van con el nombre de cada punto: si la orden cambió de
+  plantilla mientras tanto, no caen en puntos que el técnico no vio.
 - **Fotos de antes y después:** el celular las reduce a 1280 px en JPEG antes de subirlas (máximo 400 KB y 12 por orden;
   el servidor revisa que sean imágenes reales por sus primeros bytes). Se guardan aparte de la orden (`WorkOrderFile`).
+  Subir y borrar a la vez no se pisan ni dejan archivos sueltos. En «Mis órdenes» las fotos y la firma se descargan solo
+  al abrir el informe.
 - **Firma del cliente** con el dedo en la pantalla, con el nombre de quien recibe. El administrador puede exigirla
-  para que el técnico complete la orden («Checklists» → «Pedir la firma del cliente…»).
-- **No se completa** una orden sin los puntos obligatorios del checklist (ni sin firma, si la empresa la pide).
+  para que el técnico complete la orden («Checklists» → «Pedir la firma del cliente…»). Si el técnico la reemplaza, la
+  anterior se conserva; solo el administrador la borra al reemplazarla. Una firma muy larga se guarda más pequeña y,
+  si aún no cabe (60 KB), se pide firmar más simple.
+- **No se completa** una orden sin los puntos obligatorios del checklist (ni sin firma, si la empresa la pide), tampoco
+  desde «Editar» ni al crear una orden ya completada; la fecha de cierre siempre queda. Una orden completada solo la
+  reabre el administrador: el técnico ya no le cambia fotos ni firma.
 - **Informe público** en `/informe/<llave>`: el técnico o el administrador lo comparten por WhatsApp o copiando el
-  enlace. El cliente lo ve sin cuenta y lo guarda en PDF con «Descargar PDF». Muestra la marca de la empresa, el
-  checklist, las fotos, las notas y la firma; nunca la ubicación del técnico ni datos internos. Solo sirve las fotos y la
-  firma de esa orden. Cubierto por `test/informe.test.js`.
+  enlace. El cliente lo ve sin cuenta y lo guarda en PDF con «Descargar PDF». Muestra la marca de la empresa, el estado,
+  el checklist, las fotos, las notas y la firma; nunca la ubicación del técnico ni datos internos. Solo sirve las fotos y
+  la firma de esa orden. Las horas (también el sello de las notas) van en la zona de la empresa: Colombia, o la hora del
+  Este en las empresas de Estados Unidos.
+- **El enlace se puede cambiar** desde la orden («Cambiar enlace», el administrador o el técnico de la orden): el anterior
+  deja de servir (por ejemplo, si se mandó a quien no era) y queda en «Actividad».
+- **WhatsApp** usa el indicativo del país de la empresa (+57 para celulares de Colombia, +1 en Estados Unidos); si el
+  número no es claro, abre WhatsApp sin número para elegir el contacto. Igual en «Cotizaciones».
+- Un usuario cliente sin ficha de cliente no ve ninguna orden. Cubierto por `test/informe.test.js`.
 
 ### Ubicación al iniciar y completar órdenes
 - El administrador lo activa en «Usuarios» («Registrar la ubicación de los técnicos al iniciar y completar cada orden»).

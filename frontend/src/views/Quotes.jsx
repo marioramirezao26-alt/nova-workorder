@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
-import { Empty, QuoteTag, formatDateTime, formatDay, money, quoteTotals } from '../ui';
+import { Empty, QuoteTag, formatDateTime, formatDay, money, quoteTotals, whatsappLink } from '../ui';
 
 // «Cotizaciones»: se arman en borrador, se envían al cliente con un enlace (WhatsApp o copiado) y el cliente la aprueba
 // o la rechaza sin cuenta. Al aprobarse se crea la orden de trabajo. Un usuario cliente ve aquí las suyas.
@@ -9,10 +9,6 @@ const FILTERS = ['todas', 'borrador', 'enviada', 'aprobada', 'rechazada', 'venci
 const FILTER_LABEL = { todas: 'Todas', borrador: 'Borradores', enviada: 'Enviadas', aprobada: 'Aprobadas', rechazada: 'Rechazadas', vencida: 'Vencidas' };
 const colombiaDay = (offsetDays = 0) => new Date(Date.now() - 5 * 3600000 + offsetDays * 86400000).toISOString().slice(0, 10);
 const newItem = (currency) => ({ description: '', qty: 1, unitPrice: '', taxRate: currency === 'USD' ? 0 : 19 });
-const waDigits = (phone) => {
-  const d = String(phone || '').replace(/\D/g, '');
-  return d.length === 10 && d.startsWith('3') ? `57${d}` : d;
-};
 
 function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
   const [clients, setClients] = useState([]);
@@ -252,7 +248,7 @@ export default function Quotes({ api, user, go }) {
 
                   {links[q._id] && (
                     <div className="order-actions">
-                      <a className="mini-button edit" href={`https://wa.me/${waDigits(q.client?.phone)}?text=${encodeURIComponent(t('Hola {name}, te comparto la cotización #{n} «{title}» por {total}. Puedes revisarla y aprobarla aquí: {url}', { name: q.client?.name || '', n: q.number, title: q.title, total: money(q.total, q.currency), url: links[q._id] }))}`} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
+                      <a className="mini-button edit" href={whatsappLink(q.client?.phone, t('Hola {name}, te comparto la cotización #{n} «{title}» por {total}. Puedes revisarla y aprobarla aquí: {url}', { name: q.client?.name || '', n: q.number, title: q.title, total: money(q.total, q.currency), url: links[q._id] }), user.company?.lang)} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
                       <a className="ghost-button" href={links[q._id]} target="_blank" rel="noreferrer">{t('Ver como el cliente')}</a>
                       <button type="button" className="ghost-button" onClick={() => navigator.clipboard?.writeText(links[q._id]).then(() => alert(t('Enlace copiado')))}>{t('Copiar enlace')}</button>
                     </div>

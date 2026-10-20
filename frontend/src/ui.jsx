@@ -28,6 +28,21 @@ export const isOverdue = (order) =>
 
 export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
+// Enlace de WhatsApp al cliente con el indicativo del país de la empresa (`lang`): en (EE. UU.) +1 a los números de 10
+// dígitos; es (Colombia) +57 a los celulares de 10 dígitos que empiezan por 3. Un número con «+» o «00» ya trae su
+// indicativo. Si no se sabe con certeza a qué país va (un fijo, un número incompleto), WhatsApp se abre sin número para
+// elegir el contacto, en vez de mandarle el mensaje a un desconocido.
+export const whatsappLink = (phone, text, lang = 'es') => {
+  const raw = String(phone || '').trim();
+  const d = raw.replace(/\D/g, '');
+  let number = '';
+  if (/^(\+|00)/.test(raw)) number = raw.startsWith('00') ? d.slice(2) : d;
+  else if (lang === 'en') number = d.length === 10 && /^[2-9]/.test(d) ? `1${d}` : (d.length === 11 && d.startsWith('1') ? d : '');
+  else number = d.length === 10 && d.startsWith('3') ? `57${d}` : (d.length === 12 && d.startsWith('573') ? d : '');
+  if (number.length < 8 || number.length > 15) number = '';
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+};
+
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;
 
 // Plata: pesos enteros (COP) o dólares con centavos (USD).
