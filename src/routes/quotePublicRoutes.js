@@ -21,4 +21,8 @@ router.post('/:token/rechazar', quoteLimiter, [
   validateRequest,
 ], quotes.publicReject);
 
+// Pago en línea con Wompi de una cotización aprobada, y la consulta al volver del checkout.
+router.get('/:token/pago', quoteLimiter, quotes.publicCheckout);
+router.get('/:token/pago/estado', quotes.publicPaymentStatus);
+
 module.exports = router;

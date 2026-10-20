@@ -5,6 +5,9 @@ const { updateBranding } = require('../controllers/brandingController');
 const { publicUser } = require('../controllers/authController');
 const { validateRequest } = require('../middleware/validateRequest');
 const Company = require('../models/Company');
+const wompi = require('../services/wompi');
+const { audit } = require('../utils/audit');
+const { limiter } = require('../utils/rateStore');
 
 // La empresa del usuario. «Mi marca»: solo el administrador cambia el logo y los colores.
 const router = express.Router();
@@ -47,6 +50,87 @@ router.put('/require-signature', protect, authorize('admin'), [
     res.status(200).json(publicUser(req.user, company));
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error al guardar el ajuste' });
+  }
+});
+
+// «Cobros con Wompi» (Integraciones): la empresa conecta SU cuenta. Lo que se devuelve nunca incluye los secretos.
+const wompiView = (company) => {
+  const w = (company && company.wompi) || {};
+  return {
+    connected: wompi.connected(company),
+    available: company.lang !== 'en',                         // Wompi cobra en pesos: no aplica a empresas en dólares
+    test: wompi.isTest(w.publicKey),
+    publicKey: w.publicKey || '',
+    merchantName: w.merchantName || '',
+    depositPercent: w.depositPercent || 100,
+    connectedAt: w.connectedAt || null,
+    lastEventAt: w.lastEventAt || null,
+    eventsPath: `/api/wompi/${company.slug}/eventos`,
+  };
+};
+const wompiLimiter = limiter({
+  name: 'wompi-conectar',
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  onLimit: (req, res) => res.status(429).json({ message: 'Demasiados intentos. Espera un rato y vuelve a intentarlo.' }),
+});
+
+router.get('/wompi', protect, authorize('admin'), async (req, res) => {
+  res.status(200).json(wompiView(await Company.findById(req.company._id)));
+});
+
+router.put('/wompi', protect, authorize('admin'), wompiLimiter, [
+  body('publicKey').trim().matches(wompi.PUBLIC_KEY).withMessage('La llave pública empieza por pub_prod_ (o pub_test_ para pruebas)'),
+  body('integritySecret').trim().matches(wompi.INTEGRITY).withMessage('El secreto de integridad empieza por prod_integrity_ (o test_integrity_)'),
+  body('eventsSecret').trim().matches(wompi.EVENTS).withMessage('El secreto de eventos empieza por prod_events_ (o test_events_)'),
+  body('depositPercent').optional().isInt({ min: 10, max: 100 }).withMessage('El anticipo va de 10 % a 100 %').toInt(),
+  validateRequest,
+], async (req, res) => {
+  try {
+    const { publicKey, integritySecret, eventsSecret } = req.body;
+    const env = (k) => (k.includes('test') ? 'test' : 'prod');
+    if (new Set([env(publicKey), env(integritySecret), env(eventsSecret)]).size !== 1) {
+      return res.status(400).json({ message: 'Las tres llaves deben ser del mismo ambiente: todas de producción o todas de pruebas' });
+    }
+    if (req.company.lang === 'en') return res.status(400).json({ message: 'Wompi cobra en pesos colombianos: tu empresa trabaja en dólares' });
+    const merchant = await wompi.verifyMerchant(publicKey);
+    if (merchant.error) return res.status(400).json({ message: merchant.error });
+    const company = await Company.findById(req.company._id);
+    company.wompi = {
+      publicKey, ...wompi.sealKeys({ integritySecret, eventsSecret }), merchantName: merchant.name,
+      depositPercent: req.body.depositPercent || (company.wompi && company.wompi.depositPercent) || 100, connectedAt: new Date(), lastEventAt: null,
+    };
+    await company.save();
+    await audit(req, 'empresa.wompi', `Conectó Wompi${wompi.isTest(publicKey) ? ' (pruebas)' : ''}: ${merchant.name}`);
+    return res.status(200).json(wompiView(company));
+  } catch (error) {
+    return res.status(500).json({ message: 'No se pudo conectar Wompi' });
+  }
+});
+
+// Cuánto de una cotización aprobada se cobra en línea: 100 % o un anticipo.
+router.put('/wompi/deposit', protect, authorize('admin'), [
+  body('depositPercent').isInt({ min: 10, max: 100 }).withMessage('El anticipo va de 10 % a 100 %').toInt(),
+  validateRequest,
+], async (req, res) => {
+  try {
+    const company = await Company.findByIdAndUpdate(req.company._id, { 'wompi.depositPercent': req.body.depositPercent }, { new: true });
+    await audit(req, 'empresa.wompi', `Cambió el cobro en línea al ${req.body.depositPercent} % de cada cotización`);
+    res.status(200).json(wompiView(company));
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudo guardar el ajuste' });
+  }
+});
+
+router.delete('/wompi', protect, authorize('admin'), async (req, res) => {
+  try {
+    const company = await Company.findById(req.company._id);
+    company.wompi = { publicKey: '', integritySealed: '', eventsSealed: '', merchantName: '', depositPercent: (company.wompi && company.wompi.depositPercent) || 100, connectedAt: null, lastEventAt: null };
+    await company.save();
+    await audit(req, 'empresa.wompi', 'Desconectó Wompi');
+    res.status(200).json(wompiView(company));
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudo desconectar Wompi' });
   }
 });
 

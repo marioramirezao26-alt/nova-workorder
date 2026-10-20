@@ -58,6 +58,17 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Cobro en línea con Wompi (la cuenta de la empresa): llave pública, secretos cifrados y qué porcentaje de una
+    // cotización aprobada se cobra en línea (100 = todo; 50 = anticipo del 50 %).
+    wompi: {
+      publicKey: { type: String, default: '' },
+      integritySealed: { type: String, default: '', select: false },
+      eventsSealed: { type: String, default: '', select: false },
+      merchantName: { type: String, default: '' },
+      depositPercent: { type: Number, default: 100, min: 10, max: 100 },
+      connectedAt: { type: Date, default: null },
+      lastEventAt: { type: Date, default: null },
+    },
     // Consecutivo de las cotizaciones de la empresa (#1, #2…).
     quoteSeq: {
       type: Number,

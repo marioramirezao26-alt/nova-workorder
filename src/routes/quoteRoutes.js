@@ -31,5 +31,9 @@ router.post('/:id/send', authorize('admin', 'tecnico'), validateObjectId, quotes
 router.post('/:id/reopen', authorize('admin', 'tecnico'), validateObjectId, quotes.reopenQuote);
 router.post('/:id/approve', authorize('admin'), validateObjectId, [body('note').optional().isString().isLength({ max: 500 }), validateRequest], quotes.approveQuote);
 router.post('/:id/convert', authorize('admin'), validateObjectId, quotes.convertQuote);
+router.post('/:id/payment', authorize('admin'), validateObjectId, [
+  body('status').isIn(['pagado', 'pendiente']).withMessage('Estado de pago inválido'),
+  validateRequest,
+], quotes.setPayment);
 
 module.exports = router;

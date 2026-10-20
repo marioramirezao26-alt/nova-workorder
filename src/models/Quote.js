@@ -40,6 +40,16 @@ const quoteSchema = new mongoose.Schema(
     decidedVia: { type: String, enum: ['', 'cliente', 'oficina'], default: '' },
     decisionNote: { type: String, default: '', maxlength: 500 },
     workOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrder', default: null },
+    // El cobro de una cotización aprobada: cuánto se cobra (todo o el anticipo, fijado al primer intento), su estado,
+    // la última transacción de Wompi y cómo se pagó (wompi, o «oficina» si la empresa lo marcó a mano).
+    payment: {
+      due: { type: Number, default: null },
+      status: { type: String, enum: ['pendiente', 'pagado'], default: 'pendiente' },
+      method: { type: String, enum: ['', 'wompi', 'oficina'], default: '' },
+      txId: { type: String, default: '' },
+      txStatus: { type: String, default: '' },
+      paidAt: { type: Date, default: null },
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }
