@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { getLang, t } from '../i18n';
+import WompiCard from './WompiCard';
 
 // «Integraciones» (solo el administrador): llaves de API para que otros sistemas lean y creen órdenes, y webhooks
 // para avisarle a otro sistema cuando algo cambia. La llave y el secreto se muestran una sola vez.
@@ -96,6 +97,8 @@ export default function Integrations({ api }) {
       </header>
 
       {error && <p className="error">{error}</p>}
+
+      <WompiCard api={api} />
 
       {shown && (
         <div className="panel-box highlight">

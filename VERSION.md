@@ -2,6 +2,20 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Cobro con Wompi (Mejora 3, segunda parte)
+- **Cada empresa conecta SU cuenta de Wompi** en «Integraciones» (solo el administrador). La llave pública se comprueba
+  con Wompi; los secretos de integridad y de eventos se guardan cifrados (AES-256-GCM, `COMPANY_SECRETS_KEY` o
+  `JWT_SECRET`) y nunca salen de la API. Las tres llaves deben ser del mismo ambiente (pruebas o producción). No aplica a
+  empresas en dólares.
+- **El cliente paga la cotización aprobada** desde su misma página: el total o un anticipo (30 % a 100 %, lo elige la
+  empresa). El valor se fija al primer intento. El enlace al checkout va con la firma de integridad, y cada intento
+  lleva una referencia distinta (`NWO-<cotización>-<sufijo>`) porque Wompi no repite referencias.
+- **Queda pagada solo cuando Wompi lo confirma:** por el evento firmado (`/api/wompi/<empresa>/eventos`, la URL que se
+  pega en el panel de Wompi) o consultando la transacción cuando el cliente vuelve del checkout. Cuenta solo si la
+  referencia es de esa empresa y el valor y la moneda cuadran; un intento rechazado posterior no la devuelve a pendiente.
+- La oficina puede marcarla pagada a mano (efectivo, transferencia) y devolverla a «por cobrar»; un pago confirmado por
+  Wompi no se cambia a mano. Cubierto por `test/wompi.test.js`.
+
 ### Cotizaciones (Mejora 3, primera parte)
 - **Cotizaciones** (sección nueva para el administrador y los técnicos): cliente, renglones (descripción, cantidad,
   precio unitario e IVA 19 %, 5 % o sin IVA; en las empresas de Estados Unidos, dólares con centavos y un impuesto en %),

@@ -25,8 +25,10 @@ export default function PublicQuote({ token }) {
     document.title = `${t('Cotización')} #${d.quote.number} · ${d.company.name}`;
     setData(d);
   };
+  // Al volver del checkout, Wompi agrega ?id=<transacción>: se consulta y se muestra cómo quedó el pago.
+  const txId = new URLSearchParams(window.location.search).get('id');
   useEffect(() => {
-    axios.get(base).then(({ data: d }) => show(d))
+    axios.get(txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base).then(({ data: d }) => show(d))
       .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
   }, [token]);
 
@@ -38,6 +40,17 @@ export default function PublicQuote({ token }) {
     } catch (err) {
       alert(t(err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'No se pudo registrar tu respuesta'));
     } finally {
+      setBusy(false);
+    }
+  };
+
+  const pay = async () => {
+    try {
+      setBusy(true);
+      const { data: d } = await axios.get(`${base}/pago`);
+      window.location.href = d.checkoutUrl;
+    } catch (err) {
+      alert(t(err.response?.data?.message || 'No se pudo preparar el pago'));
       setBusy(false);
     }
   };
@@ -60,6 +73,18 @@ export default function PublicQuote({ token }) {
       </header>
 
       {quote.status === 'aprobada' && <p className="quote-banner ok">{t('✔ Aprobada por {name} el {d}. La empresa ya tiene tu orden de trabajo.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
+      {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}</p>}
+      {txId && quote.payment?.status !== 'pagado' && ['DECLINED', 'ERROR', 'VOIDED'].includes(quote.payment?.txStatus) && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
+      {txId && quote.payment?.status !== 'pagado' && quote.payment?.txStatus === 'PENDING' && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
+      {quote.payment?.online && (
+        <section className="report-section quote-decision no-print">
+          <h3>{quote.payment.due < quote.total ? t('Anticipo para empezar el trabajo') : t('Pago en línea')}</h3>
+          <p>{quote.payment.due < quote.total
+            ? t('Paga {due} de anticipo ({p} % de {total}); el resto se acuerda con la empresa.', { due: money(quote.payment.due, cur), total: money(quote.total, cur), p: Math.round((quote.payment.due / quote.total) * 100) })
+            : t('Paga {due} con tarjeta, PSE, Nequi o Bancolombia.', { due: money(quote.payment.due, cur) })}</p>
+          <button type="button" className="primary-button" disabled={busy} onClick={pay}>{t('Pagar {due} con Wompi', { due: money(quote.payment.due, cur) })}</button>
+        </section>
+      )}
       {quote.status === 'rechazada' && <p className="quote-banner no">{t('Rechazada por {name} el {d}.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
       {quote.status === 'vencida' && <p className="quote-banner no">{t('Esta cotización venció el {d}. Pide a {company} una nueva.', { d: day(quote.validUntil), company: company.name })}</p>}
 

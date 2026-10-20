@@ -10,6 +10,8 @@ const { currencyOf, totals } = require('../utils/money');
 const { colombiaDay } = require('./analyticsController');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
+const wompi = require('../services/wompi');
+const { dueFor, applyTransaction } = require('../services/quotePayments');
 
 // Cotizaciones (Mejora 3): se arman en borrador, se envían con un enlace y el cliente las aprueba o rechaza sin cuenta.
 // Al aprobarse se crea la orden de trabajo con el cliente y lo cotizado.
@@ -298,6 +300,15 @@ const publicView = async (quote, company) => {
       client: client ? { name: client.name, company: client.company || '' } : null,
       decidedAt: quote.decidedAt,
       decidedBy: quote.decidedBy,
+      // El cobro: cuánto (si ya se fijó), si está pagada y si se puede pagar en línea ahora mismo.
+      payment: {
+        status: quote.payment ? quote.payment.status : 'pendiente',
+        due: quote.payment && quote.payment.due ? quote.payment.due
+          : (wompi.connected(company) ? Math.round((quote.total * (company.wompi.depositPercent || 100)) / 100) : null),
+        paidAt: quote.payment ? quote.payment.paidAt : null,
+        online: quote.status === 'aprobada' && wompi.connected(company) && !(quote.payment && quote.payment.status === 'pagado'),
+        txStatus: quote.payment ? quote.payment.txStatus : '',
+      },
     },
   };
 };
@@ -331,7 +342,63 @@ const publicDecision = (approve) => async (req, res) => {
   }
 };
 
+// A dónde vuelve el cliente después de pagar: APP_URL si está, si no la dirección por la que entró.
+const appUrl = (req) => (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+
+// Pagar en línea una cotización aprobada: el enlace firmado al checkout de Wompi por lo que se cobra (todo o anticipo).
+const publicCheckout = async (req, res) => {
+  try {
+    const { quote } = await loadPublic(req.params.token);
+    const company = await Company.findById(quote.tenant).select('+wompi.integritySealed');
+    if (quote.status !== 'aprobada') throw fail(409, 'Primero aprueba la cotización');
+    if (!wompi.connected(company)) throw fail(409, 'Esta empresa no recibe pagos en línea');
+    if (quote.payment && quote.payment.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
+    const due = await dueFor(quote, company);
+    const url = wompi.checkoutUrl(company, quote, due, `${appUrl(req)}/cotizacion/${quote.publicToken}`);
+    if (!url) throw fail(409, 'La empresa debe conectar Wompi de nuevo para recibir pagos');
+    res.status(200).json({ checkoutUrl: url, due });
+  } catch (error) {
+    reply(res, error, 'No se pudo preparar el pago');
+  }
+};
+
+// El cliente vuelve del checkout con ?id=<transacción>: se consulta en Wompi y se aplica (además del evento firmado).
+const publicPaymentStatus = async (req, res) => {
+  try {
+    const { quote, company } = await loadPublic(req.params.token);
+    let current = quote;
+    if (wompi.connected(company) && req.query.id) {
+      const tx = await wompi.fetchTransaction(company, String(req.query.id));
+      if (tx && wompi.quoteIdFrom(tx.reference) === String(quote._id)) current = (await applyTransaction(company, tx)) || quote;
+    }
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json(await publicView(current, company));
+  } catch (error) {
+    reply(res, error, 'No se pudo consultar el pago');
+  }
+};
+
+// La oficina marca el pago a mano (efectivo, transferencia) o lo devuelve a pendiente si se marcó por error. Un pago
+// confirmado por Wompi no se toca desde aquí.
+const setPayment = async (req, res) => {
+  try {
+    const quote = await findQuote(req);
+    if (quote.status !== 'aprobada') throw fail(409, 'Solo se cobra una cotización aprobada');
+    if (quote.payment && quote.payment.method === 'wompi' && quote.payment.status === 'pagado') throw fail(409, 'Este pago lo confirmó Wompi: no se cambia a mano');
+    const paid = req.body.status === 'pagado';
+    await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: {
+      'payment.status': paid ? 'pagado' : 'pendiente', 'payment.method': paid ? 'oficina' : '', 'payment.paidAt': paid ? new Date() : null,
+      ...(paid && !(quote.payment && quote.payment.due) ? { 'payment.due': quote.total } : {}),
+    } });
+    await audit(req, 'cotizacion.pago', `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+  } catch (error) {
+    reply(res, error, 'No se pudo guardar el pago');
+  }
+};
+
 module.exports = {
+  publicCheckout, publicPaymentStatus, setPayment,
   listQuotes, getQuote, createQuote, updateQuote, deleteQuote, sendQuote, reopenQuote, approveQuote, convertQuote,
   publicQuote, publicApprove: publicDecision(true), publicReject: publicDecision(false),
   endOfDay,
