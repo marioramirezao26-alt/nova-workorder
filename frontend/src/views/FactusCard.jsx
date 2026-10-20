@@ -42,6 +42,7 @@ export default function FactusCard({ api }) {
             <span className={`status-tag ${info.env === 'produccion' ? 'q-enviada' : 'q-vencida'}`}>{t(info.env === 'produccion' ? 'Producción' : 'Pruebas (habilitación)')}</span>{' '}
             {t('Rango {n}', { n: info.numberingRangeId })} · {info.username}
           </p>
+          {info.env !== 'produccion' && <p className="muted small">{t('Las facturas de pruebas no tienen validez fiscal y el cliente no las ve. Al pasar a «Producción» puedes facturar de verdad las mismas cotizaciones.')}</p>}
           <div className="order-actions">
             <button type="button" className="ghost-button" onClick={() => setForm({ ...EMPTY, env: info.env, clientId: info.clientId, username: info.username, numberingRangeId: String(info.numberingRangeId || '') })}>{t('Cambiar datos')}</button>
             <button type="button" className="mini-button delete" onClick={disconnect}>{t('Desconectar')}</button>

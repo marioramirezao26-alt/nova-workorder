@@ -54,6 +54,7 @@ export default function WompiCard({ api }) {
             <code>{eventsUrl}</code>
             <button type="button" className="ghost-button" onClick={() => navigator.clipboard?.writeText(eventsUrl).then(() => alert(t('Copiado')))}>{t('Copiar')}</button>
           </div>
+          <p className="muted small">{t('Sin esta URL en Wompi, los pagos no quedan registrados aquí.')}</p>
           <p className="muted small">{t('Último aviso de Wompi: {when}', { when: info.lastEventAt ? new Date(info.lastEventAt).toLocaleString() : t('nunca') })}</p>
           <div className="order-actions">
             <button type="button" className="ghost-button" onClick={() => setForm({ ...EMPTY, publicKey: info.publicKey, depositPercent: info.depositPercent })}>{t('Cambiar llaves')}</button>

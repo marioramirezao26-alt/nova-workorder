@@ -15,6 +15,13 @@ export const createApi = (token, onSessionLost) => {
   return api;
 };
 
-// El mensaje de error más útil que devolvió la API.
-export const errorMessage = (error, fallback) =>
-  t(error.response?.data?.errors?.[0]?.message || error.response?.data?.message || fallback);
+// El mensaje de error más útil que devolvió la API. Los puntos del checklist que faltan llegan aparte (`missing`) para
+// poder armar la frase en el idioma de la app. Uno que termina en número («Precio inválido en el renglón 2») se busca
+// en el diccionario con {n} («Precio inválido en el renglón {n}»); si no está, queda igual.
+export const errorMessage = (error, fallback) => {
+  const data = error.response?.data;
+  if (data?.missing) return t('Falta marcar en el checklist: {items}', { items: data.missing });
+  const message = data?.errors?.[0]?.message || data?.message || fallback;
+  const numbered = /^(.*\D)(\d+)$/.exec(message || '');
+  return numbered && t(message) === message ? t(`${numbered[1]}{n}`, { n: numbered[2] }) : t(message);
+};

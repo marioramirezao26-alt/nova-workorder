@@ -39,8 +39,25 @@ router.post('/:id/payment', authorize('admin'), validateObjectId, [
 router.post('/:id/invoice', authorize('admin'), validateObjectId, [
   body('buyer').optional({ nullable: true }).isObject(),
   body('buyer.docType').optional().isIn(Object.keys(factus.DOC_TYPES)).withMessage('Tipo de documento inválido'),
-  body('buyer.identification').optional({ checkFalsy: true }).trim().matches(/^\d{5,15}$/).withMessage('El número de documento son solo dígitos'),
-  body('buyer.dv').optional({ checkFalsy: true }).matches(/^\d$/).withMessage('El dígito de verificación es un solo dígito'),
+  // NIT y cédula: solo dígitos (el NIT sin el DV); cédula de extranjería y pasaporte: letras y números.
+  body('buyer.identification').optional({ checkFalsy: true }).trim().custom((value, { req }) => {
+    if (['CE', 'PP'].includes(req.body.buyer.docType)) {
+      if (!/^[A-Za-z0-9]{3,20}$/.test(value)) throw new Error('El documento lleva de 3 a 20 letras o números, sin espacios ni guiones');
+    } else if (!/^\d{5,15}$/.test(value)) {
+      throw new Error('El número de documento lleva de 5 a 15 dígitos, sin puntos ni guion (el DV va aparte)');
+    }
+    return true;
+  }),
+  // El DV es opcional (Factus lo calcula); si se escribe con un NIT, tiene que ser el que da el algoritmo de la DIAN.
+  body('buyer.dv').optional({ checkFalsy: true }).matches(/^\d$/).withMessage('El dígito de verificación es un solo dígito').bail()
+    .custom((dv, { req }) => {
+      const { docType, identification } = req.body.buyer;
+      if (docType === 'NIT' && /^\d{5,15}$/.test(String(identification || '')) && factus.nitDv(identification) !== dv) {
+        throw new Error('El dígito de verificación no corresponde a ese NIT. Revisa el número o deja el DV vacío: Factus lo calcula');
+      }
+      return true;
+    }),
+  body('buyer.country').optional({ checkFalsy: true }).trim().matches(/^[A-Za-z]{2}$/).withMessage('El país va con su código de dos letras (CO, VE, US…)'),
   body('buyer.name').if(body('buyer.identification').exists({ checkFalsy: true })).trim().notEmpty().withMessage('Escribe el nombre o la razón social').isLength({ max: 120 }),
   body('buyer.email').optional({ checkFalsy: true }).isEmail().withMessage('Correo inválido'),
   body('buyer.address').optional().trim().isLength({ max: 200 }),

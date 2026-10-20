@@ -28,6 +28,21 @@ export const isOverdue = (order) =>
 
 export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
+// Enlace de WhatsApp al cliente con el indicativo del país de la empresa (`lang`): en (EE. UU.) +1 a los números de 10
+// dígitos; es (Colombia) +57 a los celulares de 10 dígitos que empiezan por 3. Un número con «+» o «00» ya trae su
+// indicativo. Si no se sabe con certeza a qué país va (un fijo, un número incompleto), WhatsApp se abre sin número para
+// elegir el contacto, en vez de mandarle el mensaje a un desconocido.
+export const whatsappLink = (phone, text, lang = 'es') => {
+  const raw = String(phone || '').trim();
+  const d = raw.replace(/\D/g, '');
+  let number = '';
+  if (/^(\+|00)/.test(raw)) number = raw.startsWith('00') ? d.slice(2) : d;
+  else if (lang === 'en') number = d.length === 10 && /^[2-9]/.test(d) ? `1${d}` : (d.length === 11 && d.startsWith('1') ? d : '');
+  else number = d.length === 10 && d.startsWith('3') ? `57${d}` : (d.length === 12 && d.startsWith('573') ? d : '');
+  if (number.length < 8 || number.length > 15) number = '';
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+};
+
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;
 
 // Plata: pesos enteros (COP) o dólares con centavos (USD).
@@ -36,7 +51,11 @@ export const money = (value, currency = 'COP') => new Intl.NumberFormat(currency
 }).format(Number(value) || 0);
 
 // Los mismos totales que calcula el servidor (cada renglón redondeado y luego sumado), para verlos mientras se escribe.
-const round = (v, currency) => (currency === 'USD' ? Math.round((Number(v) + Number.EPSILON) * 100) / 100 : Math.round(Number(v)));
+// El mismo redondeo de src/utils/money.js: sin el ruido del punto flotante (85 × 9,5 % = 8,08, no 8,07).
+const round = (v, currency) => {
+  const scale = currency === 'USD' ? 100 : 1;
+  return Math.round(Number((Number(v) * scale).toPrecision(15))) / scale;
+};
 export const quoteTotals = (items, currency) => {
   let subtotal = 0;
   let tax = 0;
@@ -46,6 +65,14 @@ export const quoteTotals = (items, currency) => {
     tax += round(amount * ((Number(i.taxRate) || 0) / 100), currency);
   });
   return { subtotal: round(subtotal, currency), tax: round(tax, currency), total: round(subtotal + tax, currency) };
+};
+
+// Dígito de verificación de un NIT: el mismo algoritmo de la DIAN (módulo 11) que valida el servidor
+// (src/services/factus.js), para avisar en el formulario antes de facturar.
+export const nitDv = (nit) => {
+  const weights = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+  const r = String(nit).replace(/\D/g, '').split('').reverse().reduce((sum, d, k) => sum + Number(d) * weights[k], 0) % 11;
+  return String(r > 1 ? 11 - r : r);
 };
 
 export const QUOTE_STATUS = { borrador: 'Borrador', enviada: 'Enviada', aprobada: 'Aprobada', rechazada: 'Rechazada', vencida: 'Vencida' };

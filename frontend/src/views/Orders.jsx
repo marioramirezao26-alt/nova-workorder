@@ -159,10 +159,11 @@ export default function Orders({ api, user }) {
                   <p className="muted">{t('Creada por {name}', { name: order.createdBy?.name || '—' })}</p>
                   <Place label={t('Inició')} point={order.startLocation} />
                   <Place label={t('Completó')} point={order.endLocation} />
-                  <ServiceReport api={api} order={order}
+                  <ServiceReport api={api} user={user} order={order}
                     editable={order.status !== 'cancelada' && (user.role === 'admin' || (user.role === 'tecnico' && order.status !== 'completada' && order.assignedTo?._id === user._id))}
                     onChange={(next) => setOrders((prev) => prev.map((o) => (o._id === next._id ? { ...o, ...next, client: o.client, assignedTo: o.assignedTo, createdBy: o.createdBy } : o)))} />
-                  {canManage && (
+                  {/* una orden completada solo la corrige el administrador */}
+                  {canManage && (user.role === 'admin' || order.status !== 'completada') && (
                     <div className="order-actions">
                       <button type="button" className="mini-button edit" onClick={() => openEdit(order)}>{t('Editar')}</button>
                       {user.role === 'admin' && <button type="button" className="mini-button delete" onClick={() => remove(order)}>{t('Eliminar')}</button>}

@@ -3,7 +3,7 @@ const { seal, open } = require('../utils/secretBox');
 
 // Cobro en línea con Wompi (Mejora 3). Cada empresa conecta SU cuenta de Wompi: el dinero va directo a ella, NOVA no lo
 // toca. Las llaves secretas (integridad y eventos) se guardan cifradas (utils/secretBox) y nunca salen de la API.
-// Una cotización queda «pagada» solo cuando Wompi lo confirma: por su evento firmado o consultando la transacción.
+// El pago de una cotización cambia solo con el evento firmado de Wompi (con el secreto de eventos de la empresa).
 
 const PUBLIC_KEY = /^pub_(prod|test)_[A-Za-z0-9]{8,80}$/;
 const INTEGRITY = /^(prod|test)_integrity_[A-Za-z0-9]{8,80}$/;
@@ -20,8 +20,10 @@ const cents = (amount) => Math.round(Number(amount) * 100);
 const reference = (quote) => `NWO-${quote._id}-${crypto.randomBytes(4).toString('hex')}`;
 const quoteIdFrom = (ref) => (/^NWO-([a-f0-9]{24})-[a-f0-9]{8}$/.exec(String(ref || '')) || [])[1] || null;
 
-// Solo empresas en pesos (Wompi cobra en COP).
-const connected = (company) => Boolean(company && company.wompi && company.wompi.publicKey && company.lang !== 'en');
+const connected = (company) => Boolean(company && company.wompi && company.wompi.publicKey);
+// Wompi cobra en pesos: solo una cotización en COP, por la moneda con que se hizo (nunca por el idioma que tenga hoy la
+// empresa: una cotización en dólares sigue en dólares aunque la empresa cambie a español).
+const chargeable = (company, quote) => connected(company) && Boolean(quote) && quote.currency === 'COP';
 
 const getJson = async (url) => {
   const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
@@ -71,7 +73,8 @@ const validEvent = (body, eventsSecret) => {
   return got.length === expected.length && crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected));
 };
 
-// Consulta una transacción directamente en Wompi (cuando el cliente vuelve del checkout).
+// Consulta una transacción en Wompi (cuando el cliente vuelve del checkout). Es pública, sin llave: Wompi devuelve la de
+// cualquier comercio, así que sirve para mostrarle al cliente cómo va, nunca para marcar el pago.
 const fetchTransaction = async (company, id) => {
   if (!/^[A-Za-z0-9-]{6,80}$/.test(String(id || ''))) return null;
   try {
@@ -83,6 +86,6 @@ const fetchTransaction = async (company, id) => {
 };
 
 module.exports = {
-  PUBLIC_KEY, INTEGRITY, EVENTS, connected, isTest, verifyMerchant, sealKeys, checkoutUrl, validEvent, fetchTransaction,
+  PUBLIC_KEY, INTEGRITY, EVENTS, connected, chargeable, isTest, verifyMerchant, sealKeys, checkoutUrl, validEvent, fetchTransaction,
   reference, quoteIdFrom, cents, openEvents: (company) => open(company.wompi.eventsSealed),
 };

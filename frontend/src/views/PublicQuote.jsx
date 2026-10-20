@@ -25,12 +25,25 @@ export default function PublicQuote({ token }) {
     document.title = `${t('Cotización')} #${d.quote.number} · ${d.company.name}`;
     setData(d);
   };
-  // Al volver del checkout, Wompi agrega ?id=<transacción>: se consulta y se muestra cómo quedó el pago.
+  // Al volver del checkout, Wompi agrega ?id=<transacción>: se muestra lo que dice Wompi de ella (d.tx). El pago lo
+  // confirma su evento firmado, que llega aparte: mientras tanto se vuelve a consultar unas veces.
   const txId = new URLSearchParams(window.location.search).get('id');
+  const statusUrl = txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base;
+  const [tries, setTries] = useState(0);
+  const load = (url) => axios.get(url).then(({ data: d }) => show(d))
+    .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
+  useEffect(() => { load(statusUrl); }, [token]);
   useEffect(() => {
-    axios.get(txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base).then(({ data: d }) => show(d))
-      .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
-  }, [token]);
+    if (!txId || tries >= 6 || data?.quote.payment?.status !== 'pendiente' || !['APPROVED', 'PENDING'].includes(data?.tx?.status)) return undefined;
+    const timer = setTimeout(() => { setTries((n) => n + 1); load(statusUrl); }, 5000);
+    return () => clearTimeout(timer);
+  }, [data]);
+  // Si vuelve con «Atrás» desde el checkout, el navegador restaura la página tal cual: el botón no puede quedar ocupado.
+  useEffect(() => {
+    const restored = (e) => { if (e.persisted) setBusy(false); };
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
 
   const answer = async (approve) => {
     try {
@@ -39,6 +52,9 @@ export default function PublicQuote({ token }) {
       show(d);
     } catch (err) {
       alert(t(err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'No se pudo registrar tu respuesta'));
+      // Ya tenía respuesta, venció, la volvieron a borrador o falló a medias: se muestra cómo quedó de verdad.
+      const status = err.response?.status;
+      if (status === 404 || status === 409 || status >= 500) load(base);
     } finally {
       setBusy(false);
     }
@@ -73,11 +89,14 @@ export default function PublicQuote({ token }) {
       </header>
 
       {quote.status === 'aprobada' && <p className="quote-banner ok">{t('✔ Aprobada por {name} el {d}. La empresa ya tiene tu orden de trabajo.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
-      {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}</p>}
-      {txId && quote.payment?.status !== 'pagado' && ['DECLINED', 'ERROR', 'VOIDED'].includes(quote.payment?.txStatus) && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
-      {txId && quote.payment?.status !== 'pagado' && quote.payment?.txStatus === 'PENDING' && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
+      {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
+      {quote.payment?.status === 'anticipo' && <p className="quote-banner ok">{t('✔ Anticipo de {paid} recibido. El saldo de {balance} se acuerda con la empresa.', { paid: money(quote.payment.amountPaid, cur), balance: money(quote.payment.balance, cur) })}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
+      {quote.payment?.status === 'pendiente' && data.tx?.status === 'APPROVED' && <p className="quote-banner ok">{t('Confirmando tu pago con Wompi… Si no se actualiza en un momento, recarga esta página.')}</p>}
+      {quote.payment?.status === 'pendiente' && ['DECLINED', 'ERROR', 'VOIDED'].includes(data.tx?.status) && !quote.payment.pending && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
+      {/* un APPROVED sin confirmar también cuenta como intento en curso (no se ofrece pagar), con su propio aviso */}
+      {quote.payment?.status === 'pendiente' && data.tx?.status !== 'APPROVED' && (data.tx?.status === 'PENDING' || quote.payment.pending) && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
       {quote.invoice?.publicUrl && (
-        <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
+        <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })}{quote.invoice.validated === false ? ` (${t('pendiente de validación en la DIAN')})` : ''} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
       )}
       {quote.payment?.online && (
         <section className="report-section quote-decision no-print">
@@ -105,7 +124,7 @@ export default function PublicQuote({ token }) {
           <thead><tr><th>{t('Descripción')}</th><th className="num">{t('Cant.')}</th><th className="num wide">{t('Precio unitario')}</th><th className="num wide">{t(cur === 'USD' ? 'Impuesto' : 'IVA')}</th><th className="num">{t('Valor')}</th></tr></thead>
           <tbody>
             {quote.items.map((i, n) => (
-              <tr key={n}><td>{i.description}</td><td className="num">{i.qty}</td><td className="num wide">{money(i.unitPrice, cur)}</td><td className="num wide">{i.taxRate} %</td><td className="num">{money(i.amount, cur)}</td></tr>
+              <tr key={n}><td>{i.description}</td><td className="num">{i.qty}</td><td className="num wide">{money(i.unitPrice, cur)}</td><td className="num wide">{i.excluded ? t('Excluido') : `${i.taxRate} %`}</td><td className="num">{money(i.amount, cur)}</td></tr>
             ))}
           </tbody>
           <tfoot>

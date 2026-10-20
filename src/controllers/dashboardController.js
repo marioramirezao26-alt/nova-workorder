@@ -3,9 +3,9 @@ const { companyScope } = require('../middleware/authMiddleware');
 
 const getDashboardSummary = async (req, res) => {
   try {
-    // Solo la empresa del usuario; un usuario cliente, solo las órdenes de su ficha.
+    // Solo la empresa del usuario; un usuario cliente, solo las órdenes de su ficha (sin ficha, ninguna).
     const scope = companyScope(req);
-    if (req.user.role === 'cliente') scope.client = req.user.client || null;
+    if (req.user.role === 'cliente') scope.client = req.user.client || { $in: [] };
     const match = { $match: scope };
     const total = await WorkOrder.countDocuments(scope);
     const statusOrder = ['pendiente', 'en_proceso', 'completada', 'cancelada'];

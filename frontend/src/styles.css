@@ -1088,9 +1088,10 @@ label.switch-row input { width: auto; margin: 0; }
 .danger-button { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; background: #d64545; color: #fff; cursor: pointer; }
 .danger-button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 640px) {
-  .quote-line { grid-template-columns: 1fr 1fr 28px; }
+  /* En el celular la descripción va en su propia fila y debajo cantidad, precio, IVA y ×, con su encabezado encima. */
+  .quote-line { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.3fr) minmax(0, 1fr) 28px; }
   .quote-line > input:first-child { grid-column: 1 / -1; }
-  .quote-line.head { display: none; }
+  .quote-line.head > span:first-child { display: none; }
   .quote-table.print .wide { display: none; }
 }
 .secret-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

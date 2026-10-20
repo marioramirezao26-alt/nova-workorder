@@ -14,16 +14,21 @@ const { audit } = require('../utils/audit');
 const MAX_PHOTOS = Number(process.env.MAX_ORDER_PHOTOS) || 12;
 const MAX_PHOTO_BYTES = 400 * 1024;          // el celular la reduce antes de subirla (1280 px, JPEG)
 const MAX_SIGNATURE_BYTES = 60 * 1024;
+const MAX_SIGNATURES = 5;                    // por orden: la vigente y hasta 4 que reemplazó el técnico
 
 const fail = (status, message) => Object.assign(new Error(message), { statusCode: status });
 const reply = (res, error, fallback) => res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : fallback });
 
-// Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha (igual que en las órdenes).
+// Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha, y sin ficha ninguna (con
+// `null` vería las órdenes internas, las que no tienen cliente). Las órdenes usan este mismo filtro.
 const orderFilter = (req) => {
   const filter = companyScope(req);
-  if (req.user.role === 'cliente') filter.client = req.user.client || null;
+  if (req.user.role === 'cliente') filter.client = req.user.client || { $in: [] };
   return filter;
 };
+
+// Zona horaria de la empresa para las horas que ve el cliente: es → Colombia; en → Estados Unidos (hora del Este).
+const timeZoneOf = (company) => (company && company.lang === 'en' ? 'America/New_York' : 'America/Bogota');
 
 const findOrder = async (req) => {
   const order = await WorkOrder.findOne({ $and: [orderFilter(req), { _id: req.params.id }] });
@@ -54,11 +59,15 @@ const sniff = (buf) => {
 
 // ¿Se puede completar? Los puntos obligatorios del checklist marcados y, si la empresa lo pide, la firma del cliente.
 // El administrador puede cerrar desde la oficina sin firma (la regla de la firma es para el técnico en la visita).
+// Devuelve el cuerpo del 409; los puntos que faltan van también aparte (`missing`) para armar la frase en inglés.
 const completionProblem = (order, company, role) => {
   const missing = (order.checklist || []).filter((i) => i.required && !i.done);
-  if (missing.length) return `Falta marcar en el checklist: ${missing.slice(0, 3).map((i) => `«${i.label}»`).join(', ')}${missing.length > 3 ? '…' : ''}`;
+  if (missing.length) {
+    const items = `${missing.slice(0, 3).map((i) => `«${i.label}»`).join(', ')}${missing.length > 3 ? '…' : ''}`;
+    return { message: `Falta marcar en el checklist: ${items}`, missing: items };
+  }
   if (role !== 'admin' && company && company.requireSignature && !(order.signature && order.signature.file)) {
-    return 'Tu empresa pide la firma del cliente antes de completar la orden';
+    return { message: 'Tu empresa pide la firma del cliente antes de completar la orden' };
   }
   return null;
 };
@@ -144,12 +153,14 @@ const setChecklist = async (req, res) => {
   }
 };
 
-// Marcar los puntos: llega la lista completa en el mismo orden ({ done, note } por punto).
+// Marcar los puntos: llega la lista completa en el mismo orden ({ label, done, note } por punto). El nombre de cada punto
+// tiene que coincidir: si la orden cambió de plantilla mientras tanto, las marcas no caen en puntos que no se vieron.
 const updateChecklist = async (req, res) => {
   try {
     const order = await findEditable(req);
     const items = req.body.items;
-    if (!Array.isArray(items) || items.length !== order.checklist.length) throw fail(400, 'El checklist cambió: actualiza la orden');
+    if (!Array.isArray(items) || items.length !== order.checklist.length
+        || order.checklist.some((item, i) => !items[i] || items[i].label !== item.label)) throw fail(400, 'El checklist cambió: actualiza la orden');
     order.checklist.forEach((item, i) => {
       item.done = Boolean(items[i] && items[i].done);
       item.note = String((items[i] && items[i].note) || '').trim().slice(0, 300);
@@ -190,15 +201,21 @@ const uploadPhoto = async (req, res) => {
   }
 };
 
+// La foto se saca de la orden con una operación atómica (no pisa una subida ni otro borrado al mismo tiempo) y solo
+// después se borra su archivo: ni la orden apunta a un archivo borrado ni queda un archivo suelto.
 const deletePhoto = async (req, res) => {
   try {
     const order = await findEditable(req);
-    const entry = order.attachments.find((a) => String(a.file) === req.params.fileId);
-    if (!entry) throw fail(404, 'Foto no encontrada');
-    await WorkOrderFile.deleteOne({ ...companyScope(req), _id: entry.file, workOrder: order._id });
-    order.attachments = order.attachments.filter((a) => String(a.file) !== req.params.fileId);
-    await order.save();
-    res.status(200).json(order);
+    const fileId = req.params.fileId;
+    if (!mongoose.isValidObjectId(fileId)) throw fail(404, 'Foto no encontrada');
+    const updated = await WorkOrder.findOneAndUpdate(
+      { ...companyScope(req), _id: order._id, 'attachments.file': fileId },
+      { $pull: { attachments: { file: fileId } } },
+      { new: true }
+    );
+    if (!updated) throw fail(404, 'Foto no encontrada');
+    await WorkOrderFile.deleteOne({ ...companyScope(req), _id: fileId, workOrder: order._id });
+    res.status(200).json(updated);
   } catch (error) {
     reply(res, error, 'No se pudo borrar la foto');
   }
@@ -222,7 +239,9 @@ const getFile = async (req, res) => {
   }
 };
 
-// Firma del cliente: { name, image: "data:image/png;base64,…" } dibujada en el celular. Reemplaza la anterior.
+// Firma del cliente: { name, image: "data:image/png;base64,…" } dibujada en el celular. Reemplaza la vigente solo si
+// nadie firmó entre tanto. Si la reemplaza el técnico, la anterior se conserva en la orden (queda en la bitácora), con
+// cupo: con MAX_SIGNATURES guardadas, otro cambio lo hace el administrador, que al reemplazarla borra las anteriores.
 const sign = async (req, res) => {
   try {
     const name = String(req.body.name || '').trim();
@@ -230,30 +249,48 @@ const sign = async (req, res) => {
     const match = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/.exec(String(req.body.image || ''));
     if (!match) throw fail(400, 'La firma no es válida');
     const data = Buffer.from(match[1], 'base64');
-    if (data.length > MAX_SIGNATURE_BYTES || sniff(data) !== 'image/png') throw fail(400, 'La firma no es válida');
+    if (data.length > MAX_SIGNATURE_BYTES) throw fail(413, 'La firma quedó muy pesada: bórrala y fírmala más simple');
+    if (sniff(data) !== 'image/png') throw fail(400, 'La firma no es válida');
     const order = await findEditable(req);
     const previous = order.signature && order.signature.file;
+    // Las firmas guardadas de la orden, leídas antes de crear la nueva: el cupo del técnico y lo que borra el administrador
+    // (nunca una firma que llegue después de esta lectura).
+    const stored = (await WorkOrderFile.find({ ...companyScope(req), workOrder: order._id, kind: 'firma' }).select('_id').lean()).map((f) => f._id);
+    if (req.user.role !== 'admin' && stored.length >= MAX_SIGNATURES) throw fail(409, 'La firma ya se cambió varias veces: pide al administrador que la corrija');
     const file = await WorkOrderFile.create({ ...companyScope(req), workOrder: order._id, kind: 'firma', type: 'image/png', data, size: data.length, by: req.user._id });
-    order.signature = { name, signedAt: new Date(), file: file._id };
-    await order.save();
-    if (previous) await WorkOrderFile.deleteOne({ ...companyScope(req), _id: previous });
-    await audit(req, 'orden.firma', `Registró la firma de ${name} en la orden «${order.title}»`, { entityId: order._id });
-    res.status(200).json(order);
+    const updated = await WorkOrder.findOneAndUpdate(
+      { ...companyScope(req), _id: order._id, 'signature.file': previous || null },
+      { $set: { signature: { name, signedAt: new Date(), file: file._id } } },
+      { new: true }
+    );
+    if (!updated) {
+      await WorkOrderFile.deleteOne({ ...companyScope(req), _id: file._id });
+      throw fail(409, 'La firma cambió: actualiza la orden');
+    }
+    if (req.user.role === 'admin' && stored.length) await WorkOrderFile.deleteMany({ ...companyScope(req), _id: { $in: stored } });
+    await audit(req, 'orden.firma', `Registró la firma de ${name} en la orden «${order.title}»`,
+      { entityId: order._id, meta: previous ? { reemplazada: String(previous) } : {} });
+    res.status(200).json(updated);
   } catch (error) {
     reply(res, error, 'No se pudo guardar la firma');
   }
 };
 
-// Enlace público del informe: se crea la primera vez y luego es siempre el mismo.
+// Enlace público del informe: se crea la primera vez y luego es siempre el mismo. Con { rotate: true } se cambia por uno
+// nuevo y el anterior deja de servir (se mandó a quien no era, o el cliente pide que deje de circular); eso lo hace el
+// administrador o el técnico de la orden.
 const reportLink = async (req, res) => {
   try {
     const order = await findOrder(req);
     if (req.user.role === 'tecnico' && String(order.assignedTo) !== String(req.user._id)) {
       throw fail(403, 'Solo puedes compartir el informe de las órdenes que tienes asignadas');
     }
-    if (!order.reportToken) {
+    const rotate = Boolean(req.body && req.body.rotate === true);
+    if (rotate && req.user.role === 'cliente') throw fail(403, 'No tienes permiso para esta acción');
+    if (!order.reportToken || rotate) {
       order.reportToken = crypto.randomBytes(18).toString('base64url');
       await order.save();
+      if (rotate) await audit(req, 'orden.enlace', `Cambió el enlace del informe de la orden «${order.title}» (el anterior dejó de servir)`, { entityId: order._id });
     }
     res.status(200).json({ path: `/informe/${order.reportToken}`, token: order.reportToken });
   } catch (error) {
@@ -277,7 +314,7 @@ const publicReport = async (req, res) => {
     if (!company || company.status === 'suspendida') throw fail(404, 'Este informe no existe');
     res.set('Cache-Control', 'no-store');
     res.status(200).json({
-      company: { id: company._id, name: company.name, lang: company.lang || 'es', branding: publicBranding(company) },
+      company: { id: company._id, name: company.name, lang: company.lang || 'es', timeZone: timeZoneOf(company), branding: publicBranding(company) },
       order: {
         title: order.title,
         description: order.description,
@@ -319,7 +356,7 @@ const publicReportFile = async (req, res) => {
 };
 
 module.exports = {
-  completionProblem,
+  completionProblem, orderFilter, timeZoneOf,
   listTemplates, createTemplate, updateTemplate, deleteTemplate,
   setChecklist, updateChecklist, uploadPhoto, deletePhoto, getFile, sign, reportLink,
   publicReport, publicReportFile,

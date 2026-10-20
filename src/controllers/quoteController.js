@@ -12,7 +12,7 @@ const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
 const wompi = require('../services/wompi');
 const factus = require('../services/factus');
-const { dueFor, applyTransaction } = require('../services/quotePayments');
+const { dueFor, notePending, pendingNow, statusFor, UNPAID } = require('../services/quotePayments');
 
 // Cotizaciones (Mejora 3): se arman en borrador, se envían con un enlace y el cliente las aprueba o rechaza sin cuenta.
 // Al aprobarse se crea la orden de trabajo con el cliente y lo cotizado.
@@ -25,11 +25,32 @@ const reply = (res, error, fallback) => res.status(error.statusCode || 500).json
 const endOfDay = (day) => new Date(`${day}T23:59:59.999-05:00`);
 const defaultValidUntil = () => endOfDay(colombiaDay(new Date(Date.now() + DEFAULT_VALID_DAYS * 86400000)));
 const expired = (q) => q.status === 'enviada' && q.validUntil < new Date();
+// Solo la factura de producción es definitiva; la de pruebas no tiene validez fiscal ni impide facturar en producción.
+// Una factura de antes de guardar el ambiente (sin env) se reconoce por su número: SETP es el prefijo del set de pruebas
+// de la DIAN (habilitación); con otro prefijo es de producción.
+const invoiceEnv = (inv) => inv.env || (inv.number && !/^SETP/i.test(inv.number) ? 'produccion' : 'pruebas');
+const testInvoice = (inv) => Boolean(inv && inv.cufe && invoiceEnv(inv) !== 'produccion');
 const shownStatus = (q) => (expired(q) ? 'vencida' : q.status);
 
-const view = (q) => {
+// Lo que se cobra en línea (el fijado, o el que se fijaría hoy) y si el cliente puede pagarlo ahora mismo: aprobada, en
+// pesos, con Wompi, por cobrar, con valor, y sin un intento de Wompi en curso (para no cobrarle dos veces).
+const onlinePayment = (quote, company) => {
+  const p = quote.payment || {};
+  const chargeable = wompi.chargeable(company, quote);
+  const due = p.due || (chargeable ? Math.round((quote.total * (company.wompi.depositPercent || 100)) / 100) : null);
+  return { due, online: quote.status === 'aprobada' && chargeable && (p.status || 'pendiente') === 'pendiente' && !pendingNow(p) && due > 0 };
+};
+
+// La llave del enlace (con ella se aprueba sin sesión) solo la reciben el administrador, quien armó la cotización y el
+// usuario cliente de la ficha; a otro técnico de la empresa no le llega.
+// Una factura de pruebas (sin validez fiscal) solo la ve el administrador.
+const view = (q, req) => {
   const o = typeof q.toObject === 'function' ? q.toObject() : { ...q };
-  return { ...o, status: shownStatus(q), expired: expired(q) };
+  const own = ['admin', 'cliente'].includes(req.user.role) || String((o.createdBy && o.createdBy._id) || o.createdBy) === String(req.user._id);
+  if (!own) delete o.publicToken;
+  if (o.invoice && o.invoice.cufe && !o.invoice.env) o.invoice = { ...o.invoice, env: invoiceEnv(o.invoice) };
+  if (testInvoice(o.invoice) && req.user.role !== 'admin') delete o.invoice;
+  return { ...o, status: shownStatus(q), expired: expired(q), payment: { ...(o.payment || {}), online: onlinePayment(q, req.company).online } };
 };
 
 const populate = (query) => query.populate('client', 'name email phone company address').populate('createdBy', 'name').populate('workOrder', 'title status');
@@ -64,17 +85,17 @@ const findOwn = async (req) => {
 const buildItems = (raw, currency) => {
   const items = (Array.isArray(raw) ? raw : []).map((i) => ({
     description: String((i && i.description) || '').trim().slice(0, 200),
-    qty: Number(i && i.qty),
+    qty: Math.round(Number(i && i.qty) * 100) / 100,          // dos decimales, y se valida ya redondeada (0,004 queda en 0)
     unitPrice: Number(i && i.unitPrice),
     taxRate: i && i.taxRate !== undefined && i.taxRate !== '' ? Number(i.taxRate) : (currency === 'COP' ? 19 : 0),
-  }));
+    excluded: currency === 'COP' && Boolean(i && i.excluded),   // excluido de IVA: va al 0 %
+  })).map((i) => (i.excluded ? { ...i, taxRate: 0 } : i));
   if (!items.length || items.length > 50) throw fail(400, 'La cotización lleva entre 1 y 50 renglones');
   items.forEach((i, n) => {
     if (!i.description) throw fail(400, `Escribe la descripción del renglón ${n + 1}`);
-    if (!(Number.isFinite(i.qty) && i.qty > 0 && i.qty <= 100000)) throw fail(400, `Cantidad inválida en el renglón ${n + 1}`);
+    if (!(Number.isFinite(i.qty) && i.qty >= 0.01 && i.qty <= 100000)) throw fail(400, `Cantidad inválida en el renglón ${n + 1}`);
     if (!(Number.isFinite(i.unitPrice) && i.unitPrice >= 0 && i.unitPrice <= 10000000000)) throw fail(400, `Precio inválido en el renglón ${n + 1}`);
     if (!(Number.isFinite(i.taxRate) && i.taxRate >= 0 && i.taxRate <= 30)) throw fail(400, `Impuesto inválido en el renglón ${n + 1}`);
-    i.qty = Math.round(i.qty * 100) / 100;
   });
   const t = totals(items, currency);
   return { items: t.lines, subtotal: t.subtotal, tax: t.tax, total: t.total };
@@ -99,7 +120,7 @@ const listQuotes = async (req, res) => {
       filter.$or = [{ title: rx }, ...(/^#?\d+$/.test(q) ? [{ number: Number(q.replace('#', '')) }] : [])];
     }
     const items = await populate(Quote.find(filter).sort({ createdAt: -1 }).limit(Math.min(Number(req.query.limit) || 50, 200)));
-    res.status(200).json({ items: items.map(view) });
+    res.status(200).json({ items: items.map((q) => view(q, req)) });
   } catch (error) {
     reply(res, error, 'No se pudieron cargar las cotizaciones');
   }
@@ -108,7 +129,7 @@ const listQuotes = async (req, res) => {
 const getQuote = async (req, res) => {
   try {
     const quote = await findQuote(req);
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo cargar la cotización');
   }
@@ -132,7 +153,7 @@ const createQuote = async (req, res) => {
       createdBy: req.user._id,
     });
     await audit(req, 'cotizacion.crear', `Creó la cotización #${quote.number} «${quote.title}»`, { entityId: quote._id });
-    res.status(201).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(201).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo crear la cotización');
   }
@@ -150,7 +171,7 @@ const updateQuote = async (req, res) => {
     if (req.body.items !== undefined) Object.assign(quote, buildItems(req.body.items, quote.currency));
     await quote.save();
     await audit(req, 'cotizacion.editar', `Editó la cotización #${quote.number}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo guardar la cotización');
   }
@@ -181,38 +202,42 @@ const sendQuote = async (req, res) => {
       await audit(req, 'cotizacion.enviar', `Envió la cotización #${quote.number}`, { entityId: quote._id });
     }
     await quote.save();
-    res.status(200).json({ path: `/cotizacion/${quote.publicToken}`, quote: view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))) });
+    res.status(200).json({ path: `/cotizacion/${quote.publicToken}`, quote: view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req) });
   } catch (error) {
     reply(res, error, 'No se pudo enviar la cotización');
   }
 };
 
-// Volver a borrador (para corregirla o reenviarla después de un rechazo o de vencerse).
+// Volver a borrador (para corregirla o reenviarla después de un rechazo o de vencerse). La llave se borra: al reenviarla
+// sale otra, y el enlace anterior (o una página abierta desde antes) ya no la muestra ni la aprueba con lo que cambió.
 const reopenQuote = async (req, res) => {
   try {
     const quote = await findOwn(req);
     if (!['enviada', 'rechazada'].includes(quote.status)) throw fail(409, 'Solo una cotización enviada o rechazada vuelve a borrador');
     const updated = await Quote.findOneAndUpdate(
       { ...companyScope(req), _id: quote._id, status: quote.status },
-      { $set: { status: 'borrador', decidedAt: null, decidedBy: '', decidedVia: '', decisionNote: '' } },
+      { $set: { status: 'borrador', decidedAt: null, decidedBy: '', decidedVia: '', decisionNote: '' }, $unset: { publicToken: 1 } },
       { new: true }
     );
     if (!updated) throw fail(409, 'La cotización cambió mientras tanto. Actualiza la lista.');
     await audit(req, 'cotizacion.reabrir', `Volvió a borrador la cotización #${quote.number}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo volver a borrador');
   }
 };
 
-// La orden de trabajo que sale de una cotización aprobada (una sola: si ya existe, no se crea otra).
+// La orden de trabajo que sale de una cotización aprobada (una sola: si ya existe, no se crea otra), con el título en el
+// idioma de la empresa (lo ven el técnico, los reportes y el webhook). `created` dice si la creó esta petición.
 const createOrderFrom = async (quote) => {
   const client = await Client.findOne({ tenant: quote.tenant, _id: quote.client });
+  const company = await Company.findById(quote.tenant).select('lang');
+  const en = Boolean(company && company.lang === 'en');
   const lines = quote.items.map((i) => `- ${i.qty} × ${i.description}`).join('\n');
   const order = await WorkOrder.create({
     tenant: quote.tenant,
-    title: `Cotización #${quote.number}: ${quote.title}`.slice(0, 200),
-    description: `Trabajo aprobado en la cotización #${quote.number}.\n${lines}`.slice(0, 2000),
+    title: `${en ? 'Quote' : 'Cotización'} #${quote.number}: ${quote.title}`.slice(0, 200),
+    description: `${en ? `Work approved in quote #${quote.number}.` : `Trabajo aprobado en la cotización #${quote.number}.`}\n${lines}`.slice(0, 2000),
     status: 'pendiente',
     priority: 'media',
     client: client ? client._id : null,
@@ -223,11 +248,11 @@ const createOrderFrom = async (quote) => {
   const linked = await Quote.findOneAndUpdate({ tenant: quote.tenant, _id: quote._id, workOrder: null }, { $set: { workOrder: order._id } }, { new: true });
   if (!linked) {                                     // otra petición ya la había creado: se queda la primera
     await WorkOrder.deleteOne({ tenant: quote.tenant, _id: order._id });
-    return Quote.findOne({ tenant: quote.tenant, _id: quote._id });
+    return { quote: await Quote.findOne({ tenant: quote.tenant, _id: quote._id }), created: false };
   }
   const populated = await WorkOrder.findOne({ tenant: quote.tenant, _id: order._id }).populate('client', 'name').populate('assignedTo', 'name');
   await webhooks.emit(quote.tenant, 'orden.creada', webhooks.orderPayload(populated));
-  return linked;
+  return { quote: linked, created: true };
 };
 
 // Aprobar o rechazar, una sola vez: el cambio se condiciona a que siga «enviada» y vigente (dos clics no aprueban dos veces).
@@ -241,7 +266,7 @@ const decide = async (quote, { approve, name, note, via }) => {
     if (fresh && expired(fresh)) throw fail(409, 'La cotización ya venció. Pide a la empresa que te envíe una nueva.');
     throw fail(409, 'La cotización ya tiene una respuesta');
   }
-  return approve ? createOrderFrom(updated) : updated;
+  return approve ? (await createOrderFrom(updated)).quote : updated;
 };
 
 // Aprobación de la oficina (el cliente aprobó por teléfono o en persona).
@@ -250,19 +275,28 @@ const approveQuote = async (req, res) => {
     const quote = await findOwn(req);
     const done = await decide(quote, { approve: true, name: req.user.name, note: req.body.note, via: 'oficina' });
     await audit(req, 'cotizacion.aprobar', `Marcó como aprobada la cotización #${quote.number}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id }))));
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo aprobar la cotización');
   }
 };
 
-// Si la orden no se alcanzó a crear al aprobar (un fallo de la base), se crea aquí.
+// Si la orden no se alcanzó a crear al aprobar (un fallo de la base) o se borró después, se crea aquí.
 const convertQuote = async (req, res) => {
   try {
     const quote = await findOwn(req);
     if (quote.status !== 'aprobada') throw fail(409, 'Solo una cotización aprobada se convierte en orden');
-    const done = quote.workOrder ? quote : await createOrderFrom(quote);
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id }))));
+    if (quote.workOrder && !(await WorkOrder.exists({ tenant: quote.tenant, _id: quote.workOrder }))) {
+      // la orden enlazada ya no existe (se borró sin desligarla): se desliga y se crea otra
+      await Quote.updateOne({ tenant: quote.tenant, _id: quote._id, workOrder: quote.workOrder }, { $set: { workOrder: null } });
+      quote.workOrder = null;
+    }
+    // Solo anota la petición que enlazó la orden: con dos «Crear la orden» a la vez, la otra no la creó.
+    const { quote: done, created } = quote.workOrder ? { quote, created: false } : await createOrderFrom(quote);
+    if (created) {
+      await audit(req, 'cotizacion.convertir', `Creó la orden de la cotización #${quote.number}`, { entityId: quote._id, meta: { workOrder: String(done.workOrder) } });
+    }
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: done._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo crear la orden');
   }
@@ -290,7 +324,7 @@ const publicView = async (quote, company) => {
       number: quote.number,
       title: quote.title,
       notes: quote.notes,
-      items: quote.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate, amount: i.amount, tax: i.tax })),
+      items: quote.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate, excluded: Boolean(i.excluded), amount: i.amount, tax: i.tax })),
       currency: quote.currency,
       subtotal: quote.subtotal,
       tax: quote.tax,
@@ -301,15 +335,19 @@ const publicView = async (quote, company) => {
       client: client ? { name: client.name, company: client.company || '' } : null,
       decidedAt: quote.decidedAt,
       decidedBy: quote.decidedBy,
-      // La factura electrónica, cuando ya tiene CUFE (para descargarla).
-      invoice: quote.invoice && quote.invoice.cufe ? { number: quote.invoice.number, publicUrl: quote.invoice.publicUrl } : null,
-      // El cobro: cuánto (si ya se fijó), si está pagada y si se puede pagar en línea ahora mismo.
+      // La factura electrónica de producción, cuando ya tiene CUFE (para descargarla); la de pruebas no se muestra.
+      invoice: quote.invoice && quote.invoice.cufe && !testInvoice(quote.invoice)
+        ? { number: quote.invoice.number, publicUrl: quote.invoice.publicUrl, validated: quote.invoice.validated !== false } : null,
+      // El cobro: cuánto se cobra en línea, lo pagado y el saldo, si se puede pagar ahora mismo y si hay un intento de
+      // Wompi en curso; «test» si se pagó con las llaves de pruebas.
       payment: {
-        status: quote.payment ? quote.payment.status : 'pendiente',
-        due: quote.payment && quote.payment.due ? quote.payment.due
-          : (wompi.connected(company) ? Math.round((quote.total * (company.wompi.depositPercent || 100)) / 100) : null),
+        status: (quote.payment && quote.payment.status) || 'pendiente',
+        ...onlinePayment(quote, company),
+        amountPaid: (quote.payment && quote.payment.amountPaid) || 0,
+        balance: quote.total - ((quote.payment && quote.payment.amountPaid) || 0),
         paidAt: quote.payment ? quote.payment.paidAt : null,
-        online: quote.status === 'aprobada' && wompi.connected(company) && !(quote.payment && quote.payment.status === 'pagado'),
+        pending: pendingNow(quote.payment),
+        test: Boolean(quote.payment && quote.payment.test),
         txStatus: quote.payment ? quote.payment.txStatus : '',
       },
     },
@@ -335,6 +373,8 @@ const publicDecision = (approve) => async (req, res) => {
       await AuditLog.create({
         tenant: quote.tenant, user: null, userName: `Cliente: ${name}`, action: approve ? 'cotizacion.aprobada' : 'cotizacion.rechazada',
         summary: `${name} ${approve ? 'aprobó' : 'rechazó'} la cotización #${quote.number} desde el enlace`, entityId: quote._id,
+        // el nombre lo escribe quien tenga el enlace: la IP y el navegador quedan como constancia de dónde vino
+        meta: { ip: req.ip || '', userAgent: String(req.get('user-agent') || '').slice(0, 300) },
       });
     } catch {
       // la bitácora es secundaria
@@ -349,14 +389,20 @@ const publicDecision = (approve) => async (req, res) => {
 const appUrl = (req) => (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
 
 // Pagar en línea una cotización aprobada: el enlace firmado al checkout de Wompi por lo que se cobra (todo o anticipo).
+// No se da otro mientras el último intento siga en curso en Wompi (menos de 30 minutos).
 const publicCheckout = async (req, res) => {
   try {
     const { quote } = await loadPublic(req.params.token);
     const company = await Company.findById(quote.tenant).select('+wompi.integritySealed');
+    const p = quote.payment || {};
     if (quote.status !== 'aprobada') throw fail(409, 'Primero aprueba la cotización');
     if (!wompi.connected(company)) throw fail(409, 'Esta empresa no recibe pagos en línea');
-    if (quote.payment && quote.payment.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
+    if (!wompi.chargeable(company, quote)) throw fail(409, 'Esta cotización no se cobra en línea');
+    if (p.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
+    if (p.status === 'anticipo') throw fail(409, 'El anticipo ya está pagado: el saldo se acuerda con la empresa');
+    if (pendingNow(p)) throw fail(409, 'Wompi está procesando un pago de esta cotización. Espera unos minutos antes de intentarlo de nuevo.');
     const due = await dueFor(quote, company);
+    if (!(due > 0)) throw fail(409, 'Esta cotización no se cobra en línea');
     const url = wompi.checkoutUrl(company, quote, due, `${appUrl(req)}/cotizacion/${quote.publicToken}`);
     if (!url) throw fail(409, 'La empresa debe conectar Wompi de nuevo para recibir pagos');
     res.status(200).json({ checkoutUrl: url, due });
@@ -365,61 +411,107 @@ const publicCheckout = async (req, res) => {
   }
 };
 
-// El cliente vuelve del checkout con ?id=<transacción>: se consulta en Wompi y se aplica (además del evento firmado).
+// El cliente vuelve del checkout con ?id=<transacción>: se consulta en Wompi para mostrarle cómo va («tx»), pero el pago
+// solo lo cambia el evento firmado (la consulta es pública: Wompi devuelve la transacción de cualquier comercio). La
+// página vuelve a consultar unas veces mientras llega el evento.
 const publicPaymentStatus = async (req, res) => {
   try {
     const { quote, company } = await loadPublic(req.params.token);
     let current = quote;
-    if (wompi.connected(company) && req.query.id) {
-      const tx = await wompi.fetchTransaction(company, String(req.query.id));
-      if (tx && wompi.quoteIdFrom(tx.reference) === String(quote._id)) current = (await applyTransaction(company, tx)) || quote;
+    let tx = null;
+    if (wompi.chargeable(company, quote) && req.query.id) {
+      const found = await wompi.fetchTransaction(company, String(req.query.id));
+      if (found && wompi.quoteIdFrom(found.reference) === String(quote._id)) {
+        tx = { status: String(found.status || '').toUpperCase() };
+        current = (await notePending(company, found)) || quote;
+      }
     }
     res.set('Cache-Control', 'no-store');
-    res.status(200).json(await publicView(current, company));
+    res.status(200).json({ ...(await publicView(current, company)), tx });
   } catch (error) {
     reply(res, error, 'No se pudo consultar el pago');
   }
 };
 
-// La oficina marca el pago a mano (efectivo, transferencia) o lo devuelve a pendiente si se marcó por error. Un pago
-// confirmado por Wompi no se toca desde aquí.
+// La oficina registra a mano lo que falta (efectivo, transferencia; con un anticipo de Wompi, el saldo) o quita lo que
+// registró si fue por error. Lo que confirmó Wompi no se toca desde aquí, salvo un pago de prueba (no es plata real).
+// No toca lo que se cobra en línea (payment.due): marcar y desmarcar deja el mismo anticipo.
 const setPayment = async (req, res) => {
   try {
     const quote = await findQuote(req);
     if (quote.status !== 'aprobada') throw fail(409, 'Solo se cobra una cotización aprobada');
-    if (quote.payment && quote.payment.method === 'wompi' && quote.payment.status === 'pagado') throw fail(409, 'Este pago lo confirmó Wompi: no se cambia a mano');
+    const p = quote.payment;
     const paid = req.body.status === 'pagado';
-    await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: {
-      'payment.status': paid ? 'pagado' : 'pendiente', 'payment.method': paid ? 'oficina' : '', 'payment.paidAt': paid ? new Date() : null,
-      ...(paid && !(quote.payment && quote.payment.due) ? { 'payment.due': quote.total } : {}),
-    } });
-    await audit(req, 'cotizacion.pago', `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
-    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    if (paid && p.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
+    // El saldo de un anticipo de prueba no es lo que falta (el anticipo no es plata real): primero se quita el de prueba.
+    if (paid && p.test) throw fail(409, 'El anticipo es un pago de prueba: quítalo con «Marcar por cobrar» antes de registrar el pago');
+    if (!paid && p.method === 'wompi' && !p.test && !p.officeAmount && p.status !== 'pendiente') throw fail(409, 'Este pago lo confirmó Wompi: no se cambia a mano');
+    const online = p.method === 'wompi' && !p.test ? Math.max(0, (p.amountPaid || 0) - (p.officeAmount || 0)) : 0;   // lo que pagó Wompi
+    const set = paid
+      ? { 'payment.status': 'pagado', 'payment.amountPaid': quote.total, 'payment.balance': 0, 'payment.officeAmount': quote.total - online, 'payment.method': online ? 'wompi' : 'oficina', 'payment.paidAt': new Date() }
+      : { 'payment.status': statusFor(online, quote.total), 'payment.amountPaid': online, 'payment.balance': quote.total - online, 'payment.officeAmount': 0, 'payment.method': online ? 'wompi' : '', ...(online ? {} : { 'payment.paidAt': null }) };
+    if (!online) Object.assign(set, { 'payment.test': false, 'payment.methodType': '' });
+    // Si la oficina quita lo suyo y Wompi sí cobró aparte (un pago real que llegó con la cotización ya marcada y quedó
+    // como posible doble cobro), ese pasa a ser el pago: no se devuelve la plata buena ni se le cobra otra vez al cliente.
+    const real = !paid && !online && (p.extra || []).find((e) => e.status === 'APPROVED' && !e.test);
+    if (real) {
+      const amount = Math.min(real.amount, quote.total);
+      Object.assign(set, {
+        'payment.status': statusFor(amount, quote.total), 'payment.amountPaid': amount, 'payment.balance': quote.total - amount,
+        'payment.method': 'wompi', 'payment.methodType': real.methodType || '', 'payment.txId': real.txId, 'payment.txStatus': 'APPROVED',
+        'payment.paidAt': real.at || new Date(),
+      });
+    }
+    const same = p.status === 'pendiente' ? UNPAID : { 'payment.status': p.status };    // si Wompi la cambió mientras tanto, no se pisa
+    const done = await Quote.updateOne(
+      { ...companyScope(req), _id: quote._id, ...same, ...(real ? { 'payment.extra': { $elemMatch: { txId: real.txId, status: 'APPROVED' } } } : {}) },
+      { $set: set, ...(real ? { $pull: { 'payment.extra': { txId: real.txId } } } : {}) }
+    );
+    if (!done.matchedCount) throw fail(409, 'La cotización cambió mientras tanto. Actualiza la lista.');
+    await audit(req, 'cotizacion.pago', real ? `Quitó el pago que registró la oficina en la cotización #${quote.number}: queda el que cobró Wompi (${real.txId})`
+      : paid && online ? `Registró como pagado el saldo de la cotización #${quote.number}`
+        : `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
+    res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
   } catch (error) {
     reply(res, error, 'No se pudo guardar el pago');
   }
 };
 
-// Factura electrónica DIAN de una cotización aprobada: a consumidor final o a nombre del cliente (cédula, NIT…). Si ya
-// tiene CUFE no se vuelve a facturar; si falla, queda anotado el error para reintentar (Factus no duplica: misma referencia).
+// Factura electrónica DIAN de una cotización aprobada (en pesos): a consumidor final o a nombre del cliente (cédula,
+// NIT…). Con la de producción no se vuelve a facturar; con una de pruebas tampoco mientras la empresa siga en pruebas,
+// pero al pasar a producción se factura de verdad. Si falla, queda anotado el error para reintentar (Factus no duplica:
+// misma referencia). Si Factus devuelve una factura ya hecha a otro comprador, se guarda la de Factus y se avisa.
 const invoiceQuote = async (req, res) => {
   try {
     const quote = await findQuote(req);
-    if (quote.invoice && quote.invoice.cufe) return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    const current = () => populate(Quote.findOne({ ...companyScope(req), _id: quote._id }));
+    if (quote.invoice && quote.invoice.cufe && !testInvoice(quote.invoice)) return res.status(200).json(view(await current(), req));
     if (quote.status !== 'aprobada') throw fail(409, 'Solo se factura una cotización aprobada');
+    if (quote.currency !== 'COP') throw fail(409, 'Solo se facturan ante la DIAN cotizaciones en pesos');
     const company = await Company.findById(req.company._id).select('+factus.clientSecretSealed +factus.passwordSealed');
     if (!factus.connected(company)) throw fail(409, 'Conecta la factura electrónica en «Integraciones» primero');
+    const env = company.factus.env === 'produccion' ? 'produccion' : 'pruebas';
+    if (quote.invoice && quote.invoice.cufe && env === 'pruebas') return res.status(200).json(view(await current(), req));
     const buyer = factus.buyerFrom(req.body.buyer);
+    let notice = '';
     try {
       const result = await factus.emit(company, factus.buildBill(company, quote, buyer));
-      await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { invoice: { ...result, buyerName: buyer.names || buyer.company || '', at: new Date(), error: '' } } });
-      await audit(req, 'cotizacion.factura', `Facturó la cotización #${quote.number} (${result.number})`, { entityId: quote._id, meta: { invoice: result.number } });
+      const buyerName = result.buyerName || buyer.names || buyer.company || '';
+      const buyerId = result.buyerId || buyer.identification;
+      if (buyerId !== buyer.identification) {
+        notice = `Factus ya tenía la factura ${result.number} de esta cotización, a nombre de ${buyerName} (${buyerId}). Para cambiar el comprador hay que anularla con una nota crédito.`;
+      }
+      await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { invoice: {
+        number: result.number, cufe: result.cufe, publicUrl: result.publicUrl, qr: result.qr, env, validated: result.validated,
+        buyerName, buyerId, at: new Date(), error: '',
+      } } });
+      await audit(req, 'cotizacion.factura', `Facturó la cotización #${quote.number} (${result.number}${env === 'pruebas' ? ', de pruebas' : ''})`, { entityId: quote._id, meta: { invoice: result.number, env } });
     } catch (error) {
       if (!(error instanceof factus.FactusError)) throw error;
       await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { 'invoice.error': error.message, 'invoice.at': new Date() } });
       return res.status(502).json({ message: error.message });
     }
-    return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    return res.status(200).json({ ...view(await current(), req), ...(notice ? { notice } : {}) });
   } catch (error) {
     return reply(res, error, 'No se pudo facturar la cotización');
   }

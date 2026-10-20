@@ -6,19 +6,30 @@ const { parseLocation, stampPoint, OFFSITE_METERS } = require('../utils/geo');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
 const WorkOrderFile = require('../models/WorkOrderFile');
-const { completionProblem } = require('./serviceReportController');
+const Quote = require('../models/Quote');
+// Lo que ve cada rol (orderFilter): las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
+const { completionProblem, orderFilter, timeZoneOf } = require('./serviceReportController');
 
-// Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
-const orderFilter = (req) => {
-  const filter = companyScope(req);
-  if (req.user.role === 'cliente') filter.client = req.user.client || null;
-  return filter;
+// El estado y sus fechas: el inicio la primera vez que pasa a «en proceso» y el cierre al completar (se quita si sale de
+// completada); el mapa en vivo es solo en proceso. Lo usan «Iniciar»/«Completar» (PATCH /status) y «Editar» (PUT).
+const applyStatus = (workOrder, status) => {
+  workOrder.status = status;
+  if (status === 'en_proceso' && !workOrder.startedAt) workOrder.startedAt = new Date();
+  workOrder.completedAt = status === 'completada' ? new Date() : null;
+  if (status !== 'en_proceso') { workOrder.lastPoint = null; workOrder.offSiteSince = null; }
 };
+
+// Sello de las notas («AAAA-MM-DD HH:mm») en la hora de la empresa: el servidor corre en UTC y el cliente lee las notas
+// en el informe público junto a las demás horas.
+const noteStamp = (company) => new Intl.DateTimeFormat('sv-SE', {
+  timeZone: timeZoneOf(company), year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+}).format(new Date());
 
 // La ubicación del técnico es para su empresa: un usuario cliente no la ve.
 const hidden = (req) => (req.user.role === 'cliente' ? '-startLocation -endLocation -lastPoint -offSiteSince' : '');
 
 const badRequest = (message) => Object.assign(new Error(message), { statusCode: 400 });
+const COMPLETED_FOR_ADMIN = 'Una orden completada solo la corrige o la reabre el administrador';
 
 // El cliente y el técnico de una orden tienen que ser de la misma empresa (y el técnico, activo).
 const resolveRefs = async (req, { client, assignedTo }) => {
@@ -119,11 +130,18 @@ const createWorkOrder = async (req, res) => {
       notes,
     } = req.body;
 
+    // Una orden que nace completada sigue la regla de «Completar» (sin checklist todavía, solo puede faltar la firma)
+    // y lleva su fecha de cierre.
+    if (status === 'completada') {
+      const problem = completionProblem({ checklist: [], signature: null }, req.company, req.user.role);
+      if (problem) return res.status(409).json(problem);
+    }
     const refs = await resolveRefs(req, { client, assignedTo });
     const workOrder = await WorkOrder.create({
       title,
       description,
       status: status || 'pendiente',
+      completedAt: status === 'completada' ? new Date() : null,
       priority: priority || 'media',
       customerName,
       dueDate,
@@ -181,11 +199,13 @@ const updateWorkOrder = async (req, res) => {
       return res.status(404).json({ message: 'Orden de trabajo no encontrada' });
     }
 
-    // Un técnico solo edita las órdenes que tiene asignadas o que creó, y no cambia su estado (eso va por «Iniciar» y
-    // «Completar»), no se la pasa a otro técnico ni borra el historial de notas.
+    // Un técnico solo edita las órdenes que tiene asignadas o que creó, mientras no estén completadas (una completada solo
+    // la corrige el administrador: el informe ya lleva la firma del cliente), y no cambia su estado (eso va por «Iniciar»
+    // y «Completar»), no se la pasa a otro técnico ni borra el historial de notas.
     if (req.user.role === 'tecnico') {
       const mine = [workOrder.assignedTo, workOrder.createdBy].some((id) => id && String(id) === String(req.user._id));
       if (!mine) return res.status(403).json({ message: 'Solo puedes editar las órdenes que tienes asignadas o que creaste' });
+      if (workOrder.status === 'completada') return res.status(403).json({ message: COMPLETED_FOR_ADMIN });
       const changed = (field, value) => value !== undefined && String(value ?? '') !== String(workOrder[field] ?? '');
       if (changed('status', status) || changed('notes', notes)
           || (assignedTo !== undefined && String(assignedTo || '') !== String(workOrder.assignedTo || '') && String(assignedTo || '') !== String(req.user._id))) {
@@ -193,14 +213,22 @@ const updateWorkOrder = async (req, res) => {
       }
     }
 
+    // Completar desde «Editar» sigue la misma regla que «Completar» (puntos obligatorios; la firma, salvo el administrador).
+    const statusChanged = status !== undefined && status !== workOrder.status;
+    if (statusChanged && status === 'completada') {
+      const problem = completionProblem(workOrder, req.company, req.user.role);
+      if (problem) return res.status(409).json(problem);
+    }
+
     // Solo se cambia lo que viene en el body: así se pueden vaciar campos opcionales
     // (por ejemplo customerName: '' o assignedTo: null) en lugar de ignorarlos.
-    const updates = { title, description, status, priority, customerName, dueDate, notes };
+    const updates = { title, description, priority, customerName, dueDate, notes };
     Object.entries(updates).forEach(([field, value]) => {
       if (value !== undefined) {
         workOrder[field] = value === '' && field === 'dueDate' ? null : value;
       }
     });
+    if (statusChanged) applyStatus(workOrder, status);
     Object.assign(workOrder, await resolveRefs(req, { client, assignedTo }));
 
     const updatedWorkOrder = await workOrder.save();
@@ -229,6 +257,8 @@ const deleteWorkOrder = async (req, res) => {
     const title = workOrder.title;
     await workOrder.deleteOne();
     await WorkOrderFile.deleteMany({ ...companyScope(req), workOrder: workOrder._id });   // sus fotos y su firma
+    // La cotización de la que salió queda sin orden: «Crear la orden» la vuelve a crear.
+    if (workOrder.quote) await Quote.updateOne({ ...companyScope(req), _id: workOrder.quote, workOrder: workOrder._id }, { $set: { workOrder: null } });
 
     await audit(req, 'orden.borrar', `Borró la orden «${title}»`, { entityId: workOrder._id });
     await webhooks.emit(req.user.tenant, 'orden.borrada', webhooks.orderPayload(workOrder));
@@ -257,16 +287,17 @@ const updateWorkOrderStatus = async (req, res) => {
     }
 
     const { status, note } = req.body;
+    // Una orden completada solo la corrige o la reabre el administrador: el técnico no la saca de ahí para cambiar fotos
+    // o firma, ni la «completa» otra vez (cambiaría la hora de cierre y las notas debajo de la firma del cliente).
+    if (req.user.role === 'tecnico' && workOrder.status === 'completada') {
+      return res.status(403).json({ message: COMPLETED_FOR_ADMIN });
+    }
     // Informe de servicio: sin los puntos obligatorios del checklist (ni la firma, si la empresa la pide) no se completa.
     if (status === 'completada' && workOrder.status !== 'completada') {
       const problem = completionProblem(workOrder, req.company, req.user.role);
-      if (problem) return res.status(409).json({ message: problem });
+      if (problem) return res.status(409).json(problem);
     }
-    workOrder.status = status;
-    if (status === 'en_proceso' && !workOrder.startedAt) workOrder.startedAt = new Date();
-    if (status === 'completada') workOrder.completedAt = new Date();
-    if (status !== 'completada') workOrder.completedAt = null;
-    if (status !== 'en_proceso') { workOrder.lastPoint = null; workOrder.offSiteSince = null; }   // el mapa en vivo es solo en proceso
+    applyStatus(workOrder, status);
     // Ubicación al iniciar y al completar: solo si la empresa la activó y este usuario la autorizó (Ley 1581).
     const loc = parseLocation(req.body.location);
     if (loc && req.company && req.company.locationTracking && req.user.locationConsentAt
@@ -287,8 +318,7 @@ const updateWorkOrderStatus = async (req, res) => {
       }
     }
     if (note) {
-      const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
-      workOrder.notes = `${workOrder.notes ? `${workOrder.notes}\n` : ''}[${stamp} · ${req.user.name}] ${note}`.slice(-5000);
+      workOrder.notes = `${workOrder.notes ? `${workOrder.notes}\n` : ''}[${noteStamp(req.company)} · ${req.user.name}] ${note}`.slice(-5000);
     }
     await workOrder.save();
 
