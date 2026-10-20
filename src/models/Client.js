@@ -52,4 +52,7 @@ const clientSchema = new mongoose.Schema(
 // El email del cliente es único dentro de cada empresa (dos empresas pueden tener el mismo cliente).
 clientSchema.index({ tenant: 1, email: 1 }, { unique: true });
 
+// Defensa en profundidad: toda consulta de clientes debe acotar por empresa (tenant) o fallar ruidosamente.
+clientSchema.plugin(require('./tenantGuard'));
+
 module.exports = mongoose.model('Client', clientSchema);

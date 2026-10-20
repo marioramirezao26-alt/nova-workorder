@@ -22,6 +22,10 @@
 ### Cambios de la versión 1.1
 - **Multiempresa:** cada empresa cliente ve solo sus usuarios, clientes, órdenes y tablero.
 - **Corrección de seguridad:** un usuario «cliente» ya no ve todas las órdenes y clientes del sistema, solo los de su ficha.
+- **Aislamiento a prueba de olvidos (defensa en profundidad):** un guard de datos (`src/models/tenantGuard.js`) obliga a que
+  toda consulta de órdenes y clientes acote por empresa (`tenant`) o traiga un `_id`; si una función nueva olvida el filtro,
+  falla con un error ruidoso en vez de mezclar datos de otra empresa. Los flujos entre empresas (migración) se eximen a
+  propósito con `{ allowCrossTenant: true }`. Cubierto por `test/aislamiento.test.js`.
 - **Registro público cerrado:** las cuentas las crea el administrador de cada empresa (contraseña temporal que se cambia al entrar).
 - **Usuarios:** crear, desactivar y reactivar técnicos, administradores y clientes; nueva contraseña temporal.
 - **Plan por técnicos:** cada empresa tiene un máximo de técnicos activos (`maxTechnicians`).

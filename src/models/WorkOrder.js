@@ -126,4 +126,7 @@ const workOrderSchema = new mongoose.Schema(
   }
 );
 
+// Defensa en profundidad: toda consulta de órdenes debe acotar por empresa (tenant) o fallar ruidosamente.
+workOrderSchema.plugin(require('./tenantGuard'));
+
 module.exports = mongoose.model('WorkOrder', workOrderSchema);
