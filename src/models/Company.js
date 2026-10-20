@@ -53,6 +53,11 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Informe de servicio: el técnico no puede completar una orden sin la firma del cliente (lo activa el administrador).
+    requireSignature: {
+      type: Boolean,
+      default: false,
+    },
     // «Mi marca»: el logo y los colores que la empresa ve en su app (los pone su administrador).
     branding: {
       primary: { type: String, default: null },

@@ -2,6 +2,20 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Informe de servicio (Mejora 1)
+- **Checklists por tipo de servicio:** el administrador arma plantillas en «Checklists» (hasta 40 puntos; los marcados
+  con * son obligatorios). El técnico elige la plantilla en la orden y la marca desde el celular, con una nota por punto.
+  La orden guarda una copia: si la plantilla cambia después, la orden sigue diciendo lo que se revisó.
+- **Fotos de antes y después:** el celular las reduce a 1280 px en JPEG antes de subirlas (máximo 400 KB y 12 por orden;
+  el servidor revisa que sean imágenes reales por sus primeros bytes). Se guardan aparte de la orden (`WorkOrderFile`).
+- **Firma del cliente** con el dedo en la pantalla, con el nombre de quien recibe. El administrador puede exigirla
+  para que el técnico complete la orden («Checklists» → «Pedir la firma del cliente…»).
+- **No se completa** una orden sin los puntos obligatorios del checklist (ni sin firma, si la empresa la pide).
+- **Informe público** en `/informe/<llave>`: el técnico o el administrador lo comparten por WhatsApp o copiando el
+  enlace. El cliente lo ve sin cuenta y lo guarda en PDF con «Descargar PDF». Muestra la marca de la empresa, el
+  checklist, las fotos, las notas y la firma; nunca la ubicación del técnico ni datos internos. Solo sirve las fotos y la
+  firma de esa orden. Cubierto por `test/informe.test.js`.
+
 ### Ubicación al iniciar y completar órdenes
 - El administrador lo activa en «Usuarios» («Registrar la ubicación de los técnicos al iniciar y completar cada orden»).
 - Cada técnico lo autoriza en su celular (Ley 1581 de 2012) y puede retirarlo cuando quiera. Solo se guarda el punto

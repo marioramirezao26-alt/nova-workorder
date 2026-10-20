@@ -11,6 +11,8 @@ NOVA WORKORDER permite:
 - crear y gestionar órdenes de trabajo
 - asignar prioridades y estados
 - seguir el avance de cada tarea
+- llenar el informe de servicio en el sitio: checklist, fotos de antes y después y firma del cliente, con un enlace
+  público del informe para enviárselo por WhatsApp o guardarlo en PDF
 - visualizar dashboard con indicadores clave
 - controlar acceso mediante permisos por rol
 

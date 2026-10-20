@@ -14,6 +14,7 @@ const {
   pingWorkOrder,
   liveWorkOrders,
 } = require('../controllers/workOrderController');
+const report = require('../controllers/serviceReportController');
 
 const router = express.Router();
 
@@ -31,5 +32,21 @@ router.post('/:id/ping', authorize('admin', 'tecnico'), validateObjectId, [
   body('location.lng').isFloat({ min: -180, max: 180 }).withMessage('Longitud inválida'),
   validateRequest,
 ], pingWorkOrder);
+
+// Informe de servicio: checklist, fotos de antes y después, firma del cliente y enlace público del informe.
+const photoBody = express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '450kb' });
+router.put('/:id/checklist', authorize('admin', 'tecnico'), validateObjectId, [
+  body('template').optional({ nullable: true }).isMongoId().withMessage('Plantilla inválida'),
+  validateRequest,
+], report.setChecklist);
+router.patch('/:id/checklist', authorize('admin', 'tecnico'), validateObjectId, [
+  body('items').isArray({ max: 40 }).withMessage('Checklist inválido'),
+  validateRequest,
+], report.updateChecklist);
+router.post('/:id/files', authorize('admin', 'tecnico'), validateObjectId, photoBody, report.uploadPhoto);
+router.get('/:id/files/:fileId', authorize('admin', 'tecnico', 'cliente'), validateObjectId, report.getFile);
+router.delete('/:id/files/:fileId', authorize('admin', 'tecnico'), validateObjectId, report.deletePhoto);
+router.post('/:id/signature', authorize('admin', 'tecnico'), validateObjectId, report.sign);
+router.post('/:id/report-link', authorize('admin', 'tecnico', 'cliente'), validateObjectId, report.reportLink);
 
 module.exports = router;

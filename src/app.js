@@ -17,6 +17,8 @@ const auditRoutes = require('./routes/auditRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const integrationRoutes = require('./routes/integrationRoutes');
 const v1Routes = require('./routes/v1Routes');
+const checklistRoutes = require('./routes/checklistRoutes');
+const reportPublicRoutes = require('./routes/reportPublicRoutes');
 const webhooks = require('./utils/webhooks');
 
 dotenv.config();
@@ -64,6 +66,8 @@ app.use('/api/company', companyRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/integrations', integrationRoutes);
+app.use('/api/checklists', checklistRoutes);
+app.use('/api/informes', reportPublicRoutes);          // informe de servicio público, con la llave del enlace
 app.use('/api/v1', v1Routes);                      // API pública con llave de empresa (docs/API.md)
 
 // En producción el mismo proceso sirve la interfaz compilada (frontend/dist): un solo origen, sin CORS.
