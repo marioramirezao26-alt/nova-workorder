@@ -33,8 +33,9 @@ const run = async () => {
   }
 
   const u = await User.updateMany(missing, { $set: { tenant: company._id } });
-  const c = await Client.updateMany(missing, { $set: { tenant: company._id } });
-  const w = await WorkOrder.updateMany(missing, { $set: { tenant: company._id } });
+  // Relleno histórico de `tenant`: es, por definición, una operación entre empresas; se exime del guard a propósito.
+  const c = await Client.updateMany(missing, { $set: { tenant: company._id } }, { allowCrossTenant: true });
+  const w = await WorkOrder.updateMany(missing, { $set: { tenant: company._id } }, { allowCrossTenant: true });
   await Client.syncIndexes();
 
   let linked = 0;

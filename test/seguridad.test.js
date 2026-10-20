@@ -56,7 +56,7 @@ test('un usuario cliente no ve la ubicación del técnico en el tablero', async 
   const tok = (await call('PUT', '/auth/password', { as: first.token, body: { currentPassword: made.data.temporaryPassword, newPassword: 'Clave-nueva-456' } })).data.token;
   await call('POST', '/workorders', { as: a.token, body: { title: 'Mantenimiento', description: 'Mantenimiento del aire', client: client._id } });
   const WorkOrder = require('../src/models/WorkOrder');
-  await WorkOrder.updateMany({}, { startLocation: { lat: 4.6, lng: -74, at: new Date() }, lastPoint: { lat: 4.6, lng: -74, at: new Date() } });
+  await WorkOrder.updateMany({ tenant: a.id }, { startLocation: { lat: 4.6, lng: -74, at: new Date() }, lastPoint: { lat: 4.6, lng: -74, at: new Date() } });
   const d = await call('GET', '/dashboard/summary', { as: tok });
   assert.equal(d.status, 200);
   const recent = d.data.recentOrders[0];
