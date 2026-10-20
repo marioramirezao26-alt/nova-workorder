@@ -76,6 +76,9 @@ export default function PublicQuote({ token }) {
       {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}</p>}
       {txId && quote.payment?.status !== 'pagado' && ['DECLINED', 'ERROR', 'VOIDED'].includes(quote.payment?.txStatus) && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
       {txId && quote.payment?.status !== 'pagado' && quote.payment?.txStatus === 'PENDING' && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
+      {quote.invoice?.publicUrl && (
+        <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
+      )}
       {quote.payment?.online && (
         <section className="report-section quote-decision no-print">
           <h3>{quote.payment.due < quote.total ? t('Anticipo para empezar el trabajo') : t('Pago en línea')}</h3>

@@ -6,6 +6,7 @@ const { publicUser } = require('../controllers/authController');
 const { validateRequest } = require('../middleware/validateRequest');
 const Company = require('../models/Company');
 const wompi = require('../services/wompi');
+const factus = require('../services/factus');
 const { audit } = require('../utils/audit');
 const { limiter } = require('../utils/rateStore');
 
@@ -131,6 +132,64 @@ router.delete('/wompi', protect, authorize('admin'), async (req, res) => {
     res.status(200).json(wompiView(company));
   } catch (error) {
     res.status(500).json({ message: 'No se pudo desconectar Wompi' });
+  }
+});
+
+// «Factura electrónica DIAN» (Integraciones): la empresa conecta su cuenta de Factus (proveedor tecnológico autorizado
+// por la DIAN). Las credenciales se prueban pidiendo un token antes de guardarlas; el secreto y la contraseña quedan
+// cifrados y nunca se devuelven.
+const factusView = (company) => {
+  const f = (company && company.factus) || {};
+  return {
+    connected: factus.connected(company),
+    available: company.lang !== 'en',
+    env: f.env || 'pruebas',
+    clientId: f.clientId || '',
+    username: f.username || '',
+    numberingRangeId: f.numberingRangeId || null,
+    connectedAt: f.connectedAt || null,
+  };
+};
+
+router.get('/factus', protect, authorize('admin'), async (req, res) => {
+  res.status(200).json(factusView(await Company.findById(req.company._id)));
+});
+
+router.put('/factus', protect, authorize('admin'), wompiLimiter, [
+  body('env').isIn(['pruebas', 'produccion']).withMessage('Elige pruebas o producción'),
+  body('clientId').trim().notEmpty().withMessage('Falta el client_id de Factus').isLength({ max: 120 }),
+  body('clientSecret').trim().notEmpty().withMessage('Falta el client_secret de Factus').isLength({ max: 200 }),
+  body('username').trim().isEmail().withMessage('El usuario de Factus es tu correo'),
+  body('password').notEmpty().withMessage('Falta la contraseña de Factus').isLength({ max: 200 }),
+  body('numberingRangeId').isInt({ min: 1 }).withMessage('Escribe el id del rango de numeración (en Factus → Rangos)').toInt(),
+  validateRequest,
+], async (req, res) => {
+  try {
+    if (req.company.lang === 'en') return res.status(400).json({ message: 'La factura electrónica DIAN es para empresas en Colombia' });
+    const company = await Company.findById(req.company._id);
+    company.factus = { env: req.body.env, ...factus.sealCredentials(req.body), numberingRangeId: req.body.numberingRangeId, connectedAt: new Date() };
+    try {
+      await factus.token(company);                       // si no da token, no se guarda nada
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+    await company.save();
+    await audit(req, 'empresa.factus', `Conectó la factura electrónica (${req.body.env})`);
+    return res.status(200).json(factusView(company));
+  } catch (error) {
+    return res.status(500).json({ message: 'No se pudo conectar la factura electrónica' });
+  }
+});
+
+router.delete('/factus', protect, authorize('admin'), async (req, res) => {
+  try {
+    const company = await Company.findById(req.company._id);
+    company.factus = { env: 'pruebas', clientId: '', clientSecretSealed: '', username: '', passwordSealed: '', numberingRangeId: null, connectedAt: null };
+    await company.save();
+    await audit(req, 'empresa.factus', 'Desconectó la factura electrónica');
+    res.status(200).json(factusView(company));
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudo desconectar la factura electrónica' });
   }
 });
 

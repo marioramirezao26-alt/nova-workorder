@@ -50,6 +50,16 @@ const quoteSchema = new mongoose.Schema(
       txStatus: { type: String, default: '' },
       paidAt: { type: Date, default: null },
     },
+    // Factura electrónica DIAN (Factus): número, CUFE y representación gráfica; o el último error al intentarlo.
+    invoice: {
+      number: { type: String, default: '' },
+      cufe: { type: String, default: '' },
+      publicUrl: { type: String, default: '' },
+      qr: { type: String, default: '' },
+      buyerName: { type: String, default: '' },
+      at: { type: Date, default: null },
+      error: { type: String, default: '' },
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   },
   { timestamps: true }

@@ -11,6 +11,7 @@ const { colombiaDay } = require('./analyticsController');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
 const wompi = require('../services/wompi');
+const factus = require('../services/factus');
 const { dueFor, applyTransaction } = require('../services/quotePayments');
 
 // Cotizaciones (Mejora 3): se arman en borrador, se envían con un enlace y el cliente las aprueba o rechaza sin cuenta.
@@ -300,6 +301,8 @@ const publicView = async (quote, company) => {
       client: client ? { name: client.name, company: client.company || '' } : null,
       decidedAt: quote.decidedAt,
       decidedBy: quote.decidedBy,
+      // La factura electrónica, cuando ya tiene CUFE (para descargarla).
+      invoice: quote.invoice && quote.invoice.cufe ? { number: quote.invoice.number, publicUrl: quote.invoice.publicUrl } : null,
       // El cobro: cuánto (si ya se fijó), si está pagada y si se puede pagar en línea ahora mismo.
       payment: {
         status: quote.payment ? quote.payment.status : 'pendiente',
@@ -397,7 +400,33 @@ const setPayment = async (req, res) => {
   }
 };
 
+// Factura electrónica DIAN de una cotización aprobada: a consumidor final o a nombre del cliente (cédula, NIT…). Si ya
+// tiene CUFE no se vuelve a facturar; si falla, queda anotado el error para reintentar (Factus no duplica: misma referencia).
+const invoiceQuote = async (req, res) => {
+  try {
+    const quote = await findQuote(req);
+    if (quote.invoice && quote.invoice.cufe) return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+    if (quote.status !== 'aprobada') throw fail(409, 'Solo se factura una cotización aprobada');
+    const company = await Company.findById(req.company._id).select('+factus.clientSecretSealed +factus.passwordSealed');
+    if (!factus.connected(company)) throw fail(409, 'Conecta la factura electrónica en «Integraciones» primero');
+    const buyer = factus.buyerFrom(req.body.buyer);
+    try {
+      const result = await factus.emit(company, factus.buildBill(company, quote, buyer));
+      await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { invoice: { ...result, buyerName: buyer.names || buyer.company || '', at: new Date(), error: '' } } });
+      await audit(req, 'cotizacion.factura', `Facturó la cotización #${quote.number} (${result.number})`, { entityId: quote._id, meta: { invoice: result.number } });
+    } catch (error) {
+      if (!(error instanceof factus.FactusError)) throw error;
+      await Quote.updateOne({ ...companyScope(req), _id: quote._id }, { $set: { 'invoice.error': error.message, 'invoice.at': new Date() } });
+      return res.status(502).json({ message: error.message });
+    }
+    return res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id }))));
+  } catch (error) {
+    return reply(res, error, 'No se pudo facturar la cotización');
+  }
+};
+
 module.exports = {
+  invoiceQuote,
   publicCheckout, publicPaymentStatus, setPayment,
   listQuotes, getQuote, createQuote, updateQuote, deleteQuote, sendQuote, reopenQuote, approveQuote, convertQuote,
   publicQuote, publicApprove: publicDecision(true), publicReject: publicDecision(false),
