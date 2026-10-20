@@ -7,7 +7,6 @@ process.env.PLATFORM_API_KEY = 'llave-de-plataforma-para-pruebas-0123456789';
 process.env.NODE_ENV = 'test';
 
 const app = require('../src/app');
-const { _failures } = require('../src/middleware/loginLimiter');
 
 let mongo;
 let server;
@@ -28,7 +27,6 @@ const stop = async () => {
 };
 
 const reset = async () => {
-  _failures.clear();
   await Promise.all(Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})));
 };
 

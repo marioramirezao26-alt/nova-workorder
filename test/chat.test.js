@@ -2,8 +2,7 @@ const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, reset, call, KEY } = require('./helpers');
 const salesChat = require('../src/utils/salesChat');
-const { _chatHits } = require('../src/middleware/chatLimiter');
-const { _hits } = require('../src/middleware/demoLimiter');
+const { resetLimits } = require('../src/utils/rateStore');
 const ChatStat = require('../src/models/ChatStat');
 
 before(start);
@@ -12,8 +11,7 @@ after(stop);
 let seen;
 beforeEach(async () => {
   await reset();
-  _chatHits.clear();
-  _hits.clear();
+  await resetLimits();
   process.env.OPENROUTER_API_KEY = 'clave-falsa-de-prueba';
   delete process.env.CHAT_DAILY_LIMIT;
   delete process.env.CHAT_ENABLED;

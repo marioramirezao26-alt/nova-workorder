@@ -1,14 +1,13 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, reset, call, KEY, origin } = require('./helpers');
-const { _hits } = require('../src/middleware/demoLimiter');
-const { _visitHits } = require('../src/middleware/visitLimiter');
+const { resetLimits } = require('../src/utils/rateStore');
 const { channelOf, fromReferrer } = require('../src/utils/channel');
 const { cleanPath } = require('../src/controllers/analyticsController');
 
 before(start);
 after(stop);
-beforeEach(async () => { await reset(); _hits.clear(); _visitHits.clear(); });
+beforeEach(async () => { await reset(); await resetLimits(); });
 
 const PHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Mobile/15E148';
 const PC = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0';
@@ -63,7 +62,7 @@ test('cuenta visitas y clics sin cookies; GABY lee canales y conversión', async
 
 test('los contadores tienen límite por IP y nunca fallan hacia el visitante', async () => {
   assert.equal((await visit({ event: 'otra-cosa' })).status, 400);
-  _visitHits.clear();
+  await resetLimits();
   for (let i = 0; i < 60; i += 1) await visit({ event: 'visita', path: '/' });
   assert.equal((await visit({ event: 'visita', path: '/' })).status, 204);
   const { data } = await call('GET', '/platform/analytics', { platformKey: KEY });

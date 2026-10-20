@@ -1,11 +1,11 @@
 const { test, before, after, beforeEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { start, stop, reset, call, KEY } = require('./helpers');
-const { _hits } = require('../src/middleware/demoLimiter');
+const { resetLimits } = require('../src/utils/rateStore');
 
 before(start);
 after(stop);
-beforeEach(async () => { await reset(); _hits.clear(); });
+beforeEach(async () => { await reset(); await resetLimits(); });
 
 const demo = { company: 'Frío Total SAS', name: 'Laura Gómez', email: 'Laura@FrioTotal.com', phone: '3109998877', technicians: '4',
   message: 'Tenemos 4 técnicos en Bogotá' };
