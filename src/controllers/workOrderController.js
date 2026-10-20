@@ -4,6 +4,7 @@ const User = require('../models/User');
 const { companyScope } = require('../middleware/authMiddleware');
 const { parseLocation, stampPoint, OFFSITE_METERS } = require('../utils/geo');
 const { audit } = require('../utils/audit');
+const webhooks = require('../utils/webhooks');
 
 // Lo que ve cada rol: las órdenes de su empresa; un usuario cliente, solo las de su ficha de cliente.
 const orderFilter = (req) => {
@@ -133,6 +134,7 @@ const createWorkOrder = async (req, res) => {
     const populatedWorkOrder = await populate(WorkOrder.findById(workOrder._id));
 
     await audit(req, 'orden.crear', `Creó la orden «${workOrder.title}»`, { entityId: workOrder._id });
+    await webhooks.emit(req.user.tenant, 'orden.creada', webhooks.orderPayload(populatedWorkOrder));
     res.status(201).json(populatedWorkOrder);
   } catch (error) {
     res.status(error.statusCode || 500).json({
@@ -204,6 +206,7 @@ const updateWorkOrder = async (req, res) => {
     const populatedWorkOrder = await populate(WorkOrder.findById(updatedWorkOrder._id));
 
     await audit(req, 'orden.editar', `Editó la orden «${updatedWorkOrder.title}»`, { entityId: updatedWorkOrder._id });
+    await webhooks.emit(req.user.tenant, 'orden.actualizada', webhooks.orderPayload(populatedWorkOrder));
     return res.status(200).json(populatedWorkOrder);
   } catch (error) {
     const status = error.statusCode || (error.name === 'ValidationError' || error.name === 'CastError' ? 400 : 500);
@@ -225,6 +228,7 @@ const deleteWorkOrder = async (req, res) => {
     await workOrder.deleteOne();
 
     await audit(req, 'orden.borrar', `Borró la orden «${title}»`, { entityId: workOrder._id });
+    await webhooks.emit(req.user.tenant, 'orden.borrada', webhooks.orderPayload(workOrder));
     return res.status(200).json({
       message: 'Orden de trabajo eliminada correctamente',
     });
@@ -281,7 +285,9 @@ const updateWorkOrderStatus = async (req, res) => {
     await workOrder.save();
 
     await audit(req, 'orden.estado', `Cambió la orden «${workOrder.title}» a «${workOrder.status}»`, { entityId: workOrder._id, meta: { status: workOrder.status } });
-    return res.status(200).json(await populate(WorkOrder.findById(workOrder._id)));
+    const populated = await populate(WorkOrder.findById(workOrder._id));
+    await webhooks.emit(req.user.tenant, 'orden.estado', webhooks.orderPayload(populated));
+    return res.status(200).json(populated);
   } catch (error) {
     return res.status(500).json({ message: error.message || 'Error al actualizar el estado' });
   }

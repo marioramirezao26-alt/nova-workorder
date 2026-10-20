@@ -7,12 +7,13 @@ const audit = async (req, action, summary, { entityId = null, meta = {} } = {}) 
     await AuditLog.create({
       tenant: req.user.tenant,
       user: req.user._id,
-      userName: req.user.name || '',
+      // Con llave de API queda claro que fue un sistema, no la persona (aunque actúe en su nombre).
+      userName: req.apiKey ? `API «${req.apiKey.name}» (de ${req.user.name || req.user.email})` : (req.user.name || ''),
       userEmail: req.user.email || '',
       action,
       summary,
       entityId,
-      meta,
+      meta: req.apiKey ? { ...meta, via: 'api', apiKey: String(req.apiKey._id) } : meta,
     });
   } catch {
     // el registro es secundario; no propagamos el error
