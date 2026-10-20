@@ -35,6 +35,9 @@
 - **Bitácora de auditoría:** el panel registra quién hizo qué y cuándo (órdenes, clientes y usuarios); el administrador la
   ve en «Actividad» (`GET /api/audit`). No guarda contraseñas ni tokens, solo una frase legible y referencias. Cubierta por
   `test/auditoria.test.js`.
+- **Reportes:** el administrador ve en «Reportes» (`GET /api/reports`) las órdenes por día, por estado y por técnico, y
+  los totales (creadas y completadas) en un rango de fechas, con descarga a CSV (`GET /api/reports/orders.csv`). Las fechas
+  se interpretan en hora de Colombia. Cubierto por `test/reporteria.test.js`.
 - **Pruebas automáticas** (`npm test`, MongoDB en memoria) y CI en GitHub.
 - **Migración** de bases 1.0: `npm run migrate`.
 
