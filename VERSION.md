@@ -2,6 +2,20 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Cotizaciones (Mejora 3, primera parte)
+- **Cotizaciones** (sección nueva para el administrador y los técnicos): cliente, renglones (descripción, cantidad,
+  precio unitario e IVA 19 %, 5 % o sin IVA; en las empresas de Estados Unidos, dólares con centavos y un impuesto en %),
+  condiciones y fecha de validez (15 días por defecto, hasta el final de ese día en Colombia). El servidor calcula los
+  totales; nunca usa los que mande el navegador. Numeradas por empresa (#1, #2…).
+- **Enviar:** pasa a «enviada» y da un enlace (`/cotizacion/<llave>`) para mandarlo por WhatsApp o copiarlo.
+- **El cliente la aprueba sin cuenta** escribiendo su nombre y marcando que acepta, o la rechaza con un motivo
+  opcional. Una sola respuesta (dos clics no aprueban dos veces) y nunca después de vencida. Queda en «Actividad».
+- **Al aprobarse se crea la orden de trabajo** (pendiente, con el cliente y lo cotizado), una sola vez, y sale el
+  webhook `orden.creada`. El administrador también puede marcarla «Aprobada por teléfono».
+- Volver a borrador para corregirla o reenviarla tras un rechazo o vencimiento; el enlace no muestra borradores.
+- El técnico maneja sus cotizaciones; el administrador, todas; un usuario cliente ve las suyas (sin borradores).
+  Cubierto por `test/cotizaciones.test.js`.
+
 ### Informe de servicio (Mejora 1)
 - **Checklists por tipo de servicio:** el administrador arma plantillas en «Checklists» (hasta 40 puntos; los marcados
   con * son obligatorios). El técnico elige la plantilla en la orden y la marca desde el celular, con una nota por punto.

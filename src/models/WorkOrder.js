@@ -148,6 +148,8 @@ const workOrderSchema = new mongoose.Schema(
       },
       default: null,
     },
+    // La cotización aprobada de la que salió esta orden (si salió de una).
+    quote: { type: mongoose.Schema.Types.ObjectId, ref: 'Quote', default: null },
     // Llave del enlace público del informe (/informe/<token>): se crea al compartirlo; sin ella no hay informe público.
     reportToken: { type: String, default: undefined },
   },

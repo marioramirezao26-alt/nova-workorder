@@ -2,13 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import PublicReport from './views/PublicReport';
+import PublicQuote from './views/PublicQuote';
 import './styles.css';
 
 // /informe/<llave>: el informe de servicio público, sin sesión.
 const report = window.location.pathname.match(/^\/informe\/([A-Za-z0-9_-]+)\/?$/);
+// /cotizacion/<llave>: la cotización pública, para aprobarla o rechazarla sin sesión.
+const quote = window.location.pathname.match(/^\/cotizacion\/([A-Za-z0-9_-]+)\/?$/);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    {report ? <PublicReport token={report[1]} /> : <App />}
+    {report ? <PublicReport token={report[1]} /> : quote ? <PublicQuote token={quote[1]} /> : <App />}
   </React.StrictMode>
 );

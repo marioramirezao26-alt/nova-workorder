@@ -29,3 +29,24 @@ export const isOverdue = (order) =>
 export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;
+
+// Plata: pesos enteros (COP) o dólares con centavos (USD).
+export const money = (value, currency = 'COP') => new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'es-CO', {
+  style: 'currency', currency, minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0,
+}).format(Number(value) || 0);
+
+// Los mismos totales que calcula el servidor (cada renglón redondeado y luego sumado), para verlos mientras se escribe.
+const round = (v, currency) => (currency === 'USD' ? Math.round((Number(v) + Number.EPSILON) * 100) / 100 : Math.round(Number(v)));
+export const quoteTotals = (items, currency) => {
+  let subtotal = 0;
+  let tax = 0;
+  items.forEach((i) => {
+    const amount = round((Number(i.qty) || 0) * (Number(i.unitPrice) || 0), currency);
+    subtotal += amount;
+    tax += round(amount * ((Number(i.taxRate) || 0) / 100), currency);
+  });
+  return { subtotal: round(subtotal, currency), tax: round(tax, currency), total: round(subtotal + tax, currency) };
+};
+
+export const QUOTE_STATUS = { borrador: 'Borrador', enviada: 'Enviada', aprobada: 'Aprobada', rechazada: 'Rechazada', vencida: 'Vencida' };
+export const QuoteTag = ({ status }) => <span className={`status-tag q-${status}`}>{t(QUOTE_STATUS[status] || status)}</span>;
