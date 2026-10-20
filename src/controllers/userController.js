@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Client = require('../models/Client');
 const { companyScope } = require('../middleware/authMiddleware');
 const { temporaryPassword } = require('../utils/passwords');
+const { audit } = require('../utils/audit');
 
 const ROLES = ['admin', 'tecnico', 'cliente'];
 const fields = 'name email role client active mustChangePassword createdAt';
@@ -71,6 +72,7 @@ const createUser = async (req, res) => {
     });
 
     const out = await User.findById(user._id).select(fields);
+    await audit(req, 'usuario.crear', `Creó al usuario ${user.name} (${user.role})`, { entityId: user._id });
     // La contraseña temporal se muestra una sola vez: el administrador se la entrega al usuario.
     res.status(201).json({ user: out, temporaryPassword: temp });
   } catch (error) {
@@ -116,6 +118,12 @@ const updateUser = async (req, res) => {
 
     await user.save();
     const out = await User.findById(user._id).select(fields);
+    const cambios = [];
+    if (role !== undefined) cambios.push(`rol → ${user.role}`);
+    if (active !== undefined) cambios.push(user.active ? 'activado' : 'desactivado');
+    if (resetPassword) cambios.push('nueva contraseña');
+    if (name !== undefined) cambios.push('nombre');
+    await audit(req, 'usuario.editar', `Editó a ${user.name}${cambios.length ? ` (${cambios.join(', ')})` : ''}`, { entityId: user._id });
     res.status(200).json({ user: out, temporaryPassword: temp });
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message || 'Error al actualizar el usuario' });

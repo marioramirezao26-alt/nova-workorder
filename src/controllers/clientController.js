@@ -1,5 +1,6 @@
 const Client = require('../models/Client');
 const { companyScope } = require('../middleware/authMiddleware');
+const { audit } = require('../utils/audit');
 
 // Lo que ve cada rol: su empresa; un usuario cliente, solo su propia ficha.
 const clientFilter = (req) => {
@@ -69,6 +70,7 @@ const createClient = async (req, res) => {
       ...companyScope(req),
     });
 
+    await audit(req, 'cliente.crear', `Creó el cliente «${client.name}»`, { entityId: client._id });
     res.status(201).json(client);
   } catch (error) {
     res.status(500).json({
@@ -115,6 +117,7 @@ const updateClient = async (req, res) => {
     client.active = active !== undefined ? active : client.active;
 
     const updatedClient = await client.save();
+    await audit(req, 'cliente.editar', `Editó el cliente «${updatedClient.name}»`, { entityId: updatedClient._id });
     res.status(200).json(updatedClient);
   } catch (error) {
     res.status(500).json({
@@ -131,8 +134,10 @@ const deleteClient = async (req, res) => {
       return res.status(404).json({ message: 'Cliente no encontrado' });
     }
 
+    const name = client.name;
     await client.deleteOne();
 
+    await audit(req, 'cliente.borrar', `Borró el cliente «${name}»`, { entityId: client._id });
     res.status(200).json({ message: 'Cliente eliminado correctamente' });
   } catch (error) {
     res.status(500).json({
