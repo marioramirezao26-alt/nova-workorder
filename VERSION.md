@@ -32,6 +32,9 @@
 - **API de plataforma** (`/api/platform`, llave `PLATFORM_API_KEY`): GABY crea empresas, ajusta el plan y suspende o reactiva.
 - **Órdenes enlazadas** a la ficha del cliente y a un técnico activo de la misma empresa, con fecha límite.
 - **Seguridad:** CORS restringido, límite de 10 intentos de inicio de sesión cada 15 minutos, encabezados de seguridad, cuerpo máximo 100 KB.
+- **Bitácora de auditoría:** el panel registra quién hizo qué y cuándo (órdenes, clientes y usuarios); el administrador la
+  ve en «Actividad» (`GET /api/audit`). No guarda contraseñas ni tokens, solo una frase legible y referencias. Cubierta por
+  `test/auditoria.test.js`.
 - **Pruebas automáticas** (`npm test`, MongoDB en memoria) y CI en GitHub.
 - **Migración** de bases 1.0: `npm run migrate`.
 
