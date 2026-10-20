@@ -81,6 +81,56 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
   );
 }
 
+// Facturar una cotización aprobada (solo el administrador, con Factus conectado): a consumidor final o a nombre del cliente.
+function InvoiceBox({ api, quote, onDone }) {
+  const [open, setOpen] = useState(false);
+  const [buyer, setBuyer] = useState({ docType: 'NIT', identification: '', dv: '', name: quote.client?.company || quote.client?.name || '', email: quote.client?.email || '' });
+  const [busy, setBusy] = useState(false);
+  const emit = async (withBuyer) => {
+    try {
+      setBusy(true);
+      onDone((await api.post(`/quotes/${quote._id}/invoice`, withBuyer ? { buyer } : {})).data);
+      setOpen(false);
+    } catch (error) {
+      alert(errorMessage(error, t('No se pudo facturar la cotización')));
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (quote.invoice?.cufe) {
+    return <p className="muted">{t('Factura {n}', { n: quote.invoice.number })}{quote.invoice.buyerName ? ` · ${quote.invoice.buyerName}` : ''} · <a className="inline-link" href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('ver PDF')}</a></p>;
+  }
+  return (
+    <div className="invoice-box">
+      {quote.invoice?.error && <p className="muted late">{t('Último intento: {e}', { e: quote.invoice.error })}</p>}
+      {!open ? (
+        <div className="order-actions">
+          <button type="button" className="mini-button edit" disabled={busy} onClick={() => setOpen(true)}>{t('Facturar (DIAN)')}</button>
+        </div>
+      ) : (
+        <div className="form-grid">
+          <div className="grid2">
+            <label>{t('Documento')}
+              <select value={buyer.docType} onChange={(e) => setBuyer({ ...buyer, docType: e.target.value })}>
+                <option value="NIT">NIT</option><option value="CC">{t('Cédula')}</option><option value="CE">{t('Cédula de extranjería')}</option><option value="PP">{t('Pasaporte')}</option>
+              </select>
+            </label>
+            <label>{t('Número')}<input inputMode="numeric" value={buyer.identification} onChange={(e) => setBuyer({ ...buyer, identification: e.target.value.replace(/\D/g, '') })} /></label>
+          </div>
+          {buyer.docType === 'NIT' && <label>{t('Dígito de verificación')}<input inputMode="numeric" maxLength={1} value={buyer.dv} onChange={(e) => setBuyer({ ...buyer, dv: e.target.value.replace(/\D/g, '') })} /></label>}
+          <label>{t('Nombre o razón social')}<input maxLength={120} value={buyer.name} onChange={(e) => setBuyer({ ...buyer, name: e.target.value })} /></label>
+          <label>{t('Correo para la factura')}<input type="email" value={buyer.email} onChange={(e) => setBuyer({ ...buyer, email: e.target.value })} /></label>
+          <div className="order-actions">
+            <button type="button" className="primary-button" disabled={busy || !buyer.identification || !buyer.name.trim()} onClick={() => emit(true)}>{busy ? t('Facturando…') : t('Facturar a este nombre')}</button>
+            <button type="button" className="ghost-button" disabled={busy} onClick={() => emit(false)}>{t('A consumidor final')}</button>
+            <button type="button" className="ghost-button" onClick={() => setOpen(false)}>{t('Cancelar')}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Quotes({ api, user, go }) {
   const currency = user.company?.lang === 'en' ? 'USD' : 'COP';
   const canWrite = user.role === 'admin' || user.role === 'tecnico';
@@ -90,6 +140,10 @@ export default function Quotes({ api, user, go }) {
   const [form, setForm] = useState(null);
   const [links, setLinks] = useState({});
   const [busy, setBusy] = useState(false);
+  const [invoicing, setInvoicing] = useState(false);
+  useEffect(() => {
+    if (user.role === 'admin') api.get('/company/factus').then(({ data }) => setInvoicing(Boolean(data.connected))).catch(() => {});
+  }, []);
 
   const load = async () => {
     try {
@@ -193,6 +247,7 @@ export default function Quotes({ api, user, go }) {
                       ? t(q.payment.method === 'wompi' ? 'Pagada con Wompi el {d}' : 'Marcada como pagada el {d}', { d: formatDateTime(q.payment.paidAt) })
                       : q.payment?.txStatus ? t('Por cobrar · último intento en Wompi: {s}', { s: q.payment.txStatus }) : t('Por cobrar')}</p>
                   )}
+                  {q.status === 'aprobada' && (invoicing || q.invoice?.cufe) && user.role === 'admin' && <InvoiceBox api={api} quote={q} onDone={replace} />}
                   {q.workOrder && <p><button type="button" className="link-button" onClick={() => go?.('ordenes')}>{t('Orden creada: {title}', { title: q.workOrder.title })}</button></p>}
 
                   {links[q._id] && (

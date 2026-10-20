@@ -4,6 +4,7 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 const { validateRequest } = require('../middleware/validateRequest');
 const { validateObjectId } = require('../middleware/validateObjectId');
 const quotes = require('../controllers/quoteController');
+const factus = require('../services/factus');
 
 // Cotizaciones de la empresa: las arman el administrador y los técnicos; un usuario cliente ve las suyas.
 const router = express.Router();
@@ -35,5 +36,16 @@ router.post('/:id/payment', authorize('admin'), validateObjectId, [
   body('status').isIn(['pagado', 'pendiente']).withMessage('Estado de pago inválido'),
   validateRequest,
 ], quotes.setPayment);
+router.post('/:id/invoice', authorize('admin'), validateObjectId, [
+  body('buyer').optional({ nullable: true }).isObject(),
+  body('buyer.docType').optional().isIn(Object.keys(factus.DOC_TYPES)).withMessage('Tipo de documento inválido'),
+  body('buyer.identification').optional({ checkFalsy: true }).trim().matches(/^\d{5,15}$/).withMessage('El número de documento son solo dígitos'),
+  body('buyer.dv').optional({ checkFalsy: true }).matches(/^\d$/).withMessage('El dígito de verificación es un solo dígito'),
+  body('buyer.name').if(body('buyer.identification').exists({ checkFalsy: true })).trim().notEmpty().withMessage('Escribe el nombre o la razón social').isLength({ max: 120 }),
+  body('buyer.email').optional({ checkFalsy: true }).isEmail().withMessage('Correo inválido'),
+  body('buyer.address').optional().trim().isLength({ max: 200 }),
+  body('buyer.phone').optional().trim().isLength({ max: 30 }),
+  validateRequest,
+], quotes.invoiceQuote);
 
 module.exports = router;

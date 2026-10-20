@@ -69,6 +69,16 @@ const companySchema = new mongoose.Schema(
       connectedAt: { type: Date, default: null },
       lastEventAt: { type: Date, default: null },
     },
+    // Factura electrónica DIAN con Factus (la cuenta de la empresa): ambiente, credenciales cifradas y rango de numeración.
+    factus: {
+      env: { type: String, enum: ['pruebas', 'produccion'], default: 'pruebas' },
+      clientId: { type: String, default: '' },
+      clientSecretSealed: { type: String, default: '', select: false },
+      username: { type: String, default: '' },
+      passwordSealed: { type: String, default: '', select: false },
+      numberingRangeId: { type: Number, default: null },
+      connectedAt: { type: Date, default: null },
+    },
     // Consecutivo de las cotizaciones de la empresa (#1, #2…).
     quoteSeq: {
       type: Number,

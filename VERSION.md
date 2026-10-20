@@ -2,6 +2,19 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Factura electrónica DIAN con Factus (Mejora 3, tercera parte)
+- **Cada empresa conecta SU cuenta de Factus** (proveedor tecnológico autorizado por la DIAN) en «Integraciones»:
+  ambiente (pruebas/habilitación o producción), client_id, client_secret, usuario, contraseña y el id del rango de
+  numeración. Las credenciales se prueban pidiendo un token antes de guardarlas; el secreto y la contraseña quedan
+  cifrados y nunca se devuelven. No aplica a empresas en dólares.
+- **El administrador factura una cotización aprobada** desde «Cotizaciones»: a consumidor final o a nombre del cliente
+  (NIT con dígito de verificación, cédula, cédula de extranjería o pasaporte). Van los renglones con su precio sin IVA y
+  su tarifa (la DIAN solo acepta 0 %, 5 % y 19 %: otra tarifa no se envía), de contado si ya está pagada o a crédito a
+  30 días si no, y la diferencia de redondeo en `cash_rounding_amount`.
+- **No se factura dos veces:** con CUFE no se vuelve a enviar, y la referencia `NWO-COT-<id>` hace que Factus devuelva
+  la misma factura si se reintenta. Si Factus o la DIAN rechazan, el error queda en la cotización para corregir y
+  reintentar. El cliente descarga la factura desde el enlace de su cotización. Cubierto por `test/factura.test.js`.
+
 ### Cobro con Wompi (Mejora 3, segunda parte)
 - **Cada empresa conecta SU cuenta de Wompi** en «Integraciones» (solo el administrador). La llave pública se comprueba
   con Wompi; los secretos de integridad y de eventos se guardan cifrados (AES-256-GCM, `COMPANY_SECRETS_KEY` o

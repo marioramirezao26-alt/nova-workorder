@@ -10,6 +10,7 @@ NOVA WORKORDER permite:
 - registrar clientes
 - crear y gestionar órdenes de trabajo
 - enviar cotizaciones que el cliente aprueba en línea y que se convierten en orden de trabajo
+- cobrarlas en línea con Wompi y facturarlas ante la DIAN con Factus (cuentas propias de cada empresa)
 - asignar prioridades y estados
 - seguir el avance de cada tarea
 - llenar el informe de servicio en el sitio: checklist, fotos de antes y después y firma del cliente, con un enlace
