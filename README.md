@@ -9,6 +9,7 @@ La solución centraliza la administración de clientes, tareas, prioridades, est
 NOVA WORKORDER permite:
 - registrar clientes
 - crear y gestionar órdenes de trabajo
+- enviar cotizaciones que el cliente aprueba en línea y que se convierten en orden de trabajo
 - asignar prioridades y estados
 - seguir el avance de cada tarea
 - llenar el informe de servicio en el sitio: checklist, fotos de antes y después y firma del cliente, con un enlace

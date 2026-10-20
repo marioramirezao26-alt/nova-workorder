@@ -58,6 +58,11 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Consecutivo de las cotizaciones de la empresa (#1, #2…).
+    quoteSeq: {
+      type: Number,
+      default: 0,
+    },
     // «Mi marca»: el logo y los colores que la empresa ve en su app (los pone su administrador).
     branding: {
       primary: { type: String, default: null },

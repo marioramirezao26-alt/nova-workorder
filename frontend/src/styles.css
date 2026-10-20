@@ -1052,3 +1052,44 @@ label.switch-row input { width: auto; margin: 0; }
   .no-print { display: none !important; }
   .report-page { padding: 0; max-width: none; }
 }
+
+/* ---- Cotizaciones ---- */
+.status-tag.q-borrador { background: rgba(160, 174, 192, 0.15); color: #c3cedb; }
+.status-tag.q-enviada { background: rgba(82, 163, 255, 0.15); color: #9fcbff; }
+.status-tag.q-aprobada { background: rgba(43, 192, 129, 0.15); color: #8de0bb; }
+.status-tag.q-rechazada { background: rgba(255, 92, 92, 0.15); color: #ff9e9e; }
+.status-tag.q-vencida { background: rgba(242, 187, 54, 0.15); color: #f0cd73; }
+.segmented-control.wrap { display: flex; flex-wrap: wrap; }
+.segmented-control.wrap button { flex: 1 1 auto; }
+.quote-lines { display: grid; gap: 8px; }
+.quote-line { display: grid; grid-template-columns: minmax(0, 3fr) minmax(64px, 0.7fr) minmax(90px, 1.2fr) minmax(80px, 0.8fr) 28px; gap: 8px; align-items: center; }
+.quote-line.head { font-size: 0.75rem; text-transform: uppercase; opacity: 0.7; }
+.quote-sums { display: grid; gap: 4px; margin: 4px 0 0; justify-items: end; }
+.quote-sums div { display: flex; gap: 16px; }
+.quote-sums dt { opacity: 0.75; }
+.quote-sums dd { margin: 0; min-width: 120px; text-align: right; }
+.quote-sums .grand { font-weight: 700; font-size: 1.1rem; }
+.quote-table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+.quote-table th, .quote-table td { padding: 6px 4px; border-bottom: 1px solid rgba(127, 140, 160, 0.25); text-align: left; vertical-align: top; }
+.quote-table .num { text-align: right; white-space: nowrap; }
+.quote-table .sum td { border-bottom: 0; opacity: 0.8; }
+.quote-table .grand td { font-weight: 700; border-bottom: 0; font-size: 1.05rem; }
+.report-page .quote-table th { font-size: 0.75rem; text-transform: uppercase; color: #5b6573; }
+.report-page .quote-table th, .report-page .quote-table td { border-bottom-color: #e3e7ec; }
+.quote-banner { padding: 10px 14px; border-radius: 10px; font-weight: 600; }
+.quote-banner.ok { background: #e6f6ee; color: #11653a; }
+.quote-banner.no { background: #fdf0e6; color: #8a4a00; }
+.quote-decision { border: 2px solid var(--brand); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+.report-page label { color: #17202b; }
+.report-page input, .report-page textarea { background: #fff; color: #17202b; border: 1px solid #c9d1db; border-radius: 8px; padding: 10px; }
+.check-line { display: flex !important; flex-direction: row !important; gap: 10px; align-items: flex-start; }
+.check-line input { width: 20px; height: 20px; margin-top: 2px; }
+.report-page .ghost-button { background: #fff; color: #17202b; border: 1px solid #c9d1db; }
+.danger-button { border: 0; border-radius: 10px; padding: 10px 16px; font-weight: 700; background: #d64545; color: #fff; cursor: pointer; }
+.danger-button:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (max-width: 640px) {
+  .quote-line { grid-template-columns: 1fr 1fr 28px; }
+  .quote-line > input:first-child { grid-column: 1 / -1; }
+  .quote-line.head { display: none; }
+  .quote-table.print .wide { display: none; }
+}
