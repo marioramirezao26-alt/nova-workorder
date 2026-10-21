@@ -60,6 +60,24 @@ test('el último turno debe ser del visitante; las reglas no dejan al modelo inv
   assert.match(salesChat.FACTS, /\$39\.000 COP por tienda/);
 });
 
+test('el chat dice lo mismo que la página: la mensualidad solo por Bold y nada de lo que ya se corrigió', () => {
+  assert.match(salesChat.FACTS, /@BOLD3103767561/);
+  assert.doesNotMatch(salesChat.FACTS, /mes a mes por Nequi/);
+  assert.doesNotMatch(salesChat.FACTS, /sin límite/);
+  assert.doesNotMatch(salesChat.FACTS, /últimos meses de un vistazo/);
+});
+
+test('el chat no promete más de lo que hace el código: cobro, permisos del técnico y reactivación', () => {
+  // GABY cobra técnicos contratados × precio (billing.py _issue), no los activos del mes
+  assert.match(salesChat.FACTS, /técnicos contratados/);
+  assert.doesNotMatch(salesChat.FACTS, /por técnico activo/);
+  // el técnico ve todas las órdenes, clientes y cotizaciones de su empresa; solo «Mis órdenes» filtra
+  assert.doesNotMatch(salesChat.FACTS, /ve solo sus órdenes/);
+  // la cuenta vuelve cuando se confirma el pago (Bold al instante; la llave, con el comprobante)
+  assert.doesNotMatch(salesChat.FACTS, /vuelve al pagar/);
+  assert.match(salesChat.FACTS, /comprobante/);
+});
+
 test('el tope diario corta el gasto y el modelo caído no rompe la página', async () => {
   process.env.CHAT_DAILY_LIMIT = '2';
   assert.equal((await ask([{ role: 'user', content: 'a' }])).status, 200);

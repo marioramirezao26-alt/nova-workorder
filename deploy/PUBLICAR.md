@@ -58,8 +58,8 @@ solicitudes de demo de la página.
   Si GoDaddy tiene otros MX, bórralos.
 
 ## 7. El chat «GABY · Ventas» de la página
-La burbuja «¿Preguntas? Habla con GABY» aparece sola cuando el `.env` de NOVA tiene `OPENROUTER_API_KEY`. Usa la misma
-clave de OpenRouter de GABY; cópiala de un `.env` al otro **en el servidor**, sin que se vea ni pase por el chat:
+La burbuja «Pregúntale a GABY (IA)» (en el celular, el botón 💬 de la barra de abajo) aparece sola cuando el `.env` de
+NOVA tiene `OPENROUTER_API_KEY`. Usa la misma clave de OpenRouter de GABY; cópiala de un `.env` al otro **en el servidor**, sin que se vea ni pase por el chat:
 
 ```bash
 grep -q '^OPENROUTER_API_KEY=.' /opt/nova-workorder/.env || \
@@ -71,7 +71,9 @@ systemctl restart nova
 - Topes de gasto: 30 mensajes por visitante cada hora y 300 por día entre todos (`CHAT_DAILY_LIMIT`). Con el modelo por
   defecto, 300 mensajes cuestan centavos de dólar.
 - Apagarlo sin borrar la clave: `echo CHAT_ENABLED=false >> /opt/nova-workorder/.env && systemctl restart nova`.
-- Lo que sabe está en `src/utils/salesChat.js` (`FACTS`): si cambian los precios, cámbialos ahí y en `landing/index.html`.
+- Lo que sabe está en `src/utils/salesChat.js` (`FACTS`): si cambian los precios, cámbialos ahí, en `landing/index.html`
+  (texto y `PRECIO_TECNICO` de la calculadora), en `landing/terminos.html` y en GABY (`GABY_NOVA_PRICE_PER_TECH`,
+  `GABY_PEDIDOS_PRICE_PER_STORE`).
 
 ## Comandos útiles en el servidor
 - Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.
