@@ -2,6 +2,45 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Página de ventas en español (novaworkorder.com)
+- **Portada «elige tu app»:** cada app con su situación, su precio y su «Empieza gratis», y WhatsApp a la vista. En el
+  celular (360×740, 390×664 y 390×844) y en 1280×800 los dos botones y el de WhatsApp se ven sin scroll. Siguen ¿Te
+  suena?, Servicios (flujo de la cotización al cierre), Pedidos (con la tienda de ejemplo «Café Demo»), Cómo empiezas
+  y el video, Precios (calculadora por técnicos y cómo se paga la mensualidad: solo por Bold), Sin riesgo, Preguntas
+  (con «lo que todavía no hace» cada app) y el formulario.
+- **Un solo botón principal, «Empieza gratis»**, que lleva al formulario con la app ya elegida (por el botón, por la
+  sección que se está viendo o por `/#pedidos`). El formulario arranca sin app marcada, pide los técnicos solo en
+  Servicios y deja pedir información por correo con un enlace discreto (`kind=demo`). Sin JavaScript el botón de
+  enviar queda deshabilitado. El contrato de `POST /api/public/demo` y de la analítica no cambia: `utm`, `ref` y
+  `referral` siempre van como texto, `technicians` va vacío en Pedidos y solo se cuentan `visita` y un `clic` por
+  pestaña (WhatsApp no se cuenta).
+- **WhatsApp:** enlaces `wa.me/573103767561` con el texto ya escrito (sin dígitos, «ref» ni «código», para no chocar
+  con los filtros de GABY) en cada sección, en la barra fija del celular y en el chat. La página dice que por WhatsApp
+  responde GABY, una asistente virtual con IA.
+- **Barra fija solo en el celular** (720 px o menos: Empieza gratis, WhatsApp y chat) fuera de la portada y del
+  formulario; el chat se abre desde ella y la burbuja solo sale en pantallas anchas. La barra y el encabezado llevan a la
+  prueba de la app solo mientras se ve su sección; en precios, preguntas y las demás secciones comunes, el formulario pide
+  elegir la app. En el celular el formulario va justo después del título y los errores salen junto al campo que falla.
+- **Se retiraron afirmaciones que no eran ciertas:** pago por Nequi, «tiempo real», «sin límite», vencidas y últimos
+  meses en el panel, historial por cliente, «te escribimos hoy mismo». Las afirmaciones nuevas se revisaron contra el
+  código y en la revisión se corrigieron tres que prometían de más: Servicios se cobra por los técnicos contratados (el
+  máximo de técnicos activos), no por los que se usen; el técnico ve, además de «Mis órdenes», todas las órdenes,
+  clientes y cotizaciones de su empresa; y la cuenta suspendida vuelve cuando se confirma el pago (al instante con el link
+  de Bold; con la llave, cuando se revisa el comprobante).
+- **`estilos.css` (lo usan las 10 páginas):** botones con contraste AA (blanco sobre #1a5cc8→#1f63d6), foco visible
+  con teclado, `color-scheme: dark`, sin desplazamiento suave con `prefers-reduced-motion` y el botón del encabezado
+  en una línea. Lo nuevo va en `inicio.css`, que solo carga la portada. Imagen para compartir nueva
+  (`img/og-novaworkorder.jpg`, 1200×630) y JSON-LD de la organización y las dos apps.
+- **Términos y privacidad** al día: pago de la suscripción solo por Bold, hasta 2.000 productos por tienda, medios de
+  pago de las tiendas, datos de cotizaciones, informe, ubicación, Factus y Wompi, y proveedores (Bold, Brevo,
+  OpenRouter, Wompi, Factus y la API de WhatsApp de Meta). La privacidad cubre ahora el WhatsApp de NOVA (punto 6.2:
+  qué se guarda, que responde una IA por OpenRouter, que se une con el formulario por el número, cuánto se guarda y
+  cómo pedir que se borre) y los correos comerciales que se envían a quien pide la prueba o información.
+- **Chat «GABY · Ventas»:** `FACTS` dice lo mismo que la página (Bold, informe, cotizaciones, Wompi y Factus con
+  cuentas propias, lo que no hace, los permisos del técnico). `test/chat.test.js` impide que vuelvan «mes a mes por
+  Nequi», «sin límite», «los últimos meses de un vistazo», «por técnico activo», «ve solo sus órdenes» y «vuelve al
+  pagar».
+
 ### Factura electrónica DIAN con Factus (Mejora 3, tercera parte)
 - **Cada empresa conecta SU cuenta de Factus** (proveedor tecnológico autorizado por la DIAN) en «Integraciones»:
   ambiente (pruebas/habilitación o producción), client_id, client_secret, usuario, contraseña y el id del rango de

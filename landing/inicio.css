@@ -1,0 +1,200 @@
+/* Solo para index.html (no toca /en ni los legales). Móvil primero: base hasta 720 px. */
+:root { --srv: #4f96ff; --ped: #ffb35c; --wa: #25d366; }
+section[id] { scroll-margin-top: 76px; }
+main:focus { outline: none; }
+h1, h2, h3, .eyebrow, #submit-note, .inicio .lead { text-wrap: balance; }
+.lead { text-wrap: pretty; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+a.sr:focus { position: fixed; left: 12px; top: 12px; z-index: 60; width: auto; height: auto; margin: 0; padding: 10px 14px; clip: auto;
+  white-space: normal; background: var(--bg2); color: var(--text); border: 1px solid var(--accent); border-radius: 10px; }
+
+.chat-form .btn { color: #fff; }
+input::placeholder, textarea::placeholder { color: #93a6c2; opacity: 1; }
+.btn:disabled { opacity: .6; cursor: not-allowed; }
+.btn.ped { background: var(--ped); color: #07111d; }
+.btn.wa { background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.55); color: var(--text); }
+.wa-icon { width: 18px; height: 18px; fill: var(--wa); flex: none; }
+.btn.wa.ancho { width: 100%; max-width: 420px; margin: 14px auto 0; display: flex; min-height: 48px; }
+
+.hero.inicio { padding: 26px 0 40px; }
+.hero.inicio .wrap { display: block; }
+.inicio h1 { font-size: clamp(1.85rem, 7.2vw, 3.4rem); margin-bottom: 10px; }
+.inicio .lead { font-size: 1.02rem; margin: 0 auto 14px; }
+.elige { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.elige-card { display: flex; flex-direction: column; gap: 6px; background: var(--card); border: 1px solid var(--line);
+  border-top: 4px solid var(--srv); border-radius: 18px; padding: 14px 12px; }
+.elige-card.ped { border-top-color: var(--ped); }
+.elige-card .chip { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--srv); margin: 0; }
+.elige-card.ped .chip { color: var(--ped); }
+.elige-card h2 { font-size: 1.08rem; line-height: 1.25; margin: 0; }
+.elige-card .desc { display: none; color: var(--dim); margin: 0; }
+.elige-card .precio { margin: auto 0 0; font-weight: 800; font-size: 1.15rem; }
+.elige-card .precio small { display: block; font-weight: 500; font-size: .8rem; color: var(--dim); }
+.elige-card .btn { width: 100%; min-height: 44px; padding: 11px 10px; font-size: .95rem; }
+.elige-card .mas { font-size: .85rem; text-align: center; padding: 6px 0; }
+.wa-nota, .inicio .note { text-align: center; color: var(--dim); font-size: .88rem; margin: 8px 0 0; }
+.trust { list-style: none; padding: 0; margin: 16px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px;
+  color: var(--dim); font-size: .88rem; max-width: 900px; }
+
+.pain .cambio { margin: 8px 0 0; color: var(--text); font-size: .92rem; }
+.cta-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-top: 24px; }
+.cta-row p { flex-basis: 100%; text-align: center; margin: 0; font-weight: 700; }
+.srv-sec { border-top: 4px solid var(--srv); }
+section.ped-sec { border-top: 4px solid var(--ped); }
+.srv-sec .eyebrow, .price.srv .eyebrow { color: #66a4ff; }
+.ped-sec .eyebrow, .price.ped .eyebrow { color: var(--ped); }
+
+.flujo-titulo { margin: 36px 0 0; }
+.flujo { list-style: none; padding: 0; margin: 16px 0 0; counter-reset: paso; display: grid; }
+.flujo li { counter-increment: paso; position: relative; padding: 0 0 18px 44px; color: var(--dim); }
+.flujo li::before { content: counter(paso); position: absolute; inset: 0 auto auto 0; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 800; color: #fff; background: linear-gradient(135deg, #1a5cc8, #1f63d6); }
+.flujo li::after { content: ''; position: absolute; left: 14px; top: 34px; bottom: 4px; width: 2px; background: var(--line); }
+.flujo li:last-child::after { display: none; }
+.flujo b { display: block; color: var(--text); }
+.conds { margin: 4px 0 0; }
+
+.features.compact { grid-template-columns: 1fr; gap: 10px; margin-top: 24px; }
+.features.compact .feature { display: grid; grid-template-columns: 36px 1fr; gap: 4px 12px; padding: 14px; align-content: start; }
+.features.compact .feature .icon { grid-row: span 2; width: 36px; height: 36px; margin: 0; font-size: 1.1rem; border-radius: 10px; }
+.features.compact .feature h3 { margin: 0; font-size: 1.02rem; }
+.incluye { margin-top: 16px; }
+.incluye ul, .limites ul { padding-left: 18px; margin: 10px 0 0; color: var(--dim); display: grid; gap: 6px; }
+.incluye b { color: var(--text); }
+
+.store-demo { margin-top: 24px; border: 1px dashed var(--accent); border-radius: 18px; padding: 16px; display: grid; gap: 12px; }
+.store-demo p, .quien p, .wa-caja p { margin: 0; color: var(--dim); }
+.store-demo .btn { justify-self: start; }
+.split .cta .btn, .store-demo .btn, .price .btn, .wa-caja .btn { min-height: 44px; }
+
+.dos-pasos { display: grid; grid-template-columns: 1fr; gap: 22px; margin-top: 24px; }
+.dos-pasos h3 { margin: 0; }
+.dos-pasos .steps { grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+.dos-pasos .step { padding: 16px 16px 16px 62px; }
+.dos-pasos .step::before { left: 16px; top: 16px; }
+.dos-pasos .step h4 { margin: 0 0 4px; font-size: 1.02rem; }
+.video-titulo { margin: 36px 0 14px; text-align: center; }
+#como-empiezas .promo { margin-bottom: 0; }
+
+#precios .price .amount small { display: block; margin-top: 8px; }
+.price.ped { border-color: rgba(255,179,92,.45); }
+.calc { margin: 16px 0 0; align-self: stretch; }
+.calc label { display: block; color: var(--dim); font-size: .95rem; margin-bottom: 8px; }
+.calc-row { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.calc-step, .mbar-chat { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; border: 1px solid var(--line);
+  background: rgba(255,255,255,.06); color: var(--text); cursor: pointer; }
+.calc-step { font: inherit; font-size: 1.4rem; line-height: 1; }
+.calc input { width: 80px; text-align: center; padding: 10px 6px; }
+.calc-total { margin: 12px 0 0; }
+.calc-total b { font-size: 2rem; }
+.calc-total small { display: block; color: var(--dim); }
+.calc .small { margin: 6px 0 0; color: #ff9e9e; }
+.price .ver-demo { margin-top: 10px; }
+.pago { max-width: 1000px; margin: 22px auto 0; display: grid; gap: 12px; text-align: left; align-items: start; }
+.pago p { margin: 10px 0 0; color: var(--dim); font-size: .95rem; }
+.pago + .small { margin-top: 16px; }
+
+.quien, .wa-caja { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.quien { margin-top: 22px; }
+.quien h3 { margin: 0 0 6px; }
+.faq-grupo { margin: 18px 0 4px; font-size: 1rem; color: var(--accent2); }
+.limites summary { color: var(--warn); }
+.faq > .small { margin: 4px 0 0; }
+.next-steps { padding-left: 20px; color: var(--dim); display: grid; gap: 6px; }
+.wa-caja { margin-top: 18px; padding: 16px; }
+.wa-caja p { font-size: .92rem; }
+.wa-caja .btn { margin: 10px 0; }
+form.card label small { color: var(--dim); font-size: .8rem; }
+form.card [aria-invalid="true"], #product-field:has([aria-invalid="true"]) label { border-color: #ff9e9e; }
+form.card input[aria-invalid="true"]:focus { border-color: #ff9e9e; outline-color: #ff9e9e; }
+form.card .consent input[aria-invalid="true"] { outline: 2px solid #ff9e9e; outline-offset: 2px; }
+#demo .wrap { grid-template-areas: "intro form" "aside form"; grid-template-rows: auto 1fr; row-gap: 18px; }
+.demo-intro { grid-area: intro; } #demo-form { grid-area: form; } .demo-aside { grid-area: aside; }
+.demo-aside .lead { margin-top: 0; }
+.linkish { background: none; border: 0; color: var(--accent2); text-decoration: underline; font: inherit; cursor: pointer; padding: 8px 0; }
+.aviso-ref { margin: 0; padding-left: 10px; border-left: 3px solid var(--ok); }
+#submit-note { margin: -6px 0 0; }
+.msg .btn { margin-top: 10px; }
+.msg span { display: block; }
+
+/* barra fija (celular) */
+.mbar { position: fixed; inset: auto 0 0; z-index: 30; display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(7,17,29,.94); backdrop-filter: blur(10px);
+  border-top: 1px solid var(--line); }
+.mbar[hidden], .mbar-chat[hidden], .calc-step[hidden] { display: none; }
+@media (min-width: 721px) { .mbar { display: none !important; } body.chat-on footer { padding-bottom: 90px; } }
+body.chat-open .mbar { display: none; }
+.mbar .btn { min-height: 44px; padding: 10px; white-space: nowrap; }
+.mbar-chat { font-size: 1.2rem; padding: 0; }
+.chat-wa { display: block; margin: -2px 14px 10px; text-align: center; font-size: .9rem; flex: none; }
+
+.solo-movil { display: none; }
+
+@media (max-width: 720px) {
+  body.has-mbar { padding-bottom: 76px; }
+  .chat-fab { display: none !important; }   /* el chat se abre en la barra */
+  /* más corta sin quitar texto: el detalle de «Sin riesgo» está en Preguntas; las tarjetas 5 y 6, en «Ver todo» */
+  .cta-row, .split .cta { flex-wrap: wrap; gap: 10px; }
+  .cta-row .btn, .split .cta .btn { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 10px 8px; font-size: .92rem; line-height: 1.25; text-align: center; text-wrap: balance; }
+  #servicios .screen { display: none; }
+  #sin-riesgo .features { gap: 8px; }
+  #sin-riesgo .feature { padding: 10px 14px; align-items: center; }
+  #sin-riesgo .icon { grid-row: auto; width: 28px; height: 28px; }
+  #sin-riesgo .feature p, :is(#servicios, #pedidos) .feature:nth-child(n+5) { display: none; }
+  .solo-movil { display: list-item; }
+  main > section:not(.hero) { padding: 40px 0; }
+  main > section:not(.hero) .lead { font-size: 1.02rem; }
+  .srv-sec .phone { width: min(240px, 64vw); }
+  .pains { gap: 10px; margin-top: 20px; }
+  .pain { padding: 14px 16px; font-size: .95rem; line-height: 1.5; }
+  .features.compact .feature p, .dos-pasos .step p, .flujo li, .incluye ul, .limites ul { font-size: .94rem; line-height: 1.5; }
+  .flujo li { padding-bottom: 14px; }
+  .dos-pasos .step { padding: 12px 14px 12px 58px; }
+  .dos-pasos .step::before { left: 14px; top: 12px; }
+  .prices .price ul { gap: 6px; font-size: .95rem; line-height: 1.5; }
+  .pago p, .quien p { line-height: 1.5; }
+  .faq details { padding: 13px 16px; }
+  .trust li { text-align: center; }
+}
+@media (max-width: 520px) {
+  #pedidos .phones { gap: 10px; }
+  #pedidos .phones .phone { width: calc(50% - 5px); padding: 6px; border-radius: 22px; }
+  #pedidos .phones .phone img { border-radius: 17px; }
+  #pedidos .phones .phone.back { margin: 24px 0 0; }
+}
+@media (max-width: 420px) {
+  .brand small { display: none; }
+  .top .wrap, .top nav { gap: 8px; }
+  .top nav .btn.small { padding: 8px 11px; font-size: .88rem; }
+  .top .login summary { padding: 7px 9px; font-size: .9rem; }
+}
+@media (min-width: 721px) {
+  .hero.inicio { padding: 40px 0 56px; }
+  .inicio .center { max-width: 820px; margin: 0 auto; }
+  .inicio .lead { font-size: 1.2rem; margin: 0 auto 22px; }
+  .elige { gap: 18px; max-width: 980px; margin: 0 auto; }
+  .elige-card { padding: 24px; gap: 10px; }
+  .elige-card h2 { font-size: 1.45rem; }
+  .elige-card .desc { display: block; }
+  .elige-card .precio { font-size: 1.5rem; }
+  .elige-card .precio small { display: inline; margin-left: 6px; font-size: .95rem; }
+  .elige-card .acciones { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .elige-card .btn { width: auto; padding: 12px 20px; }
+  .btn.wa.ancho { margin-top: 18px; }
+  .features.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .store-demo { grid-template-columns: 1fr auto; align-items: center; padding: 18px 22px; }
+  .pago { grid-template-columns: 1fr 1fr; }
+  .chat-fab { font-size: .92rem; padding: 11px 16px; }
+}
+@media (min-width: 900px) {
+  .dos-pasos { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 900px) {
+  #demo .wrap { grid-template-areas: "intro" "form" "aside"; grid-template-rows: none; row-gap: 22px; }
+}
+@media (min-width: 1024px) {
+  .features.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .flujo { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 16px; }
+  .flujo li { padding: 44px 0 0; }
+  .flujo li::after { left: 38px; right: 0; top: 14px; bottom: auto; width: auto; height: 2px; }
+}
