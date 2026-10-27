@@ -159,8 +159,11 @@ const workOrderSchema = new mongoose.Schema(
 );
 
 // Índices de las consultas reales (todas empiezan por la empresa): listados por estado y fecha, «mis órdenes» del
-// técnico, las órdenes de un cliente, el mapa en vivo y los reportes por fecha de cierre.
+// técnico, las órdenes de un cliente, el mapa en vivo y los reportes por fecha de cierre. Los de `updatedAt` y
+// `startedAt` son para el uso que lee GABY (última actividad y técnicos activos en 7 días).
 workOrderSchema.index({ tenant: 1, createdAt: -1 });
+workOrderSchema.index({ tenant: 1, updatedAt: -1 });
+workOrderSchema.index({ tenant: 1, startedAt: -1 });
 workOrderSchema.index({ tenant: 1, status: 1, createdAt: -1 });
 workOrderSchema.index({ tenant: 1, assignedTo: 1, status: 1 });
 workOrderSchema.index({ tenant: 1, client: 1, createdAt: -1 });

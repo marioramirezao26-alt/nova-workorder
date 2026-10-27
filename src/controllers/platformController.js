@@ -17,9 +17,24 @@ const slugify = (name) => String(name).normalize('NFD').replace(/[̀-ͯ]/g, '').
 // `reportsShared`: órdenes cuyo informe tiene enlace para el cliente («Compartir informe»); la app no sabe si el
 // enlace de verdad se envió por WhatsApp, pero sin enlace no hay informe que mandar.
 // `quotesSent`: cotizaciones enviadas alguna vez al cliente (las que pasaron de borrador a enviada).
+// Para acompañar la prueba de 7 días (solo fechas en ISO UTC y conteos, nada de datos de personas):
+// `lastLoginAt`: último ingreso de cualquier usuario de la empresa (se guarda en la empresa al iniciar sesión).
+// `lastActivityAt`: lo más reciente entre la última orden creada o cambiada (el informe de servicio, sus fotos, la firma
+// y el enlace viven en la orden) y la última cotización creada o cambiada. null si no hay ninguna.
+// `ordersLast24h`: órdenes creadas en las últimas 24 horas.
+// `activeTechnicians7d`: técnicos distintos con alguna orden iniciada o completada en los últimos 7 días (el técnico
+// es quien tiene la orden asignada).
+// Cada consulta va por la empresa y usa un índice que empieza por `tenant`: nada recorre órdenes de otras empresas.
+const HOUR_MS = 60 * 60 * 1000;
+const iso = (date) => (date ? new Date(date).toISOString() : null);
+
 const usage = async (company) => {
   const tenant = company._id;
-  const [technicians, users, workOrders, admin, completedOrders, reportsShared, quotesSent] = await Promise.all([
+  const now = Date.now();
+  const since24h = new Date(now - 24 * HOUR_MS);
+  const since7d = new Date(now - 7 * 24 * HOUR_MS);
+  const [technicians, users, workOrders, admin, completedOrders, reportsShared, quotesSent,
+    lastOrder, lastQuote, ordersLast24h, workedBy] = await Promise.all([
     User.countDocuments({ tenant, role: 'tecnico', active: true }),
     User.countDocuments({ tenant, active: true }),
     WorkOrder.countDocuments({ tenant }),
@@ -27,8 +42,23 @@ const usage = async (company) => {
     WorkOrder.countDocuments({ tenant, status: 'completada' }),
     WorkOrder.countDocuments({ tenant, reportToken: { $type: 'string' } }),
     Quote.countDocuments({ tenant, sentAt: { $ne: null } }),
+    WorkOrder.findOne({ tenant }).sort({ updatedAt: -1 }).select('updatedAt').lean(),
+    Quote.findOne({ tenant }).sort({ updatedAt: -1 }).select('updatedAt').lean(),
+    WorkOrder.countDocuments({ tenant, createdAt: { $gte: since24h } }),
+    WorkOrder.distinct('assignedTo', { tenant, assignedTo: { $ne: null },
+      $or: [{ tenant, startedAt: { $gte: since7d } }, { tenant, completedAt: { $gte: since7d } }] }),
   ]);
-  return { technicians, users, workOrders, adminEntered: Boolean(admin && !admin.mustChangePassword), completedOrders, reportsShared, quotesSent };
+  const activeTechnicians7d = workedBy.length
+    ? await User.countDocuments({ tenant, _id: { $in: workedBy }, role: 'tecnico' })
+    : 0;
+  const last = Math.max(lastOrder ? new Date(lastOrder.updatedAt).getTime() : 0, lastQuote ? new Date(lastQuote.updatedAt).getTime() : 0);
+  return {
+    technicians, users, workOrders, adminEntered: Boolean(admin && !admin.mustChangePassword), completedOrders, reportsShared, quotesSent,
+    lastLoginAt: iso(company.lastLoginAt),
+    lastActivityAt: last ? iso(last) : null,
+    ordersLast24h,
+    activeTechnicians7d,
+  };
 };
 
 const view = async (company) => ({

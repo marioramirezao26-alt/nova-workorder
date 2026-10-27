@@ -89,6 +89,7 @@ const quoteSchema = new mongoose.Schema(
 quoteSchema.index({ tenant: 1, number: 1 }, { unique: true });
 quoteSchema.index({ tenant: 1, status: 1, createdAt: -1 });
 quoteSchema.index({ tenant: 1, client: 1, createdAt: -1 });
+quoteSchema.index({ tenant: 1, updatedAt: -1 });                 // última actividad para el uso que lee GABY
 quoteSchema.index({ publicToken: 1 }, { unique: true, sparse: true });
 quoteSchema.plugin(require('./tenantGuard'));
 

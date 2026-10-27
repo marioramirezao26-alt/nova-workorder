@@ -79,6 +79,12 @@ const companySchema = new mongoose.Schema(
       numberingRangeId: { type: Number, default: null },
       connectedAt: { type: Date, default: null },
     },
+    // Último ingreso (login) de cualquier usuario de la empresa, para el uso que lee GABY. Se escribe como mucho una vez
+    // por minuto (ver authController) y no toca `updatedAt`.
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
     // Consecutivo de las cotizaciones de la empresa (#1, #2…).
     quoteSeq: {
       type: Number,

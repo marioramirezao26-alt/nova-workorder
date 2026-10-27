@@ -2,6 +2,26 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Uso para acompañar la prueba de 7 días (27-oct-2026)
+- GABY lee el uso de cada empresa por `GET /api/platform/companies` y `/companies/:id`. Dentro del mismo `usage` se
+  **agregan** cuatro campos; los de antes no cambian:
+  - `lastLoginAt`: último ingreso de cualquier usuario de la empresa, ISO UTC o `null`.
+  - `lastActivityAt`: lo más reciente entre la última orden creada o cambiada (el informe, sus fotos, la firma y el
+    enlace viven en la orden) y la última cotización creada o cambiada. ISO UTC o `null`.
+  - `ordersLast24h`: órdenes creadas en las últimas 24 horas.
+  - `activeTechnicians7d`: técnicos distintos (rol `tecnico`, el de la orden asignada) con alguna orden iniciada o
+    completada en los últimos 7 días.
+- **Nuevo en la base:** `Company.lastLoginAt`. Se escribe en `POST /auth/login` (ingreso válido de una empresa no
+  suspendida) con un `updateOne` que solo encuentra la empresa si no tenía fecha o la que tenía pasó del minuto: como
+  mucho una escritura por minuto por empresa, sin mover `updatedAt` y sin frenar el ingreso si falla.
+- **Índices nuevos** (Mongoose los crea al arrancar): órdenes `{ tenant, updatedAt }` y `{ tenant, startedAt }`;
+  cotizaciones `{ tenant, updatedAt }`. Las consultas van por empresa y por índice (`ordersLast24h` usa el que ya
+  existía de `createdAt`; los técnicos activos, `startedAt` y el de `completedAt`).
+- Sin datos de personas en el `usage`: solo fechas y conteos. README actualizado (sección «Plataforma»).
+- `test/plataforma.test.js`: cada campo nuevo, el caso sin actividad (`null` y 0), que un ingreso mueve `lastLoginAt`
+  (y otro dentro del minuto no), que otra empresa no suma, que el uso solo trae fechas y conteos y que las consultas
+  nuevas van por índice.
+
 ### Enlace de prueba con la ficha de GABY (27-oct-2026)
 - Paso 2 del plan de Mario («una sola ficha por persona»), junto con GABY 0.127.0 (TASK-185, ADR-104). GABY manda por el
   chat un enlace propio: `https://novaworkorder.com/?l=<código>&app=<servicios|pedidos>&t=<técnicos>#demo`. `l` es un
