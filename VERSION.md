@@ -2,6 +2,47 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Landing más elegante y recomendaciones de clientes reales (27-oct-2026)
+- Pedido de Mario: una landing más elegante y, al final, recomendaciones de los clientes. **Decisión: no se publican
+  reseñas ficticias** (Ley 1480 y la SIC lo tratan como publicidad engañosa, y Meta rechaza anuncios hacia páginas con
+  testimonios falsos). La sección se hizo para reseñas reales y **no se muestra mientras no haya al menos una aprobada**.
+- **Diseño (es y en, `estilos.css` + `inicio.css`):** mismos datos, precios y promesas; ningún `id`, `name`, `utm`, `ref`,
+  JSON-LD, texto de WhatsApp, ruta legal ni `meta` cambia. Tipografía más fina (Inter Display en títulos si está, `-0,035em`
+  en el h1, números tabulares en precios), ritmo vertical de 72–112 px, superficies con borde de 1 px, sombra suave y
+  degradado discreto, botones con relieve y foco de 2 px, iconos SVG de línea en vez de emojis (sprite en la misma página),
+  cuadrícula tenue en el hero, líneas finas de color por app en vez de bordes de 4 px, precios con chulos verdes y botones
+  alineados, preguntas con flecha que gira, contraste AA (texto secundario 9:1, terciario 6:1, botón azul 5,2–6,7).
+  Aparición discreta al bajar (`animar.js`): solo con JavaScript y sin «reducir movimiento»; lo que ya se ve al cargar no se
+  anima. Sin librerías ni fuentes nuevas. El fondo ya no es `fixed`. Medido: los dos «Empieza gratis» y WhatsApp siguen
+  sin scroll en 360×740, 390×664, 390×844 y 1280×800, y ninguna página se sale de lado en el celular.
+- **«Recomiéndanos» en la app** (Inicio, solo el administrador): calificación de 1 a 5, opinión de 20 a 400 caracteres,
+  nombre, cargo y ciudad opcionales, la empresa sale de la cuenta y la casilla obligatoria «Autorizo a NOVA Desarrollos a
+  publicar esta opinión…». Muestra en qué va (en revisión, publicada, no publicada con su motivo, retirada), deja cambiarla
+  y retirarla. En español e inglés.
+- **Modelo `Review`** (una por empresa, índice único por `tenant`): `pendiente`, `aprobada`, `rechazada` o `retirada`;
+  `consentText` y `consentAt` como constancia, `submittedAt`, `decidedAt`, `withdrawnAt`. Solo lo del formulario y el
+  nombre de la empresa: nada de correo ni teléfono. Reenviarla **reemplaza** la anterior con un documento nuevo (otro
+  `_id`) y vuelve a `pendiente`: una aprobación pedida sobre el texto viejo responde 404 y no publica el nuevo sin leerlo.
+- **API de la empresa:** `GET|PUT|DELETE /api/company/review` (sesión de administrador; técnico y cliente, 403; tope de 20
+  envíos por hora por empresa). El estado no se puede mandar desde la app. Queda en la bitácora (`resena.enviar`,
+  `resena.reemplazar`, `resena.retirar`).
+- **API de plataforma (GABY, `x-platform-key`):** `GET /api/platform/reviews?status=pendiente` (o `aprobada`,
+  `rechazada`, `retirada`), `POST /api/platform/reviews/:id/approve` (solo una pendiente) y `POST
+  /api/platform/reviews/:id/reject` con `reason` opcional (una pendiente, o una aprobada para despublicarla). Los cambios son
+  atómicos: una retirada en el camino responde 409 con su estado.
+- **Público:** `GET /api/public/reviews` → `{ items: [{ name, role, company, city, rating, text, month }] }`, solo las
+  aprobadas (12 como mucho, la última aprobada primero), `Cache-Control: public, max-age=300`. `month` es el mes en que la
+  escribió en hora de Colombia (`2026-10`). Las retiradas y rechazadas desaparecen.
+- **Landing:** `#resenas` al final, antes del pie, en `/` y `/en/` (texto original del cliente; etiquetas y mes
+  traducidos). Arranca con `hidden` y `resenas.js` la muestra solo si la API trae al menos una; todo con `textContent`.
+  **Sin JSON-LD de reseñas:** Google no acepta reseñas propias («self-serving») de la organización, y marcarlas sería
+  pedir un resultado enriquecido que no corresponde.
+- Las reseñas de ejemplo solo existen en las capturas de vista previa (base en memoria, con la franja «Vista previa con
+  reseñas de ejemplo»). Ni el código ni la base las tienen. Capturas en `informes/landing-elegante/antes|despues/`.
+- `test/resenas.test.js`: solo el administrador con sesión, la casilla obligatoria, largo y calificación, el reemplazo por
+  empresa, el retiro, aprobar y rechazar solo con la llave (el token de la app no sirve), la página pública sin datos de
+  contacto y con caché, el mes en hora de Colombia y que la landing arranque oculta, sin JSON-LD ni reseñas de ejemplo.
+
 ### Uso para acompañar la prueba de 7 días (27-oct-2026)
 - GABY lee el uso de cada empresa por `GET /api/platform/companies` y `/companies/:id`. Dentro del mismo `usage` se
   **agregan** cuatro campos; los de antes no cambian:

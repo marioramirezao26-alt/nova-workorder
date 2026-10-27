@@ -6,6 +6,7 @@ const { validateObjectId } = require('../middleware/validateObjectId');
 const { createCompany, listCompanies, getCompany, updateCompany } = require('../controllers/platformController');
 const { listDemoRequests, ackDemoRequest } = require('../controllers/demoController');
 const { getAnalytics } = require('../controllers/analyticsController');
+const { listReviews, approveReview, rejectReview } = require('../controllers/reviewController');
 
 const router = express.Router();
 
@@ -38,5 +39,13 @@ router.post('/demo-requests/:id/ack', validateObjectId, ackDemoRequest);
 
 // Analítica de la página de ventas (visitas por canal y conversión) para el resumen semanal de GABY.
 router.get('/analytics', getAnalytics);
+
+// Recomendaciones de los clientes para novaworkorder.com: GABY las lista y Mario las aprueba o rechaza desde su panel.
+router.get('/reviews', listReviews);
+router.post('/reviews/:id/approve', validateObjectId, approveReview);
+router.post('/reviews/:id/reject', validateObjectId, [
+  body('reason').optional({ nullable: true }).isString().trim().isLength({ max: 300 }).withMessage('El motivo: máximo 300 caracteres'),
+  validateRequest,
+], rejectReview);
 
 module.exports = router;
