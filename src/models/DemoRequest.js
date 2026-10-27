@@ -1,5 +1,8 @@
 const mongoose = require('mongoose');
 
+// El código de la ficha de GABY que trae el enlace de prueba (?l=): letras y números, de 8 a 32.
+const LEAD_TOKEN = /^[A-Za-z0-9]{8,32}$/;
+
 // Una empresa que pidió una demo desde la página de ventas (novaworkorder.com). GABY las lee por la API de plataforma,
 // las convierte en prospectos de NOVA · Ventas y las marca como recibidas.
 const demoRequestSchema = new mongoose.Schema(
@@ -20,6 +23,9 @@ const demoRequestSchema = new mongoose.Schema(
     channel: { type: String, trim: true, maxlength: 20, default: null },
     // Código de recomendación del cliente que compartió su enlace (?ref=…): GABY le regala un mes cuando este pague.
     referral: { type: String, trim: true, lowercase: true, maxlength: 20, default: null },
+    // La ficha de GABY de quien llegó con el enlace de prueba del chat (?l=…): un código opaco (no dice quién es), corto y
+    // solo con letras y números. GABY une la prueba a esa ficha antes que por correo o celular.
+    leadToken: { type: String, trim: true, maxlength: 32, match: LEAD_TOKEN, default: null },
     // demo: quiere que le muestren la app · prueba: quiere empezar ya; GABY le crea la cuenta y le envía el acceso.
     kind: { type: String, enum: ['demo', 'prueba'], default: 'demo' },
     // Una prueba exige aceptar los términos y la política de privacidad: cuándo los aceptó.
@@ -32,3 +38,4 @@ const demoRequestSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model('DemoRequest', demoRequestSchema);
+module.exports.LEAD_TOKEN = LEAD_TOKEN;

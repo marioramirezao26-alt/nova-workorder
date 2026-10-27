@@ -435,6 +435,7 @@
             <label><input type="radio" name="product" value="pedidos" /> <span><b>Pedidos</b><small>Tienda en línea para vender al detal</small></span></label>
           </fieldset>
           <p class="small wide aviso-ref" id="referral-note" hidden>Llegaste con un enlace de recomendación: crea tu cuenta desde aquí para que quede registrada.</p>
+          <p class="small wide aviso-ref" id="lead-note" hidden>Vienes del chat con GABY: ya dejamos elegida tu app. Completa tus datos y acepta los términos.</p>
           <label class="wide"><span id="company-label">Nombre de tu empresa o negocio</span><input name="company" required maxlength="150" autocomplete="organization" /></label>
           <label>Tu nombre<input name="name" required maxlength="100" autocomplete="name" /></label>
           <label>Tu correo<input name="email" type="email" required maxlength="200" autocomplete="email" aria-describedby="email-ayuda" /><small id="email-ayuda" aria-hidden="true">Aquí te llega el acceso.</small></label>
@@ -488,6 +489,7 @@
     <button class="mbar-chat" id="mbar-chat" type="button" hidden aria-label="Abrir el chat con GABY, asistente virtual (IA)" aria-controls="chat-box"><span aria-hidden="true">💬</span></button>
   </nav>
 
+  <script src="/enlace.js"></script>
   <script>
     (function () {
       var form = document.getElementById('demo-form');
@@ -511,6 +513,11 @@
       if (!store.get('nova-ref') && document.referrer) store.set('nova-ref', document.referrer.slice(0, 500));
       var referral = (location.search.match(/[?&]ref=([a-z0-9-]{3,20})/i) || [])[1];      // recomendado por un cliente
       if (referral) store.set('nova-referral', referral.toLowerCase());
+      // El enlace de prueba que GABY manda por el chat (?l=&app=&t=, enlace.js): la ficha viaja en el formulario y queda
+      // guardada en esta pestaña por si navega por la página antes de llenarlo.
+      var enlace = window.NovaEnlace ? window.NovaEnlace.leer(location.search) : { lead: '', app: '', size: null };
+      if (enlace.lead) store.set('nova-lead', enlace.lead);
+      var leadToken = store.get('nova-lead');
       function track(event) {
         try {
           fetch('/api/public/visit', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
@@ -521,7 +528,8 @@
       }
       track('visita');
 
-      // WhatsApp: siempre «escríbenos» (GABY nunca escribe primero). Sin dígitos, «ref» ni «código» en el texto.
+      // WhatsApp: siempre «escríbenos» (GABY nunca escribe primero). Sin dígitos, «ref» ni «código» en el texto, salvo el
+      // botón de después de crear la prueba si llegó con el enlace de GABY: lleva «(ref <código de la ficha>)».
       var WA = 'https://wa.me/573103767561?text=';
       var waText = function (t) { return WA + encodeURIComponent(t); };
       var WA_GENERAL = waText('Hola, vengo de la página web de NOVAWORKORDER y quiero saber más.');
@@ -616,6 +624,10 @@
       // A /#pedidos llegan los compradores desde el pie de cada tienda.
       if (location.hash === '#pedidos' || location.hash === '#servicios') form.product.value = location.hash.slice(1);
       if (store.get('nova-referral')) document.getElementById('referral-note').hidden = false;
+      // Del enlace de GABY: la app y los técnicos ya elegidos (lo que la persona le contó en el chat)
+      if (enlace.app) form.product.value = enlace.app;
+      if (enlace.size && form.product.value === 'servicios') form.technicians.value = String(enlace.size);
+      if (leadToken && (enlace.app || enlace.lead)) document.getElementById('lead-note').hidden = false;
 
       form.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -640,7 +652,8 @@
         data.utm = store.get('nova-utm');                                   // siempre texto, nunca null
         data.ref = store.get('nova-ref');
         data.referral = store.get('nova-referral');
-        var asked = store.get('nova-chat');                                 // si antes habló con GABY en el chat
+        if (leadToken) data.l = leadToken;                                  // la ficha del chat con GABY
+        var asked = store.get('nova-chat');                               // si antes habló con GABY en el chat
         if (asked) {
           data.source = 'chat';
           data.message = ((data.message ? data.message + '\n\n' : '') + 'Preguntó en el chat: ' + asked).slice(0, 1000);
@@ -665,7 +678,9 @@
               // «Normalmente»: GABY puede no crear la cuenta sola (correo ya registrado, tope del día, correo apagado) y
               // entonces solo le avisa al equipo. Por eso la salida a WhatsApp si el acceso no llega.
               say('ok', '¡Listo! Normalmente en unos minutos te llega a ' + email + ' el acceso a tu cuenta de ' + NOMBRE[app] + ', con una contraseña temporal. Revisa también la carpeta de spam; si en una hora no te ha llegado, escríbenos por WhatsApp.',
-                waButton('¿No te llegó o tienes dudas? Escríbenos por WhatsApp', waText('Hola, acabo de crear mi prueba gratis de NOVAWORKORDER ' + NOMBRE[app] + ' en la web.')));
+                waButton('¿No te llegó o tienes dudas? Escríbenos por WhatsApp', waText(window.NovaEnlace
+                  ? window.NovaEnlace.textoPrueba(NOMBRE[app], leadToken)
+                  : 'Hola, acabo de crear mi prueba gratis de NOVAWORKORDER ' + NOMBRE[app] + ' en la web.')));
             } else {
               say('ok', '¡Listo! Recibimos tu solicitud y te respondemos por correo a ' + email + '. Si quieres respuesta ya, escríbenos por WhatsApp.',
                 waButton('Escríbenos por WhatsApp', waText('Hola, pedí información de NOVAWORKORDER ' + NOMBRE[app] + ' en la web.')));
