@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { STATUS, StatusTag, formatDateTime } from '../ui';
 import { t } from '../i18n';
+import Recommend from './Recommend';
 
 // Inicio: los números de la empresa (o, para un cliente, de sus órdenes).
 export default function Dashboard({ api, user, go }) {
@@ -76,6 +77,8 @@ export default function Dashboard({ api, user, go }) {
           </div>
         </div>
       </div>
+
+      {user.role === 'admin' && <Recommend api={api} user={user} />}
     </section>
   );
 }

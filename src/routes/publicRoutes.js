@@ -9,6 +9,7 @@ const { getLogo } = require('../controllers/brandingController');
 const { validateObjectId } = require('../middleware/validateObjectId');
 const { chatLimiter } = require('../middleware/chatLimiter');
 const { chat, chatStatus } = require('../controllers/chatController');
+const { publicReviews } = require('../controllers/reviewController');
 
 // Rutas sin sesión que usa la página de ventas (novaworkorder.com). Caddy solo deja pasar /api/public/* en ese dominio.
 const router = express.Router();
@@ -54,6 +55,9 @@ router.post('/chat', chatLimiter, [
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
   validateRequest,
 ], chat);
+
+// Las recomendaciones aprobadas de los clientes (la sección del final de la página; con 0, la sección no se muestra).
+router.get('/reviews', publicReviews);
 
 // El logo de cada empresa (lo muestra su app, también antes de entrar).
 router.get('/logo/:id', validateObjectId, getLogo);

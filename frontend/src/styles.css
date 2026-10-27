@@ -1146,3 +1146,28 @@ a.mini-button, a.ghost-button { display: inline-flex; align-items: center; text-
   .sheet-item .nav-icon { font-size: 1.3rem; }
   .sheet-item.active { color: #fff; border-color: var(--brand); background: color-mix(in srgb, var(--brand) 22%, transparent); }
 }
+
+/* «Recomiéndanos» (Inicio del administrador): la opinión de la empresa para novaworkorder.com */
+.recommend-box { margin-top: 18px; display: grid; gap: 14px; }
+.recommend-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.recommend-head h3 { margin: 0 0 4px; }
+.recommend-head p { margin: 0; max-width: 60ch; }
+.review-state { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.review-state.pending { color: #f0cd73; } .review-state.ok { color: #4fd69c; } .review-state.bad { color: #ff9e9e; } .review-state.muted { color: #a9bbd6; }
+.recommend-current { display: grid; gap: 6px; }
+.recommend-current blockquote { margin: 0; font-size: 1.02rem; line-height: 1.55; overflow-wrap: anywhere; }
+.review-stars { margin: 0; color: #ffc65c; letter-spacing: 2px; }
+.review-stars span { color: rgba(255, 255, 255, 0.18); }
+.recommend-form { display: grid; gap: 14px; }
+.star-input { border: 0; padding: 0; margin: 0; display: flex; gap: 4px; }
+.star-input legend { padding: 0; margin-bottom: 6px; font-size: 0.92rem; }
+.star-input label { position: relative; cursor: pointer; font-size: 2rem; line-height: 1; color: rgba(255, 255, 255, 0.22); padding: 2px; margin: 0; }
+.star-input label.on { color: #ffc65c; }
+.star-input input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.star-input label:has(input:focus-visible) { outline: 2px solid var(--brand-2); outline-offset: 2px; border-radius: 6px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.recommend-form small.warn { color: #f0cd73; }
+.recommend-form input[readonly] { opacity: 0.75; }
+.recommend-form .consent-row { align-items: flex-start; margin: 0; }
+.recommend-form .consent-row input { margin-top: 3px; flex: none; width: 20px; height: 20px; accent-color: var(--brand); }
+@media (max-width: 640px) { .recommend-form .two-columns { grid-template-columns: 1fr; } }

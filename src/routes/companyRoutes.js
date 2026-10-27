@@ -9,6 +9,8 @@ const wompi = require('../services/wompi');
 const factus = require('../services/factus');
 const { audit } = require('../utils/audit');
 const { limiter } = require('../utils/rateStore');
+const { getOwnReview, saveOwnReview, withdrawOwnReview } = require('../controllers/reviewController');
+const { LIMITS } = require('../models/Review');
 
 // La empresa del usuario. «Mi marca»: solo el administrador cambia el logo y los colores.
 const router = express.Router();
@@ -203,5 +205,31 @@ router.delete('/factus', protect, authorize('admin'), async (req, res) => {
     res.status(500).json({ message: 'No se pudo desconectar la factura electrónica' });
   }
 });
+
+// «Recomiéndanos»: el administrador deja la opinión de su empresa para novaworkorder.com (una por empresa). Queda
+// pendiente hasta que Mario la apruebe desde GABY; desde la app nadie la aprueba. La empresa la puede retirar.
+const reviewLimiter = limiter({
+  name: 'resena',
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  key: (req) => String(req.company._id),
+  onLimit: (req, res) => res.status(429).json({ message: 'Demasiados envíos. Espera un rato y vuelve a intentarlo.' }),
+});
+const optionalText = (field, max, label) => body(field).optional({ nullable: true }).isString().withMessage(`${label} no es válido`)
+  .trim().isLength({ max }).withMessage(`${label}: máximo ${max} caracteres`);
+
+router.get('/review', protect, authorize('admin'), getOwnReview);
+router.put('/review', protect, authorize('admin'), reviewLimiter, [
+  body('rating').custom((v) => Number.isInteger(v) && v >= 1 && v <= 5).withMessage('Elige una calificación de 1 a 5 estrellas'),
+  body('text').isString().withMessage('Escribe tu opinión').trim()
+    .isLength({ min: LIMITS.textMin, max: LIMITS.textMax }).withMessage(`La opinión va de ${LIMITS.textMin} a ${LIMITS.textMax} caracteres`),
+  body('name').isString().withMessage('Escribe tu nombre').trim()
+    .isLength({ min: LIMITS.nameMin, max: LIMITS.nameMax }).withMessage(`Tu nombre va de ${LIMITS.nameMin} a ${LIMITS.nameMax} caracteres`),
+  optionalText('role', LIMITS.roleMax, 'El cargo'),
+  optionalText('city', LIMITS.cityMax, 'La ciudad'),
+  body('consent').custom((v) => v === true).withMessage('Para publicarla necesitamos tu autorización: marca la casilla'),
+  validateRequest,
+], saveOwnReview);
+router.delete('/review', protect, authorize('admin'), withdrawOwnReview);
 
 module.exports = router;

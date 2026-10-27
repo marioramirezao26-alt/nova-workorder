@@ -221,15 +221,21 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 - PATCH /api/platform/companies/:id — `status` (prueba, activa, suspendida), `maxTechnicians`, `name`
 - GET /api/platform/demo-requests · POST /api/platform/demo-requests/:id/ack — solicitudes de la página de ventas (con su canal)
 - GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día
+- GET /api/platform/reviews?status=pendiente · POST /api/platform/reviews/:id/approve · POST /api/platform/reviews/:id/reject
+  (`reason` opcional) — recomendaciones de los clientes para novaworkorder.com; solo las aprobadas se publican
 
 ### Mi marca (administrador de la empresa)
 - PUT /api/company/branding — `primary` y `accent` (#rrggbb), `logo` (data URL PNG, JPG o WEBP, máx. 300 KB; `null` lo quita)
 - GET /api/public/logo/:id — el logo de la empresa (lo muestra su app)
+- GET|PUT|DELETE /api/company/review — «Recomiéndanos» (solo el administrador): `rating` 1–5, `text` 20–400, `name`,
+  `role` y `city` opcionales y `consent: true`. Una por empresa; reenviarla la reemplaza y vuelve a pendiente
 
 ### Página de ventas (sin sesión)
 - POST /api/public/demo — «Empieza gratis» o «Pide tu demo»; guarda el canal de llegada (`utm`/`ref`)
 - POST /api/public/visit — contador anónimo (`event`: visita o clic). Sin cookies ni IP: solo suma por día, página,
   canal (utm_source del enlace o el sitio que lo trajo) y tipo de equipo. Los robots y los avances de enlaces no cuentan.
+- GET /api/public/reviews — las recomendaciones aprobadas (`name`, `role`, `company`, `city`, `rating`, `text`, `month`),
+  sin datos de contacto y con caché de 5 minutos. Sin ninguna, la landing no muestra la sección
 - GET /api/public/chat — `{ enabled }`: si la página muestra la burbuja del chat «GABY · Ventas».
 - POST /api/public/chat — `{ messages: [{ role, content }] }` → `{ reply }`. Una IA (OpenRouter) que solo sabe precios y
   funciones (`src/utils/salesChat.js`), sin herramientas ni acceso a datos. No guarda lo que escribe el visitante: solo
