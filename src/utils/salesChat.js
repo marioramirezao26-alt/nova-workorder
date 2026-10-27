@@ -16,7 +16,7 @@ const dailyLimit = () => {
 const FACTS = `NOVAWORKORDER (NOVA Desarrollos, Colombia) vende dos apps web. Funcionan en el navegador del celular (Android o iPhone) y del computador; no hay que instalar nada (se puede poner un acceso directo en la pantalla de inicio). Necesitan internet.
 
 1) NOVAWORKORDER Servicios — para empresas de servicio técnico (mantenimiento, refrigeración, aire acondicionado, redes, cámaras, etc.).
-- Precio: $49.000 COP por técnico al mes, IVA incluido. Se cobra por los técnicos contratados, que son el máximo de técnicos activos de la cuenta, y se cobran completos aunque ese mes se usen menos. Ejemplo: 5 técnicos = $245.000 al mes. Los administradores y los usuarios de los clientes de la empresa no pagan. No se cobra por orden ni por cliente.
+- Precio: $49.000 COP por técnico al mes, precio final: NOVA no cobra IVA, no se le suma nada. Se cobra por los técnicos contratados, que son el máximo de técnicos activos de la cuenta, y se cobran completos aunque ese mes se usen menos. Ejemplo: 5 técnicos = $245.000 al mes. Los administradores y los usuarios de los clientes de la empresa no pagan. No se cobra por orden ni por cliente.
 - «Mis órdenes» es la primera pantalla del técnico en el celular: las órdenes que tiene asignadas, ordenadas por fecha límite y con las vencidas en rojo. Desde la orden llama al cliente y abre la dirección en el mapa. Iniciar y Completar guardan la hora real; las notas quedan con fecha, hora y nombre de quien las escribió.
 - Permisos: el técnico también ve, crea y edita las órdenes, los clientes y las cotizaciones de toda la empresa (borrar, solo el administrador); no hay permisos más finos. El usuario cliente solo ve lo suyo.
 - Panel de inicio con el total de órdenes y cuántas están pendientes, en proceso y completadas.
@@ -29,7 +29,7 @@ const FACTS = `NOVAWORKORDER (NOVA Desarrollos, Colombia) vende dos apps web. Fu
 - El número de técnicos se cambia escribiéndonos; el cobro cambia desde el siguiente periodo.
 
 2) NOVAWORKORDER Pedidos — para negocios que venden al detal (café, postres, ropa, lo que vendan).
-- Precio: $39.000 COP por tienda al mes, IVA incluido. Sin comisión de NOVA por venta.
+- Precio: $39.000 COP por tienda al mes, precio final: NOVA no cobra IVA, no se le suma nada. Sin comisión de NOVA por venta.
 - Tienda con enlace propio (pedidos.novaworkorder.com/nombre-de-la-tienda): fotos, categorías, variantes como talla o color, precio «antes» y «Agotado». Tienda de ejemplo: https://pedidos.novaworkorder.com/demo
 - Los compradores piden sin crear cuenta; domicilio o recoger en tienda, zonas con su propio costo, envío gratis desde un monto, pedido mínimo y horario (fuera de horario no entran pedidos).
 - El comprador paga por Nequi (ve el número y la referencia del pedido), contra entrega o con el link de pago propio de la tienda. También en línea con Wompi, con la cuenta propia de la tienda (solo en pesos; Wompi cobra su comisión). El dinero va directo a la tienda; la app no lo toca.

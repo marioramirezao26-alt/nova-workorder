@@ -70,6 +70,23 @@ test('el chat dice lo mismo que la página: la mensualidad solo por Bold y nada 
   assert.doesNotMatch(salesChat.FACTS, /últimos meses de un vistazo/);
 });
 
+test('sin IVA: el precio de la mensualidad es final y el chat no vuelve a decir «IVA incluido»', () => {
+  // Decisión de Mario del 27-oct-2026: NOVA no cobra IVA; $49.000 y $39.000 es todo lo que se paga (revierte el 21-oct).
+  const ivaSumado = /IVA\s+incluido|incluye\s+(el\s+)?IVA|con\s+IVA|m[aá]s\s+IVA|\+\s*IVA|antes\s+de\s+IVA/i;
+  assert.doesNotMatch(salesChat.FACTS, ivaSumado);
+  assert.doesNotMatch(salesChat.SYSTEM, ivaSumado);
+  assert.doesNotMatch(salesChat.FACTS_EN, /(tax|VAT)(es)?\s+included|includes?\s+(tax|VAT)|plus\s+(sales\s+)?(tax|VAT)/i);
+  assert.match(salesChat.FACTS, /\$49\.000 COP por técnico al mes, precio final: NOVA no cobra IVA/);
+  assert.match(salesChat.FACTS, /\$39\.000 COP por tienda al mes, precio final: NOVA no cobra IVA/);
+  // La página y los términos dicen lo mismo (el «IVA del 19 %» de las cotizaciones es otra cosa y se queda).
+  const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
+  for (const f of ['index.html', 'terminos.html', 'privacidad.html']) {
+    assert.doesNotMatch(leer(f), ivaSumado, f);
+    assert.doesNotMatch(leer(f), /valueAddedTaxIncluded/, f);
+  }
+  assert.match(leer('terminos.html'), /NOVA Desarrollos no cobra IVA/);
+});
+
 test('el chat no promete más de lo que hace el código: cobro, permisos del técnico y reactivación', () => {
   // GABY cobra técnicos contratados × precio (billing.py _issue), no los activos del mes
   assert.match(salesChat.FACTS, /técnicos contratados/);
