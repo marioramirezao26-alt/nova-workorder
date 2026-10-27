@@ -29,6 +29,8 @@ router.post('/demo', demoLimiter, [
   body('utm').optional().isString().isLength({ max: 60 }),
   body('ref').optional().isString().isLength({ max: 500 }),
   body('referral').optional().isString().isLength({ max: 40 }),
+  // La ficha del chat con GABY (?l= del enlace de prueba): texto corto; el controlador solo guarda uno con la forma esperada.
+  body('l').optional({ nullable: true }).isString().isLength({ max: 64 }),
   body('source').optional({ checkFalsy: true }).isIn(['web', 'chat']),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
   validateRequest,

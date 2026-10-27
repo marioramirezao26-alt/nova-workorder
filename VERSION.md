@@ -2,6 +2,23 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Enlace de prueba con la ficha de GABY (27-oct-2026)
+- Paso 2 del plan de Mario («una sola ficha por persona»), junto con GABY 0.127.0 (TASK-185, ADR-104). GABY manda por el
+  chat un enlace propio: `https://novaworkorder.com/?l=<código>&app=<servicios|pedidos>&t=<técnicos>#demo`. `l` es un
+  código opaco de la ficha de esa persona en GABY (no dice quién es ni su número).
+- **La landing** (`landing/enlace.js`, nuevo, cargado antes del script de la página) lee `l`, `app` y `t`: deja elegida
+  la app, pone los técnicos (solo Servicios) y muestra «Vienes del chat con GABY…». El código queda en la pestaña
+  (`sessionStorage`) y viaja como `l` en `POST /api/public/demo`. Lo que no tenga la forma esperada se ignora y el
+  formulario funciona igual sin enlace.
+- **`DemoRequest.leadToken`**: letras y números, de 8 a 32. La ruta acepta `l` como texto de hasta 64 caracteres (más
+  largo o que no sea texto: 400); el controlador solo guarda uno con la forma esperada y, si no, guarda `null` y la
+  solicitud sigue (un enlace mal copiado nunca impide crear la prueba). `GET /api/platform/demo-requests` lo devuelve:
+  GABY une la prueba a esa ficha antes que por correo o celular.
+- **El botón de WhatsApp de después de crear la prueba** lleva «(ref <código>)» si llegó con el enlace, para que GABY la
+  una a su ficha aunque no haya dejado su WhatsApp en el formulario. Sin enlace, el texto de siempre.
+- `test/demo.test.js`: el código se guarda validado y llega a GABY; la landing lee los parámetros (`enlace.js`, con
+  `require`) y los manda en el formulario.
+
 ### Arreglos rápidos de la revisión de producto (27-oct-2026)
 - Aprobados por Mario de la revisión de Servicios (§10 «Quick wins», §3 y §8). Nada de funciones grandes (agenda,
   recurrencia, sin señal): eso va después.

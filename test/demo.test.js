@@ -67,3 +67,38 @@ test('la página de Estados Unidos marca la solicitud en inglés y responde erro
   const items = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
   assert.deepEqual(items.map((d) => [d.company, d.lang]), [['Cool Air LLC', 'en'], ['Frío Total SAS', 'es']]);
 });
+
+// Paso 2 (una sola ficha por persona): el enlace de prueba que GABY manda por el chat trae `l`, el código de la ficha.
+test('el código de la ficha de GABY (l) se guarda validado y GABY lo lee en las solicitudes', async () => {
+  const prueba = { ...demo, kind: 'prueba', consent: true, phone: '' };
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, l: 'k7Qm2xWa9pLr4tZc' } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, email: 'b@x.co', l: '<script>x</script>' } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, email: 'c@x.co', l: 'corto' } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, email: 'd@x.co', l: 'a'.repeat(33) } })).status, 201);
+  await resetLimits();                                                                  // el tope es de 5 por IP
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, email: 'e@x.co', l: 'x'.repeat(65) } })).status, 400);
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, email: 'f@x.co', l: { $gt: '' } } })).status, 400);
+  assert.equal((await call('POST', '/public/demo', { body: { ...prueba, email: 'g@x.co' } })).status, 201);  // sin enlace: igual
+  const items = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
+  assert.deepEqual(items.map((d) => [d.email, d.leadToken]),
+    [['laura@friototal.com', 'k7Qm2xWa9pLr4tZc'], ['b@x.co', null], ['c@x.co', null], ['d@x.co', null], ['g@x.co', null]]);
+});
+
+test('la landing lee el enlace de GABY (?l=&app=&t=) y lo manda en el formulario', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { leer, textoPrueba } = require('../landing/enlace.js');
+  assert.deepEqual(leer('?l=k7Qm2xWa9pLr4tZc&app=servicios&t=5'), { lead: 'k7Qm2xWa9pLr4tZc', app: 'servicios', size: 5 });
+  assert.deepEqual(leer('?app=Pedidos&l=k7Qm2xWa9pLr4tZc'), { lead: 'k7Qm2xWa9pLr4tZc', app: 'pedidos', size: null });
+  assert.deepEqual(leer('?l=%3Cb%3E&app=otra&t=0'), { lead: '', app: '', size: null });                // nada inventado
+  assert.deepEqual(leer('?t=20000&utm_source=ig'), { lead: '', app: '', size: null });
+  assert.deepEqual(leer(''), { lead: '', app: '', size: null });
+  assert.equal(textoPrueba('Servicios', 'k7Qm2xWa9pLr4tZc'),
+    'Hola, acabo de crear mi prueba gratis de NOVAWORKORDER Servicios en la web (ref k7Qm2xWa9pLr4tZc).');
+  assert.equal(textoPrueba('Pedidos', ''), 'Hola, acabo de crear mi prueba gratis de NOVAWORKORDER Pedidos en la web.');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'landing', 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<script src="/enlace.js"></script>') < html.indexOf("var form = document.getElementById('demo-form')"));
+  assert.match(html, /if \(leadToken\) data\.l = leadToken;/);                                 // viaja en el POST
+  assert.match(html, /if \(enlace\.app\) form\.product\.value = enlace\.app;/);                // la app ya elegida
+  assert.match(html, /form\.technicians\.value = String\(enlace\.size\)/);                      // y los técnicos
+});
