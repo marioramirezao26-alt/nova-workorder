@@ -31,6 +31,7 @@ export default function MyOrders({ api, user, onUser }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
   const [notes, setNotes] = useState({});
+  const [justDone, setJustDone] = useState(null);   // la orden que se acaba de completar: se abre «Compartir informe»
 
   const load = async () => {
     try {
@@ -54,6 +55,11 @@ export default function MyOrders({ api, user, onUser }) {
       const { data } = await api.patch(`/workorders/${order._id}/status`, { status, note: notes[order._id] || undefined, location: location || undefined });
       setOrders((prev) => prev.map((o) => (o._id === data._id ? data : o)));
       setNotes((prev) => ({ ...prev, [order._id]: '' }));
+      // Completada: pasa a «Cerradas» con el informe listo para mandárselo al cliente (el paso que más se olvida).
+      if (status === 'completada') {
+        setTab('cerradas');
+        setJustDone(data._id);
+      }
     } catch (error) {
       alert(errorMessage(error, t('No se pudo actualizar la orden')));
     } finally {
@@ -140,7 +146,7 @@ export default function MyOrders({ api, user, onUser }) {
       )}
 
       <div className="segmented-control">
-        <button type="button" className={tab === 'activas' ? 'active' : ''} onClick={() => setTab('activas')}>
+        <button type="button" className={tab === 'activas' ? 'active' : ''} onClick={() => { setTab('activas'); setJustDone(null); }}>
           {t('Por hacer ({n})', { n: orders.filter((o) => ACTIVE.includes(o.status)).length })}
         </button>
         <button type="button" className={tab === 'cerradas' ? 'active' : ''} onClick={() => setTab('cerradas')}>{t('Cerradas')}</button>
@@ -167,7 +173,7 @@ export default function MyOrders({ api, user, onUser }) {
                 </div>
               )}
               {order.notes && <details className="notes"><summary>{t('Notas')}</summary><p>{order.notes}</p></details>}
-              <ServiceReport api={api} user={user} order={order} editable={isTech && ACTIVE.includes(order.status)}
+              <ServiceReport api={api} user={user} order={order} editable={isTech && ACTIVE.includes(order.status)} autoShare={justDone === order._id}
                 onChange={(next) => setOrders((prev) => prev.map((o) => (o._id === next._id ? { ...o, ...next, client: o.client, assignedTo: o.assignedTo, createdBy: o.createdBy } : o)))} />
               {!isTech && order.assignedTo && <p className="muted">{t('Técnico: {name}', { name: order.assignedTo.name })}</p>}
               {order.completedAt && <p className="muted">{t('Completada {when}', { when: formatDateTime(order.completedAt) })}</p>}

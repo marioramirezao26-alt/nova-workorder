@@ -28,6 +28,8 @@ const noteStamp = (company) => new Intl.DateTimeFormat('sv-SE', {
 // La ubicación del técnico es para su empresa: un usuario cliente no la ve.
 const hidden = (req) => (req.user.role === 'cliente' ? '-startLocation -endLocation -lastPoint -offSiteSince' : '');
 
+const OPEN = ['pendiente', 'en_proceso'];
+
 const badRequest = (message) => Object.assign(new Error(message), { statusCode: 400 });
 const COMPLETED_FOR_ADMIN = 'Una orden completada solo la corrige o la reabre el administrador';
 
@@ -72,13 +74,23 @@ const getWorkOrders = async (req, res) => {
   try {
     const filter = orderFilter(req);
 
-    if (req.query.status && req.query.status !== 'all') {
+    // ?status=open: las que siguen abiertas (pendientes o en proceso)
+    if (req.query.status === 'open') {
+      filter.status = { $in: OPEN };
+    } else if (req.query.status && req.query.status !== 'all') {
       filter.status = WorkOrder.schema.path('status').enumValues.includes(String(req.query.status)) ? String(req.query.status) : '__ninguno__';
     }
 
-    // ?assigned=me: las órdenes asignadas al usuario (vista «Mis órdenes» del técnico)
+    // ?assigned=me: las órdenes asignadas al usuario (vista «Mis órdenes» del técnico); ?assigned=none: sin técnico
     if (req.query.assigned === 'me') {
       filter.assignedTo = req.user._id;
+    } else if (req.query.assigned === 'none') {
+      filter.assignedTo = null;
+    }
+
+    // ?origin=quote: las que nacieron de una cotización aprobada
+    if (req.query.origin === 'quote') {
+      filter.quote = { $ne: null };
     }
 
     // Búsqueda por texto en título, descripción y cliente (?q=...)

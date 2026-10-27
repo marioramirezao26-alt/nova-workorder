@@ -5,7 +5,7 @@ const { temporaryPassword } = require('../utils/passwords');
 const { audit } = require('../utils/audit');
 
 const ROLES = ['admin', 'tecnico', 'cliente'];
-const fields = 'name email role client active mustChangePassword createdAt';
+const fields = 'name email phone role client active mustChangePassword createdAt';
 
 // Técnicos activos de la empresa frente al límite de su plan (maxTechnicians; null = sin límite).
 const checkTechnicianLimit = async (company, exceptUserId = null) => {
@@ -35,12 +35,13 @@ const getUsers = async (req, res) => {
   try {
     const filter = { ...companyScope(req) };
     if (req.query.role && ROLES.includes(req.query.role)) filter.role = req.query.role;
-    // Los técnicos solo necesitan la lista para asignar órdenes: ven técnicos y administradores activos.
+    // Los técnicos solo necesitan la lista para asignar órdenes (y avisarle por WhatsApp a quien se la asignan): ven
+    // técnicos y administradores activos.
     if (req.user.role === 'tecnico') {
       filter.active = true;
       filter.role = filter.role && filter.role !== 'cliente' ? filter.role : { $in: ['tecnico', 'admin'] };
     }
-    const items = await User.find(filter).select(req.user.role === 'admin' ? fields : 'name email role').sort({ name: 1 });
+    const items = await User.find(filter).select(req.user.role === 'admin' ? fields : 'name email phone role').sort({ name: 1 });
     res.status(200).json({ items });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error al obtener los usuarios' });
@@ -49,7 +50,7 @@ const getUsers = async (req, res) => {
 
 const createUser = async (req, res) => {
   try {
-    const { name, email, role, password, client } = req.body;
+    const { name, email, role, password, client, phone } = req.body;
 
     if (await User.findOne({ email: String(email).toLowerCase() })) {
       return res.status(400).json({ message: 'Ya existe un usuario con ese email' });
@@ -64,6 +65,7 @@ const createUser = async (req, res) => {
     const user = await User.create({
       name,
       email: String(email).toLowerCase(),
+      phone: phone || '',
       role,
       password: password || temp,
       tenant: req.user.tenant,
@@ -88,7 +90,7 @@ const updateUser = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    const { name, role, active, client, resetPassword } = req.body;
+    const { name, role, active, client, resetPassword, phone } = req.body;
     const isSelf = String(user._id) === String(req.user._id);
 
     if (isSelf && ((role !== undefined && role !== 'admin') || active === false)) {
@@ -103,6 +105,7 @@ const updateUser = async (req, res) => {
     }
 
     if (name !== undefined) user.name = name;
+    if (phone !== undefined) user.phone = phone;
     if (role !== undefined) user.role = role;
     if (active !== undefined) user.active = Boolean(active);
     if (client !== undefined || role !== undefined) {
@@ -123,6 +126,7 @@ const updateUser = async (req, res) => {
     if (active !== undefined) cambios.push(user.active ? 'activado' : 'desactivado');
     if (resetPassword) cambios.push('nueva contraseña');
     if (name !== undefined) cambios.push('nombre');
+    if (phone !== undefined) cambios.push('celular');
     await audit(req, 'usuario.editar', `Editó a ${user.name}${cambios.length ? ` (${cambios.join(', ')})` : ''}`, { entityId: user._id });
     res.status(200).json({ user: out, temporaryPassword: temp });
   } catch (error) {

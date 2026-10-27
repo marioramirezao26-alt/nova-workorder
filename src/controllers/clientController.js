@@ -9,6 +9,9 @@ const clientFilter = (req) => {
   return filter;
 };
 
+// El correo del cliente es opcional: vacío (o sin enviar) queda sin correo.
+const cleanEmail = (email) => String(email ?? '').trim().toLowerCase();
+
 const getPageOptions = (req) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(Math.max(1, Number(req.query.limit) || 10), 100);
@@ -45,17 +48,16 @@ const getClients = async (req, res) => {
 
 const createClient = async (req, res) => {
   try {
-    const { name, email, phone, company, address } = req.body;
+    const { name, phone, company, address } = req.body;
+    const email = cleanEmail(req.body.email);
 
-    if (!name || !email) {
+    if (!name) {
       return res.status(400).json({
-        message: 'Nombre y email son obligatorios',
+        message: 'El nombre del cliente es obligatorio',
       });
     }
 
-    const existingClient = await Client.findOne({ ...companyScope(req), email: email.toLowerCase() });
-
-    if (existingClient) {
+    if (email && await Client.findOne({ ...companyScope(req), email })) {
       return res.status(400).json({
         message: 'Ya existe un cliente con ese email',
       });
@@ -63,7 +65,7 @@ const createClient = async (req, res) => {
 
     const client = await Client.create({
       name,
-      email: email.toLowerCase(),
+      email,
       phone,
       company,
       address,
@@ -103,14 +105,14 @@ const updateClient = async (req, res) => {
       return res.status(404).json({ message: 'Cliente no encontrado' });
     }
 
-    const { name, email, phone, company, address, active } = req.body;
+    const { name, phone, company, address, active } = req.body;
+    const email = req.body.email !== undefined ? cleanEmail(req.body.email) : undefined;
 
     client.name = name !== undefined ? name : client.name;
-    if (email !== undefined && String(email).toLowerCase() !== client.email
-        && await Client.findOne({ ...companyScope(req), email: String(email).toLowerCase() })) {
+    if (email && email !== client.email && await Client.findOne({ ...companyScope(req), email })) {
       return res.status(400).json({ message: 'Ya existe un cliente con ese email' });
     }
-    client.email = email !== undefined ? String(email).toLowerCase() : client.email;
+    if (email !== undefined) client.email = email;   // vacío: el cliente queda sin correo
     client.phone = phone !== undefined ? phone : client.phone;
     client.company = company !== undefined ? company : client.company;
     client.address = address !== undefined ? address : client.address;

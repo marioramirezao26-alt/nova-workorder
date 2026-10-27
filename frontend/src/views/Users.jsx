@@ -3,7 +3,7 @@ import { errorMessage } from '../api';
 import { ROLE } from '../ui';
 import { t } from '../i18n';
 
-const emptyForm = { name: '', email: '', role: 'tecnico', client: '' };
+const emptyForm = { name: '', email: '', phone: '', role: 'tecnico', client: '' };
 
 // Usuarios de la empresa (solo el administrador): crear con contraseña temporal, desactivar, nueva contraseña.
 export default function Users({ api, user, onUser }) {
@@ -11,6 +11,7 @@ export default function Users({ api, user, onUser }) {
   const [clients, setClients] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [issued, setIssued] = useState(null);
+  const [phoneEdit, setPhoneEdit] = useState(null);   // { id, value }: el celular que se está cambiando
 
   const load = async () => {
     try {
@@ -28,7 +29,7 @@ export default function Users({ api, user, onUser }) {
   const create = async (e) => {
     e.preventDefault();
     try {
-      const payload = { ...form, client: form.role === 'cliente' && form.client ? form.client : undefined };
+      const payload = { ...form, client: form.role === 'cliente' && form.client ? form.client : undefined, phone: form.role === 'cliente' ? undefined : form.phone };
       const { data } = await api.post('/users', payload);
       setIssued({ email: data.user.email, password: data.temporaryPassword });
       setForm(emptyForm);
@@ -42,6 +43,7 @@ export default function Users({ api, user, onUser }) {
     try {
       const { data } = await api.put(`/users/${target._id}`, changes);
       if (data.temporaryPassword) setIssued({ email: target.email, password: data.temporaryPassword });
+      setPhoneEdit(null);
       load();
     } catch (error) {
       alert(errorMessage(error, t('No se pudo actualizar el usuario')));
@@ -122,6 +124,9 @@ export default function Users({ api, user, onUser }) {
                 <option value="cliente">{t('Cliente (consulta sus órdenes)')}</option>
               </select>
             </label>
+            {form.role !== 'cliente' && (
+              <label>{t('Celular (para avisarle por WhatsApp)')}<input type="tel" maxLength={30} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
+            )}
             {form.role === 'cliente' && (
               <label>{t('Ficha de cliente')}
                 <select value={form.client} onChange={(e) => setForm({ ...form, client: e.target.value })} required>
@@ -143,13 +148,23 @@ export default function Users({ api, user, onUser }) {
               {u.mustChangePassword && <span className="muted">{t('aún no entra')}</span>}
             </div>
             <h3>{u.name}</h3>
-            <small className="muted">{u.email}</small>
+            <small className="muted">{u.email}{u.phone ? ` · 📱 ${u.phone}` : ''}</small>
+            {phoneEdit?.id === u._id && (
+              <form className="order-actions" onSubmit={(e) => { e.preventDefault(); update(u, { phone: phoneEdit.value.trim() }); }}>
+                <input type="tel" maxLength={30} aria-label={t('Celular')} placeholder={t('Celular')} value={phoneEdit.value} onChange={(e) => setPhoneEdit({ ...phoneEdit, value: e.target.value })} autoFocus />
+                <button type="submit" className="mini-button edit">{t('Guardar')}</button>
+                <button type="button" className="ghost-button" onClick={() => setPhoneEdit(null)}>{t('Cancelar')}</button>
+              </form>
+            )}
             {u._id !== user._id && (
               <div className="order-actions">
                 <button type="button" className="mini-button edit" onClick={() => update(u, { active: !u.active })}>{t(u.active ? 'Desactivar' : 'Activar')}</button>
                 <button type="button" className="mini-button edit" onClick={() => {
                   if (window.confirm(t('¿Generar una contraseña temporal nueva para {email}?', { email: u.email }))) update(u, { resetPassword: true });
                 }}>{t('Nueva contraseña')}</button>
+                {u.role !== 'cliente' && phoneEdit?.id !== u._id && (
+                  <button type="button" className="mini-button edit" onClick={() => setPhoneEdit({ id: u._id, value: u.phone || '' })}>{t(u.phone ? 'Cambiar celular' : 'Agregar celular')}</button>
+                )}
               </div>
             )}
           </article>

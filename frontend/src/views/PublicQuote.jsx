@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_URL } from '../api';
 import { applyBrand } from '../brand';
 import { adoptCompanyLang, locale, t } from '../i18n';
-import { money } from '../ui';
+import { money, novaLink } from '../ui';
 
 // Cotización pública (/cotizacion/<llave>): el cliente la revisa sin cuenta y la aprueba (con su nombre) o la rechaza
 // (con un motivo opcional). «Descargar PDF» usa la impresión del navegador.
@@ -166,7 +166,9 @@ export default function PublicQuote({ token }) {
         </section>
       )}
 
-      <footer className="report-foot muted small">{t('Generado con NOVAWORKORDER Servicios')}</footer>
+      <footer className="report-foot muted small">
+        <a href={novaLink('cotizacion', company.name, company.lang)} target="_blank" rel="noopener">{t('Hecho con NOVAWORKORDER · Prueba gratis')}</a>
+      </footer>
     </div>
   );
 }
