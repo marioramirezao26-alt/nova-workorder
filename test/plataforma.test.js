@@ -17,7 +17,7 @@ test('GABY entrega el producto: crea la empresa y su administrador, que cambia l
     name: 'Mantenimientos Andinos S.A.S.', adminName: 'Laura Gómez', adminEmail: 'Laura@Andinos.co', maxTechnicians: 5 } });
   assert.equal(made.status, 201);
   assert.equal(made.data.company.slug, 'mantenimientos-andinos-s-a-s');
-  assert.deepEqual(made.data.company.usage, { technicians: 0, users: 1, workOrders: 0, adminEntered: false });
+  assert.deepEqual(made.data.company.usage, { technicians: 0, users: 1, workOrders: 0, adminEntered: false, completedOrders: 0, reportsShared: 0, quotesSent: 0 });
   assert.equal(made.data.admin.email, 'laura@andinos.co');
   const first = await call('POST', '/auth/login', { body: { email: 'laura@andinos.co', password: made.data.admin.temporaryPassword } });
   assert.equal(first.status, 200);
@@ -50,6 +50,36 @@ test('suspender por falta de pago corta el acceso y reactivar lo devuelve; el pl
   assert.equal(info.data.maxTechnicians, 3);
   assert.equal(info.data.usage.technicians, 1);
   assert.equal((await call('PATCH', `/platform/companies/${a.id}`, { platformKey: KEY, body: { status: 'borrada' } })).status, 400);
+});
+
+test('el uso para GABY suma órdenes completadas, informes compartidos y cotizaciones enviadas (sin quitar campos)', async () => {
+  const a = await company('Uso Completo');
+  const usage = async () => (await call('GET', `/platform/companies/${a.id}`, { platformKey: KEY })).data.usage;
+  const client = (await call('POST', '/clients', { as: a.token, body: { name: 'Hotel Sol' } })).data;
+  const order = async (title) => (await call('POST', '/workorders', { as: a.token, body: { title, description: 'Trabajo de mantenimiento', client: client._id } })).data;
+  const o1 = await order('Una');
+  const o2 = await order('Dos');
+  await order('Tres');
+  await call('PATCH', `/workorders/${o1._id}/status`, { as: a.token, body: { status: 'completada' } });
+  await call('PATCH', `/workorders/${o2._id}/status`, { as: a.token, body: { status: 'completada' } });
+  await call('POST', `/workorders/${o1._id}/report-link`, { as: a.token });
+  await call('POST', `/workorders/${o1._id}/report-link`, { as: a.token, body: { rotate: true } });   // el mismo informe: cuenta una vez
+  const quote = async (title) => (await call('POST', '/quotes', { as: a.token, body: { client: client._id, title, items: [{ description: title, qty: 1, unitPrice: 1000 }] } })).data;
+  const q1 = await quote('Enviada');
+  await quote('Borrador');
+  await call('POST', `/quotes/${q1._id}/send`, { as: a.token });
+  await call('POST', `/quotes/${q1._id}/send`, { as: a.token });                                    // reenviar no suma
+
+  const u = await usage();
+  assert.deepEqual(u, { technicians: 0, users: 1, workOrders: 3, adminEntered: true, completedOrders: 2, reportsShared: 1, quotesSent: 1 });
+  // la lista de empresas trae el mismo uso
+  const listed = (await call('GET', '/platform/companies', { platformKey: KEY })).data.items.find((c) => c._id === a.id);
+  assert.deepEqual(listed.usage, u);
+  // otra empresa no suma aquí
+  const b = await company('Otra Empresa');
+  const ob = (await call('POST', '/workorders', { as: b.token, body: { title: 'Orden B', description: 'Trabajo de la otra empresa' } })).data;
+  await call('PATCH', `/workorders/${ob._id}/status`, { as: b.token, body: { status: 'completada' } });
+  assert.equal((await usage()).completedOrders, 2);
 });
 
 test('el inicio de sesión se bloquea tras 10 intentos fallidos', async () => {

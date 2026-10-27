@@ -6,7 +6,7 @@ const iso = (d) => d.toISOString().slice(0, 10);
 const STATUS = { pendiente: 'Pendiente', en_proceso: 'En proceso', completada: 'Completada', cancelada: 'Cancelada' };
 
 // Reportes de la empresa (solo admin): órdenes por estado, por técnico y por día, totales y descarga CSV.
-export default function Reports({ api }) {
+export default function Reports({ api, user }) {
   const [to, setTo] = useState(iso(new Date()));
   const [from, setFrom] = useState(iso(new Date(Date.now() - 29 * 86400000)));
   const [data, setData] = useState(null);
@@ -20,7 +20,7 @@ export default function Reports({ api }) {
       setData(d);
       setError('');
     } catch (err) {
-      setError(errorMessage(err, 'No se pudieron cargar los reportes'));
+      setError(errorMessage(err, t('No se pudieron cargar los reportes')));
     } finally {
       setBusy(false);
     }
@@ -43,49 +43,58 @@ export default function Reports({ api }) {
     }
   };
 
+  // Una tabla de nombre y cantidad, con el estilo de las tablas de la app.
+  const table = (rows, label, head) => (rows.length ? (
+    <table className="quote-table">
+      <thead><tr><th scope="col">{head}</th><th scope="col" className="num">{t('Órdenes')}</th></tr></thead>
+      <tbody>{rows.map((r) => <tr key={r.key}><td>{label(r)}</td><td className="num">{r.count}</td></tr>)}</tbody>
+    </table>
+  ) : <p className="muted">{t('Sin datos en este rango.')}</p>);
+
   return (
-    <section className="panel">
-      <header className="panel-header">
-        <h2>{t('Reportes')}</h2>
+    <section className="view">
+      <header className="view-header">
+        <div>
+          <p className="eyebrow">{user.company?.name}</p>
+          <h2>{t('Reportes')}</h2>
+        </div>
       </header>
 
-      <div className="card filters">
-        <label>{t('Desde')}<input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></label>
-        <label>{t('Hasta')}<input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
-        <button type="button" className="primary-button" onClick={load} disabled={busy}>{t('Ver')}</button>
-        <button type="button" className="ghost-button" onClick={downloadCsv} disabled={busy || !data}>{t('Descargar CSV')}</button>
+      <div className="panel-box report-filters">
+        <div className="two-columns">
+          <label>{t('Desde')}<input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></label>
+          <label>{t('Hasta')}<input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} /></label>
+        </div>
+        <div className="order-actions">
+          <button type="button" className="primary-button small" onClick={load} disabled={busy}>{t('Ver')}</button>
+          <button type="button" className="ghost-button" onClick={downloadCsv} disabled={busy || !data}>{t('Descargar CSV')}</button>
+        </div>
       </div>
 
-      {error && <p className="error">{error}</p>}
-      {!data && !error && <p className="muted">{t('Cargando…')}</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+      {!data && !error && <p className="muted empty">{t('Cargando…')}</p>}
 
       {data && (
         <>
-          <div className="stat-grid">
-            <div className="stat-card"><small>{t('Órdenes creadas')}</small><strong>{data.totals.created}</strong></div>
-            <div className="stat-card"><small>{t('Completadas')}</small><strong>{data.totals.completed}</strong></div>
+          <div className="stats-grid two">
+            <div className="stat-card"><span>{t('Órdenes creadas')}</span><strong>{data.totals.created}</strong></div>
+            <div className="stat-card"><span>{t('Completadas')}</span><strong>{data.totals.completed}</strong></div>
           </div>
 
-          <h3>{t('Por técnico')}</h3>
-          {data.byTechnician.length ? (
-            <table className="report-table"><tbody>
-              {data.byTechnician.map((r) => <tr key={r.name}><td>{r.name}</td><td>{r.count}</td></tr>)}
-            </tbody></table>
-          ) : <p className="muted">{t('Sin datos en este rango.')}</p>}
-
-          <h3>{t('Por estado')}</h3>
-          {data.byStatus.length ? (
-            <table className="report-table"><tbody>
-              {data.byStatus.map((r) => <tr key={r.status}><td>{t(STATUS[r.status] || r.status)}</td><td>{r.count}</td></tr>)}
-            </tbody></table>
-          ) : <p className="muted">{t('Sin datos en este rango.')}</p>}
-
-          <h3>{t('Por día')}</h3>
-          {data.byDay.length ? (
-            <table className="report-table"><tbody>
-              {data.byDay.map((r) => <tr key={r.day}><td>{r.day}</td><td>{r.count}</td></tr>)}
-            </tbody></table>
-          ) : <p className="muted">{t('Sin datos en este rango.')}</p>}
+          <div className="report-grid">
+            <div className="panel-box">
+              <h3>{t('Por técnico')}</h3>
+              {table(data.byTechnician.map((r) => ({ ...r, key: r.name })), (r) => r.name, t('Técnico'))}
+            </div>
+            <div className="panel-box">
+              <h3>{t('Por estado')}</h3>
+              {table(data.byStatus.map((r) => ({ ...r, key: r.status })), (r) => t(STATUS[r.status] || r.status), t('Estado'))}
+            </div>
+            <div className="panel-box">
+              <h3>{t('Por día')}</h3>
+              {table(data.byDay.map((r) => ({ ...r, key: r.day })), (r) => r.day, t('Día'))}
+            </div>
+          </div>
         </>
       )}
     </section>

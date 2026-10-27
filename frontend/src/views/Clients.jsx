@@ -26,7 +26,7 @@ export default function Clients({ api, user }) {
 
   const openEdit = (client) => {
     setEditingId(client._id);
-    setForm({ name: client.name, email: client.email, phone: client.phone || '', company: client.company || '', address: client.address || '', active: client.active });
+    setForm({ name: client.name, email: client.email || '', phone: client.phone || '', company: client.company || '', address: client.address || '', active: client.active });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -56,7 +56,7 @@ export default function Clients({ api, user }) {
   };
 
   const q = query.trim().toLowerCase();
-  const shown = clients.filter((c) => !q || `${c.name} ${c.email} ${c.company || ''} ${c.phone || ''}`.toLowerCase().includes(q));
+  const shown = clients.filter((c) => !q || `${c.name} ${c.email || ''} ${c.company || ''} ${c.phone || ''}`.toLowerCase().includes(q));
 
   return (
     <section className="view">
@@ -77,7 +77,7 @@ export default function Clients({ api, user }) {
           <form className="order-form" onSubmit={save}>
             <label>{t('Nombre')}<input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></label>
             <div className="two-columns">
-              <label>{t('Email')}<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
+              <label>{t('Email (opcional)')}<input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
               <label>{t('Teléfono')}<input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
             </div>
             <label>{t('Empresa (razón social)')}<input type="text" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} /></label>
@@ -107,7 +107,7 @@ export default function Clients({ api, user }) {
               <h3>{client.name}</h3>
               {client.company && <small className="muted">{client.company}</small>}
               <div className="client-box">
-                <a className="contact-link" href={`mailto:${client.email}`}>✉ {client.email}</a>
+                {client.email && <a className="contact-link" href={`mailto:${client.email}`}>✉ {client.email}</a>}
                 {client.phone && <a className="contact-link" href={`tel:${client.phone}`}>📞 {client.phone}</a>}
                 {client.address && <a className="contact-link" href={mapsLink(client.address)} target="_blank" rel="noreferrer">📍 {client.address}</a>}
               </div>

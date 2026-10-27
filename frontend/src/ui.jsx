@@ -43,6 +43,21 @@ export const whatsappLink = (phone, text, lang = 'es') => {
   return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
 };
 
+// «Hecho con NOVAWORKORDER · Prueba gratis» del informe y la cotización públicos: lleva a la página de ventas diciendo
+// de dónde viene (`utm_source`: informe o cotizacion) y qué empresa lo mandó (`ref`). El `ref` es el nombre de la
+// empresa normalizado, el mismo que ya se ve en la página (nada interno), con la forma que acepta la página de ventas
+// (3 a 20 letras, números o guiones); si no da para eso, el enlace va sin `ref`.
+export const refCode = (name) => {
+  const code = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 20).replace(/-+$/, '');
+  return /^[a-z0-9-]{3,20}$/.test(code) ? code : '';
+};
+export const novaLink = (source, companyName, lang = 'es') => {
+  const ref = refCode(companyName);
+  // utm_content, not ref: the landing reads «ref» as a customer referral code (GABY's referral channel)
+  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : ''}?utm_source=${source}${ref ? `&utm_content=${ref}` : ''}`;
+};
+
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;
 
 // Plata: pesos enteros (COP) o dólares con centavos (USD).

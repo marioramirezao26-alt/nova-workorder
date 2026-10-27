@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API_URL } from '../api';
 import { applyBrand } from '../brand';
 import { adoptCompanyLang, locale, t } from '../i18n';
-import { STATUS } from '../ui';
+import { STATUS, novaLink } from '../ui';
 
 // Informe de servicio público (/informe/<llave>): lo abre el cliente sin cuenta. «Descargar PDF» usa la impresión
 // del navegador (Guardar como PDF), con una hoja pensada para imprimir. Las horas van en la zona de la empresa.
@@ -96,7 +96,9 @@ export default function PublicReport({ token }) {
         ) : <p className="muted">{t('Sin firma del cliente.')}</p>}
       </section>
 
-      <footer className="report-foot muted small">{t('Generado con NOVAWORKORDER Servicios')}</footer>
+      <footer className="report-foot muted small">
+        <a href={novaLink('informe', company.name, company.lang)} target="_blank" rel="noopener">{t('Hecho con NOVAWORKORDER · Prueba gratis')}</a>
+      </footer>
     </div>
   );
 }

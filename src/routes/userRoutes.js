@@ -15,6 +15,7 @@ router.post('/', authorize('admin'), [
   body('name').trim().notEmpty().withMessage('El nombre es obligatorio').isLength({ max: 100 }),
   body('email').isEmail().withMessage('Debe enviar un email válido'),
   body('role').isIn(ROLES).withMessage('Rol inválido'),
+  body('phone').optional().trim().isLength({ max: 30 }).withMessage('El celular no debe superar 30 caracteres'),
   body('password').optional().isLength({ min: 8 }).withMessage('La contraseña debe tener al menos 8 caracteres'),
   body('client').optional({ nullable: true }).isMongoId().withMessage('Cliente inválido'),
   validateRequest,
@@ -22,6 +23,7 @@ router.post('/', authorize('admin'), [
 router.put('/:id', authorize('admin'), validateObjectId, [
   body('name').optional().trim().notEmpty().isLength({ max: 100 }),
   body('role').optional().isIn(ROLES).withMessage('Rol inválido'),
+  body('phone').optional().trim().isLength({ max: 30 }).withMessage('El celular no debe superar 30 caracteres'),
   body('active').optional().isBoolean().withMessage('active debe ser verdadero o falso'),
   body('client').optional({ nullable: true }).isMongoId().withMessage('Cliente inválido'),
   body('resetPassword').optional().isBoolean(),

@@ -116,7 +116,7 @@ export default function Integrations({ api }) {
 
       <div className="panel-box">
         <h3>{t('Llaves de API')}</h3>
-        <p className="muted">{t('Cada llave actúa como tú, solo dentro de tu empresa. Úsala en el encabezado «Authorization: Bearer nwo_…». Ver la guía en docs/API.md.')}</p>
+        <p className="muted">{t('Cada llave actúa como tú, solo dentro de tu empresa. Úsala en el encabezado «Authorization: Bearer nwo_…».')}</p>
         <form className="order-form" onSubmit={createKey}>
           <div className="two-columns">
             <label>{t('Nombre')}<input type="text" maxLength={60} placeholder={t('Por ejemplo, ERP')} value={keyForm.name} onChange={(e) => setKeyForm({ ...keyForm, name: e.target.value })} required /></label>
