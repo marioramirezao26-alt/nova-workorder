@@ -54,7 +54,8 @@ export const refCode = (name) => {
 };
 export const novaLink = (source, companyName, lang = 'es') => {
   const ref = refCode(companyName);
-  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : ''}?utm_source=${source}${ref ? `&ref=${ref}` : ''}`;
+  // utm_content, not ref: the landing reads «ref» as a customer referral code (GABY's referral channel)
+  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : ''}?utm_source=${source}${ref ? `&utm_content=${ref}` : ''}`;
 };
 
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;

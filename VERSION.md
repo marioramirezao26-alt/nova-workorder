@@ -14,11 +14,8 @@
 - **Reportes** con las clases que existen (`view`, `panel-box`, `stats-grid`, `report-grid`, `quote-table`). El fondo de
   la app ya no se corta al alto de la ventana: `body` crece con la página (antes `height: 100%`).
 - **Informe y cotización públicos:** el pie es «Hecho con NOVAWORKORDER · Prueba gratis», enlazado a
-  `novaworkorder.com/?utm_source=informe` (o `cotizacion`) `&ref=<nombre de la empresa normalizado>`, el mismo nombre
-  que ya muestra la página, cortado a lo que acepta la landing (`[a-z0-9-]{3,20}`; si no da, va sin `ref`). La landing
-  ya lee los dos (`landing/index.html` y `en/index.html`). Ojo: con `ref`, la visita cuenta como canal «referido» y el
-  formulario guarda `referral`; GABY hoy busca ese código entre sus `ref_code` (6 hex) y no lo encontrará: tiene que
-  unirlo con la empresa por el slug.
+  `novaworkorder.com/?utm_source=informe` (o `cotizacion`) `&utm_content=<nombre de la empresa normalizado>`. Va en
+  `utm_content` y no en `ref`, porque la landing toma `ref` como código de referido de un cliente (canal «referido»).
 - **Correo del cliente opcional** (modelo, validación y formulario). Sin correo el campo no se guarda y la API lo
   devuelve como `''`. El índice único pasa a ser solo entre clientes con correo (`tenant_1_email_1_con_correo`, parcial);
   al arrancar, `Client.syncEmailIndex()` quita el viejo `tenant_1_email_1` (idempotente, sin tocar datos). La app no
