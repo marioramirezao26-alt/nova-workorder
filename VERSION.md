@@ -2,6 +2,17 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Precio final, sin IVA (27-oct-2026)
+- Decisión de Mario: NOVAWORKORDER no cobra IVA. $49.000 por técnico al mes (Servicios) y $39.000 por tienda al mes
+  (Pedidos) es todo lo que se paga. Revierte el «IVA incluido» del 21-oct.
+- En `index.html` el «IVA incluido» de la portada, los precios y la calculadora pasa a un discreto «precio final»; la
+  descripción dice «Precios finales» y el JSON-LD ya no lleva `valueAddedTaxIncluded`. Los términos (punto 4) dicen que
+  los precios son finales y que NOVA Desarrollos no cobra IVA. Los `FACTS` del chat dicen «precio final: NOVA no cobra
+  IVA». La página en inglés y sus términos no hablaban de impuestos y no cambian.
+- El IVA de las cotizaciones y facturas que hacen las empresas (19 %, 5 %, 0 % o excluido) es otra cosa y sigue igual.
+- `test/chat.test.js` falla si los `FACTS`, la página, los términos o la privacidad vuelven a decir «IVA incluido» (o
+  «más IVA», «+ IVA»…) o a llevar `valueAddedTaxIncluded`.
+
 ### Prueba gratis de 7 días (27-oct-2026)
 - Decisión de Mario: la prueba gratis de Servicios y Pedidos pasa de 14 a 7 días, en español y en inglés. Se cambió en
   la página (`index.html`, términos, `/en/` con aliados y comparaciones), en los `FACTS` del chat de ventas, en
