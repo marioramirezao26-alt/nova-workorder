@@ -214,7 +214,10 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 
 ### Plataforma (GABY, con el encabezado `x-platform-key`)
 - POST /api/platform/companies — crea la empresa y su administrador (contraseña temporal)
-- GET /api/platform/companies · GET /api/platform/companies/:id — con el uso (técnicos, usuarios, órdenes)
+- GET /api/platform/companies · GET /api/platform/companies/:id — con el uso (`usage`): `technicians`, `users`,
+  `workOrders`, `adminEntered`, `completedOrders`, `reportsShared`, `quotesSent`, `lastLoginAt` (último ingreso de la
+  empresa, ISO UTC o `null`), `lastActivityAt` (última orden o cotización creada o cambiada, ISO o `null`),
+  `ordersLast24h` y `activeTechnicians7d` (técnicos con órdenes iniciadas o completadas en 7 días). Solo fechas y conteos.
 - PATCH /api/platform/companies/:id — `status` (prueba, activa, suspendida), `maxTechnicians`, `name`
 - GET /api/platform/demo-requests · POST /api/platform/demo-requests/:id/ack — solicitudes de la página de ventas (con su canal)
 - GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día

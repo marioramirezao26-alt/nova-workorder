@@ -29,6 +29,19 @@ const registerUser = async (req, res) => {
   });
 };
 
+// Último ingreso de la empresa (lo lee GABY en el uso): como mucho una escritura por minuto, porque el filtro solo
+// encuentra la empresa si no tenía fecha o la que tenía ya pasó del minuto. Sin `timestamps` para no mover `updatedAt`;
+// si falla, el ingreso sigue igual.
+const LAST_LOGIN_EVERY_MS = 60 * 1000;
+const touchLastLogin = async (company) => {
+  const now = new Date();
+  await Company.updateOne(
+    { _id: company._id, $or: [{ lastLoginAt: null }, { lastLoginAt: { $lt: new Date(now.getTime() - LAST_LOGIN_EVERY_MS) } }] },
+    { $set: { lastLoginAt: now } },
+    { timestamps: false },
+  ).catch(() => {});
+};
+
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -64,6 +77,7 @@ const loginUser = async (req, res) => {
     }
 
     await clearFailures(req);
+    await touchLastLogin(company);
     res.status(200).json({ ...publicUser(user, company), token: generateToken(user._id, user.tokenVersion) });
   } catch (error) {
     res.status(500).json({
