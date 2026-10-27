@@ -92,8 +92,15 @@ const getDashboardSummary = async (req, res) => {
       { $limit: 5 },
     ]);
 
+    // Aviso del administrador: cotizaciones que el cliente aprobó y cuya orden sigue sin técnico (nadie se ha enterado).
+    // Es el mismo filtro de «Órdenes» con ?origin=quote&assigned=none&status=open.
+    const approvedQuotesUnassigned = req.user.role === 'admin'
+      ? await WorkOrder.countDocuments({ ...scope, quote: { $ne: null }, assignedTo: null, status: { $in: ['pendiente', 'en_proceso'] } })
+      : 0;
+
     res.status(200).json({
       total,
+      approvedQuotesUnassigned,
       pending,
       inProgress,
       completed,

@@ -19,6 +19,36 @@
 - `test/demo.test.js`: el código se guarda validado y llega a GABY; la landing lee los parámetros (`enlace.js`, con
   `require`) y los manda en el formulario.
 
+### Arreglos rápidos de la revisión de producto (27-oct-2026)
+- Aprobados por Mario de la revisión de Servicios (§10 «Quick wins», §3 y §8). Nada de funciones grandes (agenda,
+  recurrencia, sin señal): eso va después.
+- **Login:** «Solicita una demo» pasa a «Empieza gratis 7 días» → `novaworkorder.com/?utm_source=app-login#demo` (en
+  inglés, `/en/?utm_source=app-login#start`). El error sale junto al formulario con `role="alert"`, no en `alert()`.
+- **Barra del celular:** como mucho 5 botones. El administrador ve Inicio, Órdenes, Cotizaciones, Clientes y «Más», que
+  abre una hoja con Mapa, Checklists, Usuarios, Reportes, Actividad, Integraciones y Mi marca (antes 4 quedaban fuera de
+  la pantalla). El técnico (5) y el usuario cliente (2) siguen igual; medido a 390 px, ningún botón se sale. Los iconos de
+  texto llevan `aria-hidden`.
+- **Reportes** con las clases que existen (`view`, `panel-box`, `stats-grid`, `report-grid`, `quote-table`). El fondo de
+  la app ya no se corta al alto de la ventana: `body` crece con la página (antes `height: 100%`).
+- **Informe y cotización públicos:** el pie es «Hecho con NOVAWORKORDER · Prueba gratis», enlazado a
+  `novaworkorder.com/?utm_source=informe` (o `cotizacion`) `&utm_content=<nombre de la empresa normalizado>`. Va en
+  `utm_content` y no en `ref`, porque la landing toma `ref` como código de referido de un cliente (canal «referido»).
+- **Correo del cliente opcional** (modelo, validación y formulario). Sin correo el campo no se guarda y la API lo
+  devuelve como `''`. El índice único pasa a ser solo entre clientes con correo (`tenant_1_email_1_con_correo`, parcial);
+  al arrancar, `Client.syncEmailIndex()` quita el viejo `tenant_1_email_1` (idempotente, sin tocar datos). La app no
+  envía correos; la factura de Factus ya trataba el correo como opcional.
+- **Avisar al técnico por WhatsApp:** los usuarios tienen celular opcional (Usuarios → al crear o «Agregar celular»).
+  Al crear una orden con técnico o cambiarle el técnico sale «Avisar a Juan por WhatsApp» (`whatsappLink`, con la
+  orden, el cliente, la dirección, la fecha y el enlace `/#mis`). Sin celular no hay botón.
+- **Al completar** desde «Mis órdenes», la orden pasa a «Cerradas» con «Compartir informe» ya abierto.
+- **Aviso en Inicio del dueño:** «N cotizaciones aprobadas sin técnico» → «Órdenes» filtrado (`#ordenes?sin-tecnico`).
+  El resumen trae `approvedQuotesUnassigned` y `GET /workorders` acepta `assigned=none`, `origin=quote` y `status=open`.
+- **`usage` de plataforma (GABY):** se agregan `completedOrders`, `reportsShared` (órdenes con enlace de informe creado:
+  la app no sabe si se envió) y `quotesSent` (cotizaciones con `sentAt`). Los campos de antes no cambian.
+- Integraciones ya no dice «Ver la guía en docs/API.md» (no hay página pública de la API).
+- Pruebas: `test/arreglos.test.js` (correo opcional, cambio de índice, celular, aviso y filtros) y `test/plataforma.test.js`
+  (`usage` con los campos nuevos). Capturas antes y después en `informes/revision-apps/arreglos/servicios/`.
+
 ### Precio final, sin IVA (27-oct-2026)
 - Decisión de Mario: NOVAWORKORDER no cobra IVA. $49.000 por técnico al mes (Servicios) y $39.000 por tienda al mes
   (Pedidos) es todo lo que se paga. Revierte el «IVA incluido» del 21-oct.

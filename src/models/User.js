@@ -20,6 +20,13 @@ const userSchema = new mongoose.Schema(
       required: [true, 'La contraseña es obligatoria'],
       minlength: 6,
     },
+    // Celular (opcional): con él, quien crea o asigna una orden puede avisarle al técnico por WhatsApp.
+    phone: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 30,
+    },
     role: {
       type: String,
       enum: ['admin', 'tecnico', 'cliente'],

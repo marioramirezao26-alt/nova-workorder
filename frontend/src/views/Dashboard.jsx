@@ -23,6 +23,16 @@ export default function Dashboard({ api, user, go }) {
         </div>
       </header>
 
+      {user.role === 'admin' && d.approvedQuotesUnassigned > 0 && (
+        <div className="panel-box highlight alert-box" role="status">
+          <p>
+            <strong>{d.approvedQuotesUnassigned === 1 ? t('1 cotización aprobada sin técnico') : t('{n} cotizaciones aprobadas sin técnico', { n: d.approvedQuotesUnassigned })}</strong>
+            {' '}{t('El cliente ya dijo que sí: asígnale un técnico a la orden.')}
+          </p>
+          <button type="button" className="mini-button edit" onClick={() => go('ordenes', 'sin-tecnico')}>{t('Ver y asignar')}</button>
+        </div>
+      )}
+
       <div className="stats-grid">
         <button type="button" className="stat-card" onClick={() => go('ordenes')}><span>{t('Total')}</span><strong>{d.total || 0}</strong></button>
         <button type="button" className="stat-card" onClick={() => go('ordenes')}><span>{t('Pendientes')}</span><strong>{d.statusBreakdown?.pendiente || 0}</strong></button>

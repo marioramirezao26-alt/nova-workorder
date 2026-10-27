@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { API_URL, createApi, errorMessage } from './api';
 import { ROLE } from './ui';
@@ -39,6 +39,18 @@ const MENU = {
   tecnico: ['mis', 'ordenes', 'cotizaciones', 'clientes', 'inicio'],
   cliente: ['mis', 'cotizaciones'],
 };
+// En el celular la barra de abajo lleva hasta 5 botones: si el menú tiene más, van 4 y «Más», que abre el resto en una
+// hoja. Los 4 del administrador son los de todos los días; el resto de roles usa los primeros de su menú.
+const BAR_SLOTS = 5;
+const BAR = { admin: ['inicio', 'ordenes', 'cotizaciones', 'clientes'] };
+const barFor = (role, menu) => {
+  if (menu.length <= BAR_SLOTS) return { bar: menu, more: [] };
+  const bar = (BAR[role] || menu).filter((key) => menu.includes(key)).slice(0, BAR_SLOTS - 1);
+  return { bar, more: menu.filter((key) => !bar.includes(key)) };
+};
+
+// Empieza gratis: la página de ventas con el formulario de la prueba; `utm_source` dice que llegó desde este login.
+const TRIAL_URL = { es: 'https://novaworkorder.com/?utm_source=app-login#demo', en: 'https://novaworkorder.com/en/?utm_source=app-login#start' };
 
 // Cambia entre español e inglés; la app se vuelve a pintar con el idioma nuevo.
 // `short`: «EN» / «ES», para la barra del celular, donde no cabe la palabra completa.
@@ -52,23 +64,27 @@ function LangSwitch({ onChange, className = 'ghost-button', short = false }) {
   );
 }
 
+// La sección vive en la dirección (#ordenes); lo que va después de «?» es para la vista (#ordenes?sin-tecnico).
 const sectionFromHash = (menu) => {
-  const key = window.location.hash.replace('#', '');
+  const key = window.location.hash.replace('#', '').split('?')[0];
   return menu.includes(key) ? key : menu[0];
 };
 
 function Login({ onLogin, onLang }) {
   const [form, setForm] = useState({ email: '', password: '' });
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
+  // El error sale junto al formulario (y el lector de pantalla lo anuncia), no en una ventana del navegador.
   const submit = async (e) => {
     e.preventDefault();
     try {
       setBusy(true);
+      setError('');
       const { data } = await axios.post(`${API_URL}/auth/login`, form);
       onLogin(data);
-    } catch (error) {
-      alert(errorMessage(error, t('No se pudo iniciar sesión')));
+    } catch (err) {
+      setError(errorMessage(err, t('No se pudo iniciar sesión')));
     } finally {
       setBusy(false);
     }
@@ -90,9 +106,10 @@ function Login({ onLogin, onLang }) {
       <form className="auth-card" onSubmit={submit}>
         <h3>{t('Iniciar sesión')}</h3>
         <label>{t('Email')}<input type="email" autoComplete="username" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required /></label>
-        <label>{t('Contraseña')}<input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required /></label>
+        <label>{t('Contraseña')}<input type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required aria-invalid={error ? 'true' : undefined} aria-describedby={error ? 'login-error' : undefined} /></label>
+        {error && <p id="login-error" className="form-error" role="alert">{error}</p>}
         <button type="submit" className="primary-button" disabled={busy}>{busy ? t('Entrando…') : t('Entrar')}</button>
-        <p className="muted">{t('¿No tienes cuenta? Pídela al administrador de tu empresa.')} {t('¿Tu empresa aún no usa NOVAWORKORDER Servicios?')} <a href={getLang() === 'en' ? 'https://novaworkorder.com/en/#start' : 'https://novaworkorder.com/#demo'}>{t('Solicita una demo')}</a>.</p>
+        <p className="muted">{t('¿No tienes cuenta? Pídela al administrador de tu empresa.')} {t('¿Tu empresa aún no usa NOVAWORKORDER Servicios?')} <a href={TRIAL_URL[getLang()] || TRIAL_URL.es}>{t('Empieza gratis 7 días')}</a>.</p>
         <LangSwitch onChange={onLang} />
       </form>
     </div>
@@ -135,6 +152,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem(storageKey) || '');
   const [user, setUser] = useState(null);
   const [section, setSection] = useState('');
+  const [moreOpen, setMoreOpen] = useState(false);
   const [, setLangTick] = useState(0);
   const relang = () => setLangTick((n) => n + 1);
 
@@ -169,9 +187,12 @@ function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, [user?._id]);
 
-  const go = (key) => {
-    if (window.location.hash !== `#${key}`) window.location.hash = key;
+  // `detail`: lo que va después de «?» en la dirección, para la vista (por ejemplo, un filtro de «Órdenes»).
+  const go = (key, detail = '') => {
+    const hash = detail ? `${key}?${detail}` : key;
+    if (window.location.hash !== `#${hash}`) window.location.hash = hash;
     setSection(key);
+    setMoreOpen(false);
     window.scrollTo(0, 0);
   };
 
@@ -191,6 +212,7 @@ function App() {
 
   const current = menu.includes(section) ? section : menu[0];
   const View = SECTIONS[current].view;
+  const { bar, more } = barFor(user.role, menu);
 
   return (
     <div className="dashboard-layout">
@@ -205,7 +227,7 @@ function App() {
         <nav className="nav">
           {menu.map((key) => (
             <button key={key} type="button" className={`nav-item ${current === key ? 'active' : ''}`} onClick={() => go(key)}>
-              <span className="nav-icon">{SECTIONS[key].icon}</span> {t(SECTIONS[key].label)}
+              <span className="nav-icon" aria-hidden="true">{SECTIONS[key].icon}</span> {t(SECTIONS[key].label)}
             </button>
           ))}
         </nav>
@@ -233,15 +255,53 @@ function App() {
       </main>
 
       {menu.length > 1 && (
-        <nav className="bottom-nav" style={{ gridTemplateColumns: `repeat(${menu.length}, 1fr)` }}>
-          {menu.map((key) => (
-            <button key={key} type="button" className={current === key ? 'active' : ''} onClick={() => go(key)}>
-              <span className="nav-icon">{SECTIONS[key].icon}</span>
+        <nav className="bottom-nav" aria-label={t('Secciones')} style={{ gridTemplateColumns: `repeat(${bar.length + (more.length ? 1 : 0)}, minmax(0, 1fr))` }}>
+          {bar.map((key) => (
+            <button key={key} type="button" className={current === key ? 'active' : ''} aria-current={current === key ? 'page' : undefined} onClick={() => go(key)}>
+              <span className="nav-icon" aria-hidden="true">{SECTIONS[key].icon}</span>
               <span>{t(SECTIONS[key].label)}</span>
             </button>
           ))}
+          {more.length > 0 && (
+            <button type="button" className={more.includes(current) || moreOpen ? 'active' : ''} aria-expanded={moreOpen} aria-controls="more-sheet" onClick={() => setMoreOpen(!moreOpen)}>
+              <span className="nav-icon" aria-hidden="true">⋯</span>
+              <span>{t('Más')}</span>
+            </button>
+          )}
         </nav>
       )}
+      {moreOpen && <MoreSheet keys={more} current={current} go={go} onClose={() => setMoreOpen(false)} />}
+    </div>
+  );
+}
+
+// «Más» en el celular: el resto de secciones en una hoja que sube desde abajo. Se cierra con «Cerrar», tocando fuera o
+// con Escape, y al abrirse lleva el foco a la primera sección.
+function MoreSheet({ keys, current, go, onClose }) {
+  const first = useRef(null);
+  useEffect(() => {
+    first.current?.focus();
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div id="more-sheet" className="sheet" role="dialog" aria-modal="true" aria-label={t('Más secciones')} onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <strong>{t('Más secciones')}</strong>
+          <button type="button" className="ghost-button" onClick={onClose}>{t('Cerrar')}</button>
+        </div>
+        <div className="sheet-grid">
+          {keys.map((key, n) => (
+            <button key={key} ref={n === 0 ? first : undefined} type="button" className={`sheet-item ${current === key ? 'active' : ''}`}
+              aria-current={current === key ? 'page' : undefined} onClick={() => go(key)}>
+              <span className="nav-icon" aria-hidden="true">{SECTIONS[key].icon}</span>
+              <span>{t(SECTIONS[key].label)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

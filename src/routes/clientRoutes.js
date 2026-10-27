@@ -15,7 +15,8 @@ const router = express.Router();
 
 const clientValidation = [
   body('name').trim().notEmpty().withMessage('El nombre del cliente es obligatorio'),
-  body('email').isEmail().withMessage('Debe enviar un email válido'),
+  // El correo es opcional; si viene, tiene que ser válido.
+  body('email').optional({ checkFalsy: true }).trim().isEmail().withMessage('Debe enviar un email válido'),
   body('phone').optional().trim().isLength({ max: 30 }).withMessage('El teléfono no debe superar 30 caracteres'),
   body('company').optional().trim().isLength({ max: 150 }).withMessage('La empresa no debe superar 150 caracteres'),
   body('address').optional().trim().isLength({ max: 250 }).withMessage('La dirección no debe superar 250 caracteres'),

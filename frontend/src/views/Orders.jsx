@@ -2,9 +2,23 @@ import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
 import ServiceReport from './ServiceReport';
-import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDateTime, formatDay, isOverdue } from '../ui';
+import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDateTime, formatDay, isOverdue, whatsappLink } from '../ui';
 
 const emptyForm = { title: '', description: '', status: 'pendiente', priority: 'media', client: '', assignedTo: '', dueDate: '', notes: '' };
+
+// «Cotizaciones aprobadas sin técnico» (el aviso de Inicio): las órdenes que salieron de una cotización aprobada, siguen
+// abiertas y nadie las tiene. Llega como #ordenes?sin-tecnico.
+const UNASSIGNED = 'sin-tecnico';
+const filterFromHash = () => (window.location.hash.split('?')[1] === UNASSIGNED ? UNASSIGNED : 'all');
+
+// El WhatsApp para avisarle al técnico: qué orden, de quién, dónde, para cuándo y el enlace para entrar a verla.
+const assignMessage = (order, tech) => [
+  t('Hola {name}, te asigné una orden en NOVAWORKORDER: «{title}».', { name: tech.name.split(' ')[0], title: order.title }),
+  order.client?.name || order.customerName ? t('Cliente: {name}', { name: order.client?.name || order.customerName }) : '',
+  order.client?.address ? t('Dirección: {address}', { address: order.client.address }) : '',
+  order.dueDate ? t('Para el {date}', { date: formatDay(order.dueDate) }) : '',
+  t('Entra a verla: {url}', { url: `${window.location.origin}/#mis` }),
+].filter(Boolean).join('\n');
 
 // Órdenes de la empresa: buscar, filtrar, crear, editar y (el administrador) eliminar.
 export default function Orders({ api, user }) {
@@ -12,17 +26,22 @@ export default function Orders({ api, user }) {
   const [orders, setOrders] = useState([]);
   const [clients, setClients] = useState([]);
   const [techs, setTechs] = useState([]);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState(filterFromHash);
   const [query, setQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [assigned, setAssigned] = useState(null);   // la orden recién asignada, para avisarle al técnico
 
   const load = async () => {
     try {
       const q = new URLSearchParams({ limit: '100' });
-      if (filter !== 'all') q.set('status', filter);
+      if (filter === UNASSIGNED) {
+        q.set('origin', 'quote');
+        q.set('assigned', 'none');
+        q.set('status', 'open');
+      } else if (filter !== 'all') q.set('status', filter);
       if (query.trim()) q.set('q', query.trim());
       const { data } = await api.get(`/workorders?${q}`);
       setOrders(data.items || []);
@@ -32,6 +51,12 @@ export default function Orders({ api, user }) {
   };
 
   useEffect(() => { load(); }, [filter]);
+  // Volver a «Órdenes» desde la barra (#ordenes) quita el filtro del aviso de Inicio.
+  useEffect(() => {
+    const onHash = () => setFilter(filterFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
   useEffect(() => {
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
@@ -57,8 +82,12 @@ export default function Orders({ api, user }) {
   const save = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) await api.put(`/workorders/${editingId}`, form);
-      else await api.post('/workorders', form);
+      const before = orders.find((o) => o._id === editingId);
+      const { data } = editingId ? await api.put(`/workorders/${editingId}`, form) : await api.post('/workorders', form);
+      // Se creó con técnico o se le cambió el técnico: botón para avisarle por WhatsApp (si tiene celular).
+      const techId = data?.assignedTo?._id || '';
+      const changed = techId && techId !== String(before?.assignedTo?._id || '');
+      setAssigned(changed && techId !== user._id ? data : null);
       setShowForm(false);
       setForm(emptyForm);
       setEditingId(null);
@@ -88,6 +117,27 @@ export default function Orders({ api, user }) {
         </div>
         {canManage && !showForm && <button type="button" className="primary-button small" onClick={openNew}>{t('+ Nueva orden')}</button>}
       </header>
+
+      {assigned && (() => {
+        const tech = techs.find((u) => u._id === assigned.assignedTo._id);
+        const first = (tech?.name || assigned.assignedTo.name || '').split(' ')[0];
+        return (
+          <div className="panel-box highlight">
+            <p>{t('«{title}» quedó asignada a {name}.', { title: assigned.title, name: tech?.name || assigned.assignedTo.name })}</p>
+            {tech?.phone ? (
+              <div className="order-actions">
+                <a className="mini-button edit" href={whatsappLink(tech.phone, assignMessage(assigned, tech), user.company?.lang)} target="_blank" rel="noreferrer">{t('Avisar a {name} por WhatsApp', { name: first })}</a>
+                <button type="button" className="ghost-button" onClick={() => setAssigned(null)}>{t('Listo')}</button>
+              </div>
+            ) : (
+              <p className="muted small">
+                {user.role === 'admin' ? t('Agrega su celular en «Usuarios» para avisarle por WhatsApp.') : ''}{' '}
+                <button type="button" className="link-button" onClick={() => setAssigned(null)}>{t('Listo')}</button>
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {showForm && (
         <div className="panel-box">
@@ -136,6 +186,7 @@ export default function Orders({ api, user }) {
         <select className="filter-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="all">{t('Todas')}</option>
           {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
+          <option value={UNASSIGNED}>{t('Cotizaciones aprobadas sin técnico')}</option>
         </select>
       </div>
 

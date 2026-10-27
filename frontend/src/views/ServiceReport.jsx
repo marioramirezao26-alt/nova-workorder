@@ -127,7 +127,8 @@ function SignaturePad({ onSave, busy }) {
 // «1 foto», «3 fotos».
 const count = (n, one, many) => (n === 1 ? t(one) : t(many, { n }));
 
-export default function ServiceReport({ api, user, order, editable, onChange }) {
+// `autoShare`: la orden se acaba de completar; el informe se abre con el enlace listo para enviarlo.
+export default function ServiceReport({ api, user, order, editable, onChange, autoShare = false }) {
   const [templates, setTemplates] = useState(null);
   const [busy, setBusy] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -135,6 +136,7 @@ export default function ServiceReport({ api, user, order, editable, onChange }) 
   const [open, setOpen] = useState(editable && order.status === 'en_proceso');
   const fileKind = useRef('antes');
   const fileInput = useRef(null);
+  const shareBox = useRef(null);
   // Compartir: el administrador, el usuario cliente o el técnico de la orden. Cambiar el enlace: el administrador o el
   // técnico de la orden.
   const mine = user.role === 'admin' || (user.role === 'tecnico' && String(order.assignedTo?._id || order.assignedTo || '') === String(user._id));
@@ -195,6 +197,15 @@ export default function ServiceReport({ api, user, order, editable, onChange }) 
     const data = await run(() => api.post(`/workorders/${order._id}/report-link`), 'No se pudo crear el enlace del informe');
     if (data?.path) setLink(`${window.location.origin}${data.path}`);
   };
+  useEffect(() => {
+    if (!autoShare || !canShare) return;
+    setOpen(true);
+    if (!link) share();
+  }, [autoShare]);
+  useEffect(() => {
+    if (autoShare && link) shareBox.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [autoShare, link]);
+
   // Cambiar el enlace: el anterior deja de abrir el informe (se mandó a quien no era, o el cliente lo pide).
   const rotate = async () => {
     if (!window.confirm(t('El enlace anterior dejará de funcionar. ¿Crear uno nuevo?'))) return;
@@ -266,8 +277,9 @@ export default function ServiceReport({ api, user, order, editable, onChange }) 
       )}
       {signing && <SignaturePad busy={busy} onSave={saveSignature} />}
 
+      {canShare && autoShare && link && <p className="label">{t('Orden completada: envíale el informe al cliente')}</p>}
       {canShare && (
-        <div className="order-actions">
+        <div className="order-actions" ref={shareBox}>
           {!link ? (
             <button type="button" className="ghost-button" disabled={busy} onClick={share}>{t('🔗 Compartir informe')}</button>
           ) : (

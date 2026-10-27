@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const Company = require('../models/Company');
 const User = require('../models/User');
 const WorkOrder = require('../models/WorkOrder');
+const Quote = require('../models/Quote');
 const { temporaryPassword } = require('../utils/passwords');
 
 // API de plataforma: la usa GABY para entregar el producto cuando un cliente paga (crear la empresa y su
@@ -11,15 +12,23 @@ const slugify = (name) => String(name).normalize('NFD').replace(/[̀-ͯ]/g, '').
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'empresa';
 
 // Uso de la cuenta: GABY lo mira cada día durante la prueba para avisarle a NOVA a quién llamar (sin técnicos, sin
-// órdenes, o el administrador nunca entró: sigue con la contraseña temporal).
+// órdenes, o el administrador nunca entró: sigue con la contraseña temporal) y en qué paso va (órdenes completadas,
+// informes compartidos y cotizaciones enviadas). Los campos solo se agregan: GABY lee los que ya existían.
+// `reportsShared`: órdenes cuyo informe tiene enlace para el cliente («Compartir informe»); la app no sabe si el
+// enlace de verdad se envió por WhatsApp, pero sin enlace no hay informe que mandar.
+// `quotesSent`: cotizaciones enviadas alguna vez al cliente (las que pasaron de borrador a enviada).
 const usage = async (company) => {
-  const [technicians, users, workOrders, admin] = await Promise.all([
-    User.countDocuments({ tenant: company._id, role: 'tecnico', active: true }),
-    User.countDocuments({ tenant: company._id, active: true }),
-    WorkOrder.countDocuments({ tenant: company._id }),
-    User.findOne({ tenant: company._id, email: company.contactEmail }).select('mustChangePassword'),
+  const tenant = company._id;
+  const [technicians, users, workOrders, admin, completedOrders, reportsShared, quotesSent] = await Promise.all([
+    User.countDocuments({ tenant, role: 'tecnico', active: true }),
+    User.countDocuments({ tenant, active: true }),
+    WorkOrder.countDocuments({ tenant }),
+    User.findOne({ tenant, email: company.contactEmail }).select('mustChangePassword'),
+    WorkOrder.countDocuments({ tenant, status: 'completada' }),
+    WorkOrder.countDocuments({ tenant, reportToken: { $type: 'string' } }),
+    Quote.countDocuments({ tenant, sentAt: { $ne: null } }),
   ]);
-  return { technicians, users, workOrders, adminEntered: Boolean(admin && !admin.mustChangePassword) };
+  return { technicians, users, workOrders, adminEntered: Boolean(admin && !admin.mustChangePassword), completedOrders, reportsShared, quotesSent };
 };
 
 const view = async (company) => ({
