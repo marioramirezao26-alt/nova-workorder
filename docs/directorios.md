@@ -5,7 +5,7 @@ Para: Mario. Los títulos e instrucciones están en español; **los textos para 
 Reglas de oro:
 
 - Usa **solo** estos datos. No inventes reseñas, número de clientes, integraciones ni funciones.
-- Precios exactos: **NOVAWORKORDER (service crews) $29 USD por técnico al mes** y **NOVAWORKORDER Store $19 USD por tienda al mes**. Ambos con **prueba gratis de 14 días, sin tarjeta**. Sin contrato.
+- Precios exactos: **NOVAWORKORDER (service crews) $29 USD por técnico al mes** y **NOVAWORKORDER Store $19 USD por tienda al mes**. Ambos con **prueba gratis de 7 días, sin tarjeta**. Sin contrato.
 - Si un formulario pide algo que no tenemos (por ejemplo "integrations", "API", "invoicing"), déjalo vacío o marca "No". Es mejor una ficha corta y cierta.
 - URLs verificadas el 14 de octubre de 2026. Si alguna cambió, entra desde la página principal del directorio.
 
@@ -33,7 +33,7 @@ Reglas de oro:
 >
 > It runs in the browser of any phone (Android or iPhone) and computer: nothing to install, and it can be added to the home screen.
 >
-> Pricing is $29 USD per technician per month, with office admins and customer access at no extra cost and unlimited work orders, customers and users. No contract, no setup fee, cancel anytime. Start with a 14-day free trial, no credit card required. Support by email in English or Spanish.
+> Pricing is $29 USD per technician per month, with office admins and customer access at no extra cost and unlimited work orders, customers and users. No contract, no setup fee, cancel anytime. Start with a 7-day free trial, no credit card required. Support by email in English or Spanish.
 
 **Key features:**
 
@@ -50,7 +50,7 @@ Reglas de oro:
 
 **Pricing:** $29 USD per technician per month, billed monthly. Example: 5 technicians = $145/month. No contract, no setup fee.
 
-**Free trial:** Yes, 14 days, no credit card.
+**Free trial:** Yes, 7 days, no credit card.
 
 **Free version:** No.
 
@@ -76,7 +76,7 @@ Si el directorio permite varios productos, publícalo como **producto aparte** (
 >
 > The owner sees new orders in arrival order, marks them shipped, delivered and paid, and prints the list. Optional simple inventory takes units off with each order and shows "Sold out" at zero. Every order has a tracking link for the shopper, and an AI assistant (GABY) can answer shoppers' questions on the store page.
 >
-> $19 USD per store per month. 14-day free trial, no credit card. No contract, cancel anytime.
+> $19 USD per store per month. 7-day free trial, no credit card. No contract, cancel anytime.
 
 **Key features:**
 
@@ -93,7 +93,7 @@ Si el directorio permite varios productos, publícalo como **producto aparte** (
 
 **Pricing:** $19 USD per store per month, billed monthly. Unlimited products and orders. No contract, no setup fee.
 
-**Free trial:** Yes, 14 days, no credit card.
+**Free trial:** Yes, 7 days, no credit card.
 
 ### Datos generales (iguales para los dos)
 

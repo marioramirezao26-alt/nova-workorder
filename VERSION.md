@@ -2,6 +2,15 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Prueba gratis de 7 días (27-oct-2026)
+- Decisión de Mario: la prueba gratis de Servicios y Pedidos pasa de 14 a 7 días, en español y en inglés. Se cambió en
+  la página (`index.html`, términos, `/en/` con aliados y comparaciones), en los `FACTS` del chat de ventas, en
+  `docs/directorios.md` y en la imagen para compartir (`img/og-novaworkorder.jpg`, que ahora se pide con `?v=2` para que
+  WhatsApp y Facebook no muestren la vieja). En las comparaciones solo cambia nuestra columna: Jobber y Housecall Pro
+  siguen con sus 14 días. Las copias de seguridad diarias se siguen guardando 14 días (eso no es la prueba).
+- Este repo no fija la duración: la empresa queda en `status: 'prueba'` sin fecha de fin y GABY decide cuándo termina.
+  Las cuentas que ya están en prueba no se tocan.
+
 ### Página de ventas en español (novaworkorder.com)
 - **Portada «elige tu app»:** cada app con su situación, su precio y su «Empieza gratis», y WhatsApp a la vista. En el
   celular (360×740, 390×664 y 390×844) y en 1280×800 los dos botones y el de WhatsApp se ven sin scroll. Siguen ¿Te

@@ -58,6 +58,9 @@ test('el último turno debe ser del visitante; las reglas no dejan al modelo inv
   assert.match(salesChat.SYSTEM, /Nunca inventes/);
   assert.match(salesChat.FACTS, /\$49\.000 COP por técnico/);
   assert.match(salesChat.FACTS, /\$39\.000 COP por tienda/);
+  // La prueba gratis es de 7 días desde el 27-oct-2026 (antes 14).
+  assert.match(salesChat.FACTS, /7 días de prueba gratis/);
+  assert.doesNotMatch(salesChat.FACTS, /14 días|14-day/);
 });
 
 test('el chat dice lo mismo que la página: la mensualidad solo por Bold y nada de lo que ya se corrigió', () => {
@@ -125,6 +128,8 @@ test('la página de Estados Unidos habla en inglés y con precios en dólares', 
   assert.match(salesChat.FACTS_EN, /\$29 USD per technician/);
   assert.match(salesChat.FACTS_EN, /PayPal/);
   assert.doesNotMatch(salesChat.FACTS_EN, /COP|Nequi/);
+  assert.match(salesChat.FACTS_EN, /7-day free trial/);
+  assert.doesNotMatch(salesChat.FACTS_EN, /14-day|14 days/);
   salesChat._setProvider(async () => { throw new Error('caído'); });
   const down = await call('POST', '/public/chat', { body: { lang: 'en', messages: [{ role: 'user', content: 'hi' }] } });
   assert.equal(down.status, 503);
