@@ -6,7 +6,7 @@ const WorkOrder = require('../models/WorkOrder');
 const AuditLog = require('../models/AuditLog');
 const { companyScope } = require('../middleware/authMiddleware');
 const { publicBranding } = require('../utils/branding');
-const { currencyOf, totals } = require('../utils/money');
+const { currencyOf, marketOf, totals } = require('../utils/money');
 const { addDays, colombiaDay, endOfDay } = require('../utils/colombia');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
@@ -318,7 +318,7 @@ const loadPublic = async (token) => {
 const publicView = async (quote, company) => {
   const client = await Client.findOne({ tenant: quote.tenant, _id: quote.client }).select('name company');
   return {
-    company: { id: company._id, name: company.name, lang: company.lang || 'es', branding: publicBranding(company) },
+    company: { id: company._id, name: company.name, lang: company.lang || 'es', market: marketOf(company), branding: publicBranding(company) },
     quote: {
       number: quote.number,
       title: quote.title,

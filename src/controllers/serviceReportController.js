@@ -7,6 +7,7 @@ const Company = require('../models/Company');
 const { companyScope } = require('../middleware/authMiddleware');
 const { publicBranding } = require('../utils/branding');
 const { audit } = require('../utils/audit');
+const { isUS, marketOf } = require('../utils/money');
 
 // Informe de servicio (Mejora 1): checklist por tipo de servicio, fotos de antes y después, firma del cliente en el
 // celular del técnico y un enlace público con el informe (para imprimir o guardar en PDF) que se le comparte al cliente.
@@ -27,8 +28,8 @@ const orderFilter = (req) => {
   return filter;
 };
 
-// Zona horaria de la empresa para las horas que ve el cliente: es → Colombia; en → Estados Unidos (hora del Este).
-const timeZoneOf = (company) => (company && company.lang === 'en' ? 'America/New_York' : 'America/Bogota');
+// Zona horaria de la empresa para las horas que ve el cliente: Colombia, o Estados Unidos (hora del Este) según el mercado.
+const timeZoneOf = (company) => (isUS(company) ? 'America/New_York' : 'America/Bogota');
 
 const findOrder = async (req) => {
   const order = await WorkOrder.findOne({ $and: [orderFilter(req), { _id: req.params.id }] });
@@ -314,7 +315,7 @@ const publicReport = async (req, res) => {
     if (!company || company.status === 'suspendida') throw fail(404, 'Este informe no existe');
     res.set('Cache-Control', 'no-store');
     res.status(200).json({
-      company: { id: company._id, name: company.name, lang: company.lang || 'es', timeZone: timeZoneOf(company), branding: publicBranding(company) },
+      company: { id: company._id, name: company.name, lang: company.lang || 'es', market: marketOf(company), timeZone: timeZoneOf(company), branding: publicBranding(company) },
       order: {
         title: order.title,
         description: order.description,

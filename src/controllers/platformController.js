@@ -4,6 +4,7 @@ const User = require('../models/User');
 const WorkOrder = require('../models/WorkOrder');
 const Quote = require('../models/Quote');
 const { temporaryPassword } = require('../utils/passwords');
+const { marketOf } = require('../utils/money');
 
 // API de plataforma: la usa GABY para entregar el producto cuando un cliente paga (crear la empresa y su
 // administrador), ajustar el plan (técnicos incluidos) y suspender o reactivar por pagos.
@@ -69,6 +70,7 @@ const view = async (company) => ({
   maxTechnicians: company.maxTechnicians,
   contactEmail: company.contactEmail,
   lang: company.lang || 'es',
+  market: marketOf(company),
   createdAt: company.createdAt,
   usage: await usage(company),
 });
@@ -76,6 +78,8 @@ const view = async (company) => ({
 const createCompany = async (req, res) => {
   try {
     const { name, adminName, adminEmail, maxTechnicians = null, status = 'activa', lang = 'es' } = req.body;
+    // El mercado va aparte del idioma (una empresa hispana de EE. UU.: es + us); en inglés siempre es us.
+    const market = lang === 'en' || req.body.market === 'us' ? 'us' : 'co';
     const email = String(adminEmail).toLowerCase();
 
     if (await User.findOne({ email })) {
@@ -85,7 +89,7 @@ const createCompany = async (req, res) => {
     let slug = slugify(name);
     if (await Company.findOne({ slug })) slug = `${slug}-${crypto.randomBytes(3).toString('hex')}`;
 
-    const company = await Company.create({ name, slug, status, maxTechnicians, contactEmail: email, lang });
+    const company = await Company.create({ name, slug, status, maxTechnicians, contactEmail: email, lang, market });
     const password = temporaryPassword();
     try {
       await User.create({ name: adminName, email, password, role: 'admin', tenant: company._id, mustChangePassword: true });
@@ -125,9 +129,10 @@ const updateCompany = async (req, res) => {
     const company = await Company.findById(req.params.id);
     if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
 
-    const { name, status, maxTechnicians, lang } = req.body;
+    const { name, status, maxTechnicians, lang, market } = req.body;
     if (name !== undefined) company.name = name;
     if (lang !== undefined) company.lang = lang;
+    if (market !== undefined) company.market = market;
     if (status !== undefined) company.status = status;
     if (maxTechnicians !== undefined) company.maxTechnicians = maxTechnicians;
     await company.save();

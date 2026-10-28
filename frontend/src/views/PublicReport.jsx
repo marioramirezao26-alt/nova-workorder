@@ -97,7 +97,7 @@ export default function PublicReport({ token }) {
       </section>
 
       <footer className="report-foot muted small">
-        <a href={novaLink('informe', company.name, company.lang)} target="_blank" rel="noopener">{t('Hecho con NOVAWORKORDER · Prueba gratis')}</a>
+        <a href={novaLink('informe', company.name, company.lang, company.market)} target="_blank" rel="noopener">{t('Hecho con NOVAWORKORDER · Prueba gratis')}</a>
       </footer>
     </div>
   );

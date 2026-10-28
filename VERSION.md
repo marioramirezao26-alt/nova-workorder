@@ -2,6 +2,26 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### /es-us/: la página para hispanos en EE. UU. y el mercado aparte del idioma (28-oct-2026)
+- Etapa 1 del plan México/EE. UU. Mario: quien se registre en `novaworkorder.com/es-us/` es cliente de EE. UU. (US$29
+  por técnico, US$19 por tienda, mensualidad por PayPal, como /en/) pero con la app y los correos en español.
+- **`landing/es-us/`:** `index.html` (la portada sencilla de Colombia en dólares, sin Colombia, Nequi, DIAN, Factus,
+  Wompi, PSE, COP ni Bold; sin video y sin reseñas; WhatsApp discreto solo al final de las preguntas, en el pie y como
+  respaldo sin chat; capturas nuevas con datos de EE. UU. en español: `img/*-es-us.webp`), `privacidad.html` y
+  `terminos.html` (los de /en/ en español, con Pedidos, el chat que se guarda y el píxel con consentimiento). hreflang
+  es-CO / en-US / es-US en las tres portadas; «¿Estás en EE. UU.?» en el pie de /; el «Español» de /en/ lleva a /es-us/;
+  sitemap. Caddy ya la sirve igual que /en/ (`try_files {path}/index.html` y `{path}.html`).
+- **`market` ('co' | 'us', por defecto 'co'; `lang: 'en'` siempre es 'us'):** en `POST /api/public/demo` y
+  `POST /api/public/chat`; se guarda en `DemoRequest` y sale en `GET /api/platform/demo-requests`. El chat lo manda a
+  GABY (`market` en el cuerpo de `/api/webchat/message`) y salesChat de respaldo cotiza en dólares en español
+  (`FACTS_US_ES` / `SYSTEM_US_ES`). El píxel de Meta manda `market` en sus eventos (co en /, us en /es-us/).
+- **Empresas de Servicios:** `Company.market` (la API de plataforma lo acepta al crear y al cambiar, y lo devuelve; el
+  perfil, la cotización pública y el informe público lo exponen). La moneda de las cotizaciones, la hora del Este, el
+  bloqueo de Wompi y de Factus, los celulares (+1) y el enlace «Hecho con NOVAWORKORDER» (/es-us/) siguen al mercado,
+  no al idioma (`utils/money.js`: `isUS`, `marketOf`; en el frontend `usCompany`, `phoneRegion`). Las empresas en inglés
+  de antes cuentan como us.
+- Pruebas en `test/es-us.test.js` y `test/webchat.test.js`.
+
 ### El chat de la página lo atiende GABY (CRM) con salesChat de respaldo (28-oct-2026)
 - Mario: «todo el que entre por ese chat queda en el CRM y GABY lo debe atender igual que por WhatsApp». GABY expone
   `POST /api/webchat/message` y `GET /api/webchat/messages` (llave `x-webchat-key` = `GABY_WEBCHAT_KEY`, en los dos .env).

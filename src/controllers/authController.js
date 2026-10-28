@@ -5,6 +5,7 @@ const DUMMY_HASH = bcrypt.hashSync('nadie-tiene-esta-clave', 10);
 const Company = require('../models/Company');
 const generateToken = require('../utils/generateToken');
 const { publicBranding } = require('../utils/branding');
+const { marketOf } = require('../utils/money');
 const { recordFailure, clearFailures } = require('../middleware/loginLimiter');
 
 const publicUser = (user, company) => ({
@@ -16,7 +17,7 @@ const publicUser = (user, company) => ({
   mustChangePassword: Boolean(user.mustChangePassword),
   locationConsentAt: user.locationConsentAt || null,
   liveConsentAt: user.liveConsentAt || null,
-  company: company ? { _id: company._id, name: company.name, status: company.status, lang: company.lang || 'es', branding: publicBranding(company),
+  company: company ? { _id: company._id, name: company.name, status: company.status, lang: company.lang || 'es', market: marketOf(company), branding: publicBranding(company),
     locationTracking: Boolean(company.locationTracking), liveTracking: Boolean(company.liveTracking),
     requireSignature: Boolean(company.requireSignature) } : null,
 });
