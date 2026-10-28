@@ -4,24 +4,20 @@ const WorkOrder = require('../models/WorkOrder');
 const User = require('../models/User');
 const { protect, authorize, companyScope } = require('../middleware/authMiddleware');
 const { validateRequest } = require('../middleware/validateRequest');
+const { TZ, addDays, colombiaDay, endOfDay, startOfDay } = require('../utils/colombia');
 
 // Reportes de la empresa (solo el administrador): órdenes por día, por estado y por técnico, totales y export CSV.
-// Las fechas se interpretan en hora de Colombia (UTC-5, sin horario de verano).
+// Las fechas se interpretan en hora de Colombia (el servidor corre en UTC).
 const router = express.Router();
 router.use(protect, authorize('admin'));
 
-const TZ = 'America/Bogota';
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 const range = (req) => {
-  const to = DATE.test(req.query.to || '') ? req.query.to : new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
-  let from = DATE.test(req.query.from || '') ? req.query.from : null;
-  if (!from) {
-    const d = new Date(`${to}T00:00:00-05:00`);
-    d.setUTCDate(d.getUTCDate() - 29);
-    from = d.toISOString().slice(0, 10);
-  }
-  return { from, to, start: new Date(`${from}T00:00:00-05:00`), end: new Date(`${to}T23:59:59.999-05:00`) };
+  // Sin fechas: los últimos 30 días de Colombia, hoy incluido.
+  const to = DATE.test(req.query.to || '') ? req.query.to : colombiaDay();
+  const from = DATE.test(req.query.from || '') ? req.query.from : addDays(to, -29);
+  return { from, to, start: startOfDay(from), end: endOfDay(to) };
 };
 
 const validators = [

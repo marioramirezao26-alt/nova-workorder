@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
+import { addDays, colombiaDay } from '../dates';
 
-const iso = (d) => d.toISOString().slice(0, 10);
 const STATUS = { pendiente: 'Pendiente', en_proceso: 'En proceso', completada: 'Completada', cancelada: 'Cancelada' };
 
 // Reportes de la empresa (solo admin): órdenes por estado, por técnico y por día, totales y descarga CSV.
 export default function Reports({ api, user }) {
-  const [to, setTo] = useState(iso(new Date()));
-  const [from, setFrom] = useState(iso(new Date(Date.now() - 29 * 86400000)));
+  // Los últimos 30 días de Colombia (con el día en UTC, desde las 7 p. m. el rango arrancaba en mañana).
+  const [to, setTo] = useState(() => colombiaDay());
+  const [from, setFrom] = useState(() => addDays(colombiaDay(), -29));
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
