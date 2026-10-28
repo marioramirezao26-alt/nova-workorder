@@ -267,3 +267,13 @@ body.chat-open .mbar { display: none; }
 .medicion-botones { display: flex; gap: 8px; margin-left: auto; }
 .medicion .btn { min-height: 40px; padding: 8px 14px; }
 @media (max-width: 720px) { .medicion { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); } }
+
+/* Así funciona de Pedidos con su color, y el enlace discreto al WhatsApp de NOVA (preguntas y pie) */
+#pedidos .flujo li::before { color: var(--ped); border-color: rgba(255,179,92,.5); box-shadow: 0 0 0 4px rgba(255,179,92,.07); }
+#pedidos .flujo li::after { background: linear-gradient(180deg, rgba(255,179,92,.45), rgba(255,179,92,.08)); }
+@media (min-width: 1024px) { #pedidos .flujo li::after { background: linear-gradient(90deg, rgba(255,179,92,.45), rgba(255,179,92,.08)); } }
+.wa-link { margin: 18px 0 0; text-align: center; font-size: .92rem; }
+.wa-link a, footer .wa-pie { display: inline-flex; align-items: center; gap: 6px; color: var(--dim); }
+.wa-link a { padding: 8px 4px; }
+.wa-link a:hover, footer .wa-pie:hover { color: var(--text); }
+.wa-link .ico, footer .wa-pie .ico { width: 16px; height: 16px; color: #5fd68a; }

@@ -153,9 +153,11 @@ test('la página de Estados Unidos habla en inglés y con precios en dólares', 
   assert.match(down.data.message, /can't answer/);
 });
 
-test('sin WhatsApp de NOVA: la página y el chat mandan al chat de la página y al correo', () => {
-  // 28-oct-2026: el número de NOVA (+57 310 376 7561) dejó de recibir mensajes. Mario: «que GABY atienda por el chat de
-  // la página no más». La llave de Bold (@BOLD3103767561) es otra cosa y se queda.
+test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discreto en preguntas y en el pie', () => {
+  // 28-oct-2026: el número viejo de NOVA (+57 310 376 7561) dejó de recibir mensajes y no vuelve. Mario: GABY atiende por
+  // el chat de la página; el WhatsApp Business nuevo (+57 321 392 7697, lo atiende él) va solo como «¿Prefieres
+  // WhatsApp?» al final de las preguntas, en el pie y como respaldo si el chat está apagado: nunca en la portada ni en la
+  // barra del celular. La llave de Bold (@BOLD3103767561) es otra cosa y se queda.
   const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
   const nuestroNumero = /wa\.me\/573103767561|\+?57 ?310 ?376 ?7561/;
   const contactoWhatsApp = /escr[ií]b[ea]nos (por|al) WhatsApp|Soporte por WhatsApp|(Pregunta|Cuéntanos|seguir) por WhatsApp|me responde por WhatsApp|se abre WhatsApp/i;
@@ -163,10 +165,20 @@ test('sin WhatsApp de NOVA: la página y el chat mandan al chat de la página y 
     const html = leer(f);
     assert.doesNotMatch(html, nuestroNumero, f);
     assert.doesNotMatch(html, contactoWhatsApp, f);
-    assert.doesNotMatch(html, /wa\.me\//, f);
   }
+  assert.doesNotMatch(leer('en/index.html'), /wa\.me\//);
   const html = leer('index.html');
-  assert.doesNotMatch(html, /class="btn wa|id="i-wa"|waButton|mbar-wa|chat-wa/);
+  const enlaces = html.match(/wa\.me\/[^"?]*/g) || [];
+  assert.equal(enlaces.length, 3, 'preguntas, pie y respaldo sin chat');
+  for (const e of enlaces) assert.equal(e, 'wa.me/573213927697');
+  const antes = (id) => html.indexOf('wa.me/') > html.indexOf(id);
+  assert.ok(antes('id="preguntas"'), 'ningún WhatsApp antes de las preguntas (portada, apps, precios)');
+  const barra = html.slice(html.indexOf('<nav class="mbar"'), html.indexOf('</nav>', html.indexOf('<nav class="mbar"')));
+  assert.doesNotMatch(barra, /wa\.me|i-wa/);
+  assert.match(html, /<p class="wa-alt" data-wa-alt hidden>/);                               // solo aparece sin chat
+  assert.match(html, /\[data-wa-alt\]'\), function \(el\) \{ el\.hidden = on !== false; \}/);
+  assert.match(html, /¿Prefieres WhatsApp\? Escríbenos/);
+  assert.doesNotMatch(html, /class="btn wa|waButton|mbar-wa|chat-wa/);
   assert.match(html, /Soporte por chat y correo/);
   assert.match(html, /¿Quién me responde en el chat\?/);
   // los botones abren el chat (button con aria-label) y, si el chat no está, llevan al formulario
@@ -186,7 +198,8 @@ test('sin WhatsApp de NOVA: la página y el chat mandan al chat de la página y 
   assert.doesNotMatch(html, /Si después nos escribes desde este número/);
 
   for (const t of [salesChat.FACTS, salesChat.SYSTEM]) {
-    assert.doesNotMatch(t, /310 376 7561|wa\.me/);
+    assert.doesNotMatch(t, /310 376 7561|321 392 7697|wa\.me/);                           // el chat no da números
+    assert.match(t, /«¿Prefieres WhatsApp\?»/);
     assert.doesNotMatch(t, /escribirnos por WhatsApp|responde por WhatsApp|seguir por WhatsApp|Soporte: WhatsApp/);
   }
   assert.match(salesChat.FACTS, /Soporte: este chat de la página .* contacto@novaworkorder\.com/);
@@ -194,4 +207,17 @@ test('sin WhatsApp de NOVA: la página y el chat mandan al chat de la página y 
   assert.match(salesChat.SYSTEM, /«Empieza gratis» del chat/);
   assert.match(salesChat.FACTS, /@BOLD3103767561/);
   assert.doesNotMatch(salesChat.FACTS_EN + salesChat.SYSTEM_EN, /310 376 7561|wa\.me/);
+});
+
+test('la marca no se ata a Colombia como origen y el chat habla sencillo', () => {
+  // Mario, 28-oct-2026: que la página sirva mañana fuera de Colombia. Se quedan los pesos (COP), Nequi, la DIAN y lo legal.
+  const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
+  const html = leer('index.html');
+  assert.doesNotMatch(html, /Colombia/);
+  assert.doesNotMatch(html, /"areaServed"/);
+  assert.doesNotMatch(leer('en/index.html'), /[Mm]ade in Colombia|Colombian (team|company)/);
+  assert.doesNotMatch(salesChat.FACTS, /Colombia/);
+  assert.match(salesChat.SYSTEM, /no es de tecnología: frases cortas, sin jerga/);
+  assert.match(html, /\$49\.000 <small>COP por técnico al mes, precio final/);
+  assert.match(html, /Nequi/);
 });
