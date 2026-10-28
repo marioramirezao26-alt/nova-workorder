@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
-import { whatsappLink } from '../ui';
+import { phoneRegion, whatsappLink } from '../ui';
 
 // Informe de servicio dentro de una orden: checklist, fotos de antes y después, firma del cliente y el enlace del
 // informe para mandárselo. `editable`: el técnico de la orden (o el administrador) mientras se puede llenar. Las fotos,
@@ -285,7 +285,7 @@ export default function ServiceReport({ api, user, order, editable, onChange, au
           ) : (
             <>
               <a className="ghost-button" href={link} target="_blank" rel="noreferrer">{t('Ver informe')}</a>
-              <a className="mini-button edit" href={whatsappLink(order.client?.phone, message, user.company?.lang)} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
+              <a className="mini-button edit" href={whatsappLink(order.client?.phone, message, phoneRegion(user.company))} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
               <button type="button" className="ghost-button" onClick={() => navigator.clipboard?.writeText(link).then(() => alert(t('Enlace copiado')))}>{t('Copiar enlace')}</button>
               {mine && <button type="button" className="link-button" disabled={busy} onClick={rotate}>{t('Cambiar enlace')}</button>}
             </>

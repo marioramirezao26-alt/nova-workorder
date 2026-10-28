@@ -22,6 +22,7 @@ router.post('/companies', [
   body('maxTechnicians').optional({ nullable: true }).isInt({ min: 0, max: 10000 }).withMessage('maxTechnicians debe ser un entero'),
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
   body('lang').optional().isIn(['es', 'en']).withMessage('Idioma inválido: es o en'),
+  body('market').optional().isIn(['co', 'us']).withMessage('Mercado inválido: co o us'),
   validateRequest,
 ], createCompany);
 router.get('/companies/:id', validateObjectId, getCompany);
@@ -30,6 +31,7 @@ router.patch('/companies/:id', validateObjectId, [
   body('maxTechnicians').optional({ nullable: true }).isInt({ min: 0, max: 10000 }).withMessage('maxTechnicians debe ser un entero'),
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
   body('lang').optional().isIn(['es', 'en']).withMessage('Idioma inválido: es o en'),
+  body('market').optional().isIn(['co', 'us']).withMessage('Mercado inválido: co o us'),
   validateRequest,
 ], updateCompany);
 

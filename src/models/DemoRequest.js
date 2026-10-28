@@ -16,6 +16,9 @@ const demoRequestSchema = new mongoose.Schema(
     // Idioma de la página donde la pidió: es (Colombia, novaworkorder.com) o en (Estados Unidos, novaworkorder.com/en).
     // GABY lo usa para atenderla en inglés y en dólares.
     lang: { type: String, enum: ['es', 'en'], default: 'es' },
+    // Mercado (dónde está el negocio y cómo se le cobra), aparte del idioma: co (Colombia, pesos) o us (Estados Unidos,
+    // dólares por PayPal). /en/ siempre es us; /es-us/ es us en español. GABY lo lee para cobrarle en dólares.
+    market: { type: String, enum: ['co', 'us'], default: 'co' },
     technicians: { type: Number, min: 1, max: 10000, default: null },
     message: { type: String, trim: true, maxlength: 1000, default: '' },
     source: { type: String, trim: true, maxlength: 60, default: 'web' },

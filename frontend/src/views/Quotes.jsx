@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
-import { Empty, QuoteTag, formatDateTime, formatDay, money, nitDv, quoteTotals, whatsappLink } from '../ui';
+import { Empty, QuoteTag, formatDateTime, formatDay, money, nitDv, phoneRegion, quoteTotals, usCompany, whatsappLink } from '../ui';
 import { addDays, colombiaDay } from '../dates';
 
 // «Cotizaciones»: se arman en borrador, se envían al cliente con un enlace (WhatsApp o copiado) y el cliente la aprueba
@@ -180,7 +180,7 @@ function InvoiceBox({ api, quote, env, onDone }) {
 }
 
 export default function Quotes({ api, user, go }) {
-  const currency = user.company?.lang === 'en' ? 'USD' : 'COP';
+  const currency = usCompany(user.company) ? 'USD' : 'COP';
   const canWrite = user.role === 'admin' || user.role === 'tecnico';
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState('todas');
@@ -317,7 +317,7 @@ export default function Quotes({ api, user, go }) {
                   {/* solo mientras está enviada: al volver a borrador la llave cambia y ese enlace ya no abre */}
                   {links[q._id] && q.status === 'enviada' && (
                     <div className="order-actions">
-                      <a className="mini-button edit" href={whatsappLink(q.client?.phone, t('Hola {name}, te comparto la cotización #{n} «{title}» por {total}. Puedes revisarla y aprobarla aquí: {url}', { name: q.client?.name || '', n: q.number, title: q.title, total: money(q.total, q.currency), url: links[q._id] }), user.company?.lang)} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
+                      <a className="mini-button edit" href={whatsappLink(q.client?.phone, t('Hola {name}, te comparto la cotización #{n} «{title}» por {total}. Puedes revisarla y aprobarla aquí: {url}', { name: q.client?.name || '', n: q.number, title: q.title, total: money(q.total, q.currency), url: links[q._id] }), phoneRegion(user.company))} target="_blank" rel="noreferrer">{t('Enviar por WhatsApp')}</a>
                       <a className="ghost-button" href={links[q._id]} target="_blank" rel="noreferrer">{t('Ver como el cliente')}</a>
                       <button type="button" className="ghost-button" onClick={() => navigator.clipboard?.writeText(links[q._id]).then(() => alert(t('Enlace copiado')))}>{t('Copiar enlace')}</button>
                     </div>

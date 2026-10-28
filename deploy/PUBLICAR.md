@@ -87,7 +87,10 @@ systemctl restart nova
   respondiendo con la IA de `OPENROUTER_API_KEY`. La sal no se cambia después: cambiarla cambia el `ip_hash` de todos.
 - Lo que sabe está en `src/utils/salesChat.js` (`FACTS`): si cambian los precios, cámbialos ahí, en `landing/index.html`
   (texto y `PRECIO_TECNICO` de la calculadora), en `landing/terminos.html` y en GABY (`GABY_NOVA_PRICE_PER_TECH`,
-  `GABY_PEDIDOS_PRICE_PER_STORE`).
+  `GABY_PEDIDOS_PRICE_PER_STORE`). Los de EE. UU. (dólares) están en `FACTS_EN` y `FACTS_US_ES`, en `landing/en/`, en
+  `landing/es-us/` (texto, `PRECIO_TECNICO` y `terminos.html`) y en GABY (`GABY_NOVA_PRICE_USD`, `GABY_PEDIDOS_PRICE_USD`).
+- La página para hispanos en EE. UU. es `landing/es-us/` (novaworkorder.com/es-us/): se publica sola con la carpeta
+  `landing/`, como /en/; no hay que tocar Caddy.
 
 ## Comandos útiles en el servidor
 - Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.

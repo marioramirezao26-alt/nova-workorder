@@ -2,6 +2,7 @@ const ChatStat = require('../models/ChatStat');
 const salesChat = require('../utils/salesChat');
 const gaby = require('../utils/gabyWebchat');
 const { colombiaDay } = require('../utils/colombia');
+const { marketOf } = require('./demoController');
 
 const BUSY = 'Ahora no puedo responder. Déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com y te respondemos hoy.';
 const BUSY_EN = 'I can\'t answer right now. Leave your details in "Start free" or email us at contacto@novaworkorder.com and we\'ll reply today.';
@@ -39,7 +40,7 @@ const count = (first) => ChatStat.updateOne({ day: colombiaDay() }, { $inc: { me
 // Reenvía el mensaje nuevo a GABY. Devuelve true si ya respondió al navegador; false para seguir con salesChat.
 const viaGaby = async (req, res, { session, text, en, first }) => {
   try {
-    const r = await gaby.send({ session, text, lang: en ? 'en' : 'es', page: req.body.page, ip: req.ip });
+    const r = await gaby.send({ session, text, lang: en ? 'en' : 'es', market: marketOf(req.body), page: req.body.page, ip: req.ip });
     if (r.status === 429) { res.status(429).json({ message: en ? LIMIT_EN : LIMIT }); return true; }
     if (r.status === 200 && (r.data.reply || r.data.messages.length)) {
       count(first);
@@ -53,7 +54,8 @@ const viaGaby = async (req, res, { session, text, en, first }) => {
   return false;
 };
 
-// POST /api/public/chat — { messages: [{ role: 'user' | 'assistant', content }], session?, page?, lang? } → { reply }.
+// POST /api/public/chat — { messages: [{ role: 'user' | 'assistant', content }], session?, page?, lang?, market? } → { reply }.
+// market 'us' (la página /es-us/): en español pero con precios en dólares; lang 'en' siempre es us.
 // Con `session` y GABY configurada, solo el último mensaje viaja a GABY (que guarda la conversación) y la respuesta trae
 // también { messages, actions, handoff }. Sin sesión (la página en inglés) o si GABY falla, responde salesChat con el
 // historial que guarda el navegador, y aquí no se guarda lo que escribe.
@@ -74,7 +76,7 @@ const chat = async (req, res) => {
     }
     if (!salesChat.enabled()) return res.status(503).json({ message: busy });
     if (!(await take(first))) return res.status(503).json({ message: busy });
-    const reply = await salesChat.reply(messages, en ? 'en' : 'es');
+    const reply = await salesChat.reply(messages, en ? 'en' : 'es', marketOf(req.body));
     return res.status(200).json({ reply });
   } catch (error) {
     return res.status(503).json({ message: busy });

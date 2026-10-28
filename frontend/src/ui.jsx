@@ -31,6 +31,12 @@ export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&
 // dígitos; es (Colombia) +57 a los celulares de 10 dígitos que empiezan por 3. Un número con «+» o «00» ya trae su
 // indicativo. Si no se sabe con certeza a qué país va (un fijo, un número incompleto), WhatsApp se abre sin número para
 // elegir el contacto, en vez de mandarle el mensaje a un desconocido.
+// Una empresa de Estados Unidos (mercado us, o en inglés de antes): sus celulares son de +1 y cotiza en dólares,
+// aunque use la app en español.
+export const usCompany = (company) => Boolean(company && (company.market === 'us' || company.lang === 'en'));
+// El tercer parámetro dice el país de los celulares: 'en' = Estados Unidos (+1), 'es' = Colombia (+57).
+export const phoneRegion = (company) => (usCompany(company) ? 'en' : 'es');
+
 export const whatsappLink = (phone, text, lang = 'es') => {
   const raw = String(phone || '').trim();
   const d = raw.replace(/\D/g, '');
@@ -51,10 +57,11 @@ export const refCode = (name) => {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 20).replace(/-+$/, '');
   return /^[a-z0-9-]{3,20}$/.test(code) ? code : '';
 };
-export const novaLink = (source, companyName, lang = 'es') => {
+export const novaLink = (source, companyName, lang = 'es', market = 'co') => {
   const ref = refCode(companyName);
   // utm_content, not ref: the landing reads «ref» as a customer referral code (GABY's referral channel)
-  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : ''}?utm_source=${source}${ref ? `&utm_content=${ref}` : ''}`;
+  // la página de su mercado: /en/ (EE. UU. en inglés), /es-us/ (EE. UU. en español) o la de Colombia
+  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : market === 'us' ? 'es-us/' : ''}?utm_source=${source}${ref ? `&utm_content=${ref}` : ''}`;
 };
 
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;

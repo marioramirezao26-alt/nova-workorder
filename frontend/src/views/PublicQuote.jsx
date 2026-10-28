@@ -167,7 +167,7 @@ export default function PublicQuote({ token }) {
       )}
 
       <footer className="report-foot muted small">
-        <a href={novaLink('cotizacion', company.name, company.lang)} target="_blank" rel="noopener">{t('Hecho con NOVAWORKORDER · Prueba gratis')}</a>
+        <a href={novaLink('cotizacion', company.name, company.lang, company.market)} target="_blank" rel="noopener">{t('Hecho con NOVAWORKORDER · Prueba gratis')}</a>
       </footer>
     </div>
   );

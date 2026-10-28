@@ -10,6 +10,7 @@
   <link rel="canonical" href="https://novaworkorder.com/" />
   <link rel="alternate" hreflang="es-CO" href="https://novaworkorder.com/" />
   <link rel="alternate" hreflang="en-US" href="https://novaworkorder.com/en/" />
+  <link rel="alternate" hreflang="es-US" href="https://novaworkorder.com/es-us/" />
   <link rel="alternate" hreflang="x-default" href="https://novaworkorder.com/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="es_CO" />
@@ -59,7 +60,7 @@
         s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '1088825597305014');
-        fbq('track', 'PageView');
+        fbq('track', 'PageView', { market: 'co' });
       }
       var dijo = null;
       try { dijo = localStorage.getItem(CLAVE); } catch (e) {}
@@ -68,7 +69,13 @@
       window.NovaMedicion = {
         dijo: function () { return dijo; },
         decidir: function (si) { dijo = si ? 'si' : 'no'; try { localStorage.setItem(CLAVE, dijo); } catch (e) {} if (si) cargar(); },
-        evento: function (nombre, datos) { if (dijo === 'si' && window.fbq) window.fbq('track', nombre, datos || {}); }
+        // Cada evento lleva el mercado de la página (co aquí; us en /es-us/) para separarlos en Meta.
+        evento: function (nombre, datos) {
+          if (dijo !== 'si' || !window.fbq) return;
+          var d = { market: 'co' };
+          for (var k in (datos || {})) if (Object.prototype.hasOwnProperty.call(datos, k)) d[k] = datos[k];
+          window.fbq('track', nombre, d);
+        }
       };
     })();
   </script>
@@ -526,6 +533,7 @@
         <a href="https://app.novaworkorder.com">Entrar a Servicios</a>
         <a href="https://pedidos.novaworkorder.com/admin">Entrar a Pedidos</a>
         <a href="/en/" hreflang="en" lang="en">English</a>
+        <a href="/es-us/" hreflang="es-US">¿Estás en EE. UU.?</a>
       </nav>
     </div>
   </footer>

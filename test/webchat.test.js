@@ -102,10 +102,11 @@ test('reenvía a GABY solo el mensaje nuevo, con la llave, la sesión y el hash 
   assert.equal(r.method, 'POST');
   assert.equal(r.url, '/api/webchat/message');
   assert.equal(r.key, LLAVE);
-  assert.deepEqual(Object.keys(r.body).sort(), ['ip_hash', 'lang', 'page', 'session', 'text']);
+  assert.deepEqual(Object.keys(r.body).sort(), ['ip_hash', 'lang', 'market', 'page', 'session', 'text']);
   assert.equal(r.body.session, SESION);
   assert.equal(r.body.text, '¿Cuánto cuesta?');                                    // solo lo nuevo, sin el historial
   assert.equal(r.body.lang, 'es');
+  assert.equal(r.body.market, 'co');                                                 // sin market: Colombia
   assert.deepEqual(r.body.page, { app: 'servicios', utm: { source: 'instagram', medium: 'social', campaign: 'octubre', content: '', term: '' },
     ref: 'https://www.instagram.com/', referral: 'a1b2c3', l: 'k7Qm2xWa9pLr4tZc', path: '/' });
   assert.match(r.body.ip_hash, /^[0-9a-f]{64}$/);
@@ -121,6 +122,14 @@ test('reenvía a GABY solo el mensaje nuevo, con la llave, la sesión y el hash 
   assert.equal(seen.length, 0);                                                       // salesChat no se usó
   const [stat] = await ChatStat.find().lean();
   assert.equal(stat.messages, 1);                                                     // se cuenta en el día
+});
+
+test('a GABY le llega el mercado: /es-us/ es us en español; la página en inglés siempre es us', async () => {
+  await ask({ session: SESION, messages: turnos, page: { ...PAGE, path: '/es-us/' }, lang: 'es', market: 'us' });
+  await ask({ session: SESION, messages: turnos, page: PAGE, lang: 'en' });
+  await ask({ session: SESION, messages: turnos, page: PAGE, lang: 'en', market: 'co' });
+  assert.deepEqual(got.map((r) => [r.body.lang, r.body.market]), [['es', 'us'], ['en', 'us'], ['en', 'us']]);
+  assert.equal(got[0].body.page.path, '/es-us/');
 });
 
 test('si GABY falla, no responde o no está configurada, contesta salesChat y el visitante no se queda sin respuesta', async () => {

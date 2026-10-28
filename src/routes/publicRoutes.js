@@ -34,6 +34,7 @@ router.post('/demo', demoLimiter, [
   body('l').optional({ nullable: true }).isString().isLength({ max: 64 }),
   body('source').optional({ checkFalsy: true }).isIn(['web', 'chat']),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
+  body('market').optional({ checkFalsy: true }).isIn(['co', 'us']),
   validateRequest,
 ], requestDemo);
 
@@ -54,6 +55,7 @@ router.post('/chat', chatLimiter, [
   body('messages').isArray({ min: 1, max: 30 }).withMessage('Escribe tu pregunta'),
   body('messages.*.content').isString().isLength({ max: 2000 }),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
+  body('market').optional({ checkFalsy: true }).isIn(['co', 'us']),
   body('session').optional({ nullable: true }).isString().isLength({ max: 64 }),
   body('page').optional({ nullable: true }).isObject(),
   validateRequest,

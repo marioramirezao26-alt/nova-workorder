@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
 import ServiceReport from './ServiceReport';
-import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDateTime, formatDay, isOverdue, whatsappLink } from '../ui';
+import { Empty, PRIORITY, STATUS, PriorityTag, StatusTag, formatDateTime, formatDay, isOverdue, phoneRegion, whatsappLink } from '../ui';
 
 const emptyForm = { title: '', description: '', status: 'pendiente', priority: 'media', client: '', assignedTo: '', dueDate: '', notes: '' };
 
@@ -126,7 +126,7 @@ export default function Orders({ api, user }) {
             <p>{t('«{title}» quedó asignada a {name}.', { title: assigned.title, name: tech?.name || assigned.assignedTo.name })}</p>
             {tech?.phone ? (
               <div className="order-actions">
-                <a className="mini-button edit" href={whatsappLink(tech.phone, assignMessage(assigned, tech), user.company?.lang)} target="_blank" rel="noreferrer">{t('Avisar a {name} por WhatsApp', { name: first })}</a>
+                <a className="mini-button edit" href={whatsappLink(tech.phone, assignMessage(assigned, tech), phoneRegion(user.company))} target="_blank" rel="noreferrer">{t('Avisar a {name} por WhatsApp', { name: first })}</a>
                 <button type="button" className="ghost-button" onClick={() => setAssigned(null)}>{t('Listo')}</button>
               </div>
             ) : (
