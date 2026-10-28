@@ -3,6 +3,7 @@ import { errorMessage } from '../api';
 import { getLang, t } from '../i18n';
 import WompiCard from './WompiCard';
 import FactusCard from './FactusCard';
+import { colombiaCompany } from '../ui';
 
 // «Integraciones» (solo el administrador): llaves de API para que otros sistemas lean y creen órdenes, y webhooks
 // para avisarle a otro sistema cuando algo cambia. La llave y el secreto se muestran una sola vez.
@@ -24,7 +25,7 @@ const when = (iso) => {
 
 const copyText = (text) => navigator.clipboard?.writeText(text).then(() => alert(t('Copiado')), () => {});
 
-export default function Integrations({ api }) {
+export default function Integrations({ api, user }) {
   const [keys, setKeys] = useState([]);
   const [hooks, setHooks] = useState([]);
   const [events, setEvents] = useState(Object.keys(EVENT_LABEL));
@@ -99,8 +100,9 @@ export default function Integrations({ api }) {
 
       {error && <p className="error">{error}</p>}
 
-      <WompiCard api={api} />
-      <FactusCard api={api} />
+      {/* Wompi cobra en pesos colombianos y Factus factura ante la DIAN: solo para empresas de Colombia */}
+      {colombiaCompany(user?.company) && <WompiCard api={api} />}
+      {colombiaCompany(user?.company) && <FactusCard api={api} />}
 
       {shown && (
         <div className="panel-box highlight">

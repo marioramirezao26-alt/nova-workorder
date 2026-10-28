@@ -2,6 +2,25 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### /es-mx/: la página para México y el mercado mx de punta a punta (28-oct-2026)
+- Etapa 2 del plan México/EE. UU. Mario: quien se registre en `novaworkorder.com/es-mx/` es cliente de México ($299 MXN
+  por técnico y $249 MXN por tienda al mes, mensualidad en pesos mexicanos por PayPal) con la app y los correos en español.
+- **`landing/es-mx/`:** `index.html` (la de /es-us/ adaptada a México: pesos mexicanos, IVA, «celular», «computadora»,
+  «refacciones», «sin plazos forzosos», «sin letras chiquitas», links de pago de Mercado Pago, PayPal o Stripe, y «La
+  factura CFDI está en camino», sin fecha; sin Colombia, Nequi, DIAN, Factus, Wompi, PSE, COP ni Bold; sin videos;
+  WhatsApp discreto solo al final de las preguntas, en el pie y como respaldo sin chat), `privacidad.html` (con los
+  derechos ARCO) y `terminos.html` (dicen la verdad: NOVA Desarrollos tiene su sede en Colombia y sus leyes rigen los
+  términos). Capturas nuevas con datos de Monterrey (+52, MXN), sacadas de las apps corriendo en local
+  (`img/*-es-mx.webp`). hreflang es-MX en las cuatro portadas y en los textos legales de /es-us/; «¿Estás en México?» en
+  el pie de / y de /es-us/, «Español (México)» en el de /en/, y «¿Estás en EE. UU.?» en el de /es-mx/; sitemap.
+- **`market` 'mx'** (`'co' | 'us' | 'mx'`; `lang: 'en'` sigue siendo siempre us) en el registro, el chat (GABY cotiza en
+  MXN), el respaldo `salesChat.js` (`FACTS_MX` / `SYSTEM_MX`), el píxel de Meta (market mx) y `Company.market`.
+- **Empresas de México:** cotizaciones en MXN con centavos y el IVA de México (16 % por defecto; 8 % frontera o 0 % en
+  la lista), hora de Ciudad de México en el informe y en los reportes, celulares +52 en los enlaces de WhatsApp,
+  «Hecho con NOVAWORKORDER» a /es-mx/, y sin Wompi ni Factus (la API los rechaza y «Integraciones» no los muestra).
+  `utils/money.js`: `marketOf` ('co' | 'us' | 'mx'), `isMX`, `isColombia`, `currencyOf`, `defaultTaxRate`.
+- Pruebas en `test/es-mx.test.js` y `test/webchat.test.js`; `test/es-us.test.js` ya no toma mx como inválido.
+
 ### /es-us/: la página para hispanos en EE. UU. y el mercado aparte del idioma (28-oct-2026)
 - Etapa 1 del plan México/EE. UU. Mario: quien se registre en `novaworkorder.com/es-us/` es cliente de EE. UU. (US$29
   por técnico, US$19 por tienda, mensualidad por PayPal, como /en/) pero con la app y los correos en español.

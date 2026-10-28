@@ -1,5 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
+const { MARKETS } = require('../utils/money');
 const { validateRequest } = require('../middleware/validateRequest');
 const { demoLimiter } = require('../middleware/demoLimiter');
 const { requestDemo } = require('../controllers/demoController');
@@ -34,7 +35,7 @@ router.post('/demo', demoLimiter, [
   body('l').optional({ nullable: true }).isString().isLength({ max: 64 }),
   body('source').optional({ checkFalsy: true }).isIn(['web', 'chat']),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
-  body('market').optional({ checkFalsy: true }).isIn(['co', 'us']),
+  body('market').optional({ checkFalsy: true }).isIn(MARKETS),
   validateRequest,
 ], requestDemo);
 
@@ -55,7 +56,7 @@ router.post('/chat', chatLimiter, [
   body('messages').isArray({ min: 1, max: 30 }).withMessage('Escribe tu pregunta'),
   body('messages.*.content').isString().isLength({ max: 2000 }),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
-  body('market').optional({ checkFalsy: true }).isIn(['co', 'us']),
+  body('market').optional({ checkFalsy: true }).isIn(MARKETS),
   body('session').optional({ nullable: true }).isString().isLength({ max: 64 }),
   body('page').optional({ nullable: true }).isObject(),
   validateRequest,

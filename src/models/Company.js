@@ -41,11 +41,12 @@ const companySchema = new mongoose.Schema(
       enum: ['es', 'en'],
       default: 'es',
     },
-    // Mercado, aparte del idioma: co (Colombia: pesos, IVA, Wompi y Factus) o us (Estados Unidos: dólares, hora del Este).
-    // Una empresa de /es-us/ es us con la app en español. Las empresas en inglés de antes (lang en) cuentan como us.
+    // Mercado, aparte del idioma: co (Colombia: pesos, IVA, Wompi y Factus), us (Estados Unidos: dólares, hora del Este)
+    // o mx (México: pesos mexicanos, IVA del 16 %, hora de Ciudad de México, celulares +52). Una empresa de /es-us/ es us
+    // y una de /es-mx/ es mx, las dos con la app en español. Las empresas en inglés de antes (lang en) cuentan como us.
     market: {
       type: String,
-      enum: ['co', 'us'],
+      enum: ['co', 'us', 'mx'],
       default: 'co',
     },
     // Registrar la ubicación del técnico al iniciar y al completar cada orden (lo activa el administrador; cada

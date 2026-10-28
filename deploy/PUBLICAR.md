@@ -91,6 +91,9 @@ systemctl restart nova
   `landing/es-us/` (texto, `PRECIO_TECNICO` y `terminos.html`) y en GABY (`GABY_NOVA_PRICE_USD`, `GABY_PEDIDOS_PRICE_USD`).
 - La página para hispanos en EE. UU. es `landing/es-us/` (novaworkorder.com/es-us/): se publica sola con la carpeta
   `landing/`, como /en/; no hay que tocar Caddy.
+- La página para México es `landing/es-mx/` (novaworkorder.com/es-mx/): igual, se publica sola con `landing/`. Sus
+  precios (pesos mexicanos) están en `FACTS_MX` de `src/utils/salesChat.js`, en `landing/es-mx/` (texto, `PRECIO_TECNICO`
+  y `terminos.html`) y en GABY (`GABY_NOVA_PRICE_MXN`, `GABY_PEDIDOS_PRICE_MXN`).
 
 ## Comandos útiles en el servidor
 - Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.

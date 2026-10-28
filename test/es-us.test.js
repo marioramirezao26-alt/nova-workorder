@@ -25,7 +25,7 @@ beforeEach(async () => {
 const demo = { company: 'Aire Fresco LLC', name: 'Rosa Díaz', email: 'rosa@airefresco.com', phone: '(713) 555-0142', technicians: '3' };
 
 test('el registro guarda el mercado aparte del idioma y GABY lo lee en las solicitudes', async () => {
-  assert.equal((await call('POST', '/public/demo', { body: { ...demo, market: 'mx' } })).status, 400);
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, market: 'ar' } })).status, 400);   // mx es la etapa 2
   assert.equal((await call('POST', '/public/demo', { body: { ...demo, lang: 'es', market: 'us', kind: 'prueba', consent: true } })).status, 201);
   assert.equal((await call('POST', '/public/demo', { body: { ...demo, email: 'joe@coolair.com', lang: 'en' } })).status, 201);
   assert.equal((await call('POST', '/public/demo', { body: { ...demo, email: 'laura@frio.co' } })).status, 201);
@@ -43,7 +43,7 @@ test('el chat de /es-us/ responde en español con precios en dólares (respaldo 
   assert.equal((await call('POST', '/public/chat', { body: { lang: 'es', market: 'us', messages: msg } })).status, 200);
   assert.equal((await call('POST', '/public/chat', { body: { lang: 'es', messages: msg } })).status, 200);
   assert.equal((await call('POST', '/public/chat', { body: { lang: 'en', messages: msg } })).status, 200);
-  assert.equal((await call('POST', '/public/chat', { body: { lang: 'es', market: 'mx', messages: msg } })).status, 400);
+  assert.equal((await call('POST', '/public/chat', { body: { lang: 'es', market: 'ar', messages: msg } })).status, 400);
   assert.deepEqual(seen, [['es', 'us'], ['es', 'co'], ['en', 'us']]);
   assert.equal(salesChat.systemFor('es', 'us'), salesChat.SYSTEM_US_ES);
   assert.equal(salesChat.systemFor('es', 'co'), salesChat.SYSTEM);
@@ -67,7 +67,7 @@ test('una empresa hispana de EE. UU. usa la app en español y cotiza en dólares
   assert.equal(made.status, 201);
   assert.equal(made.data.company.lang, 'es');
   assert.equal(made.data.company.market, 'us');
-  assert.equal((await call('POST', '/platform/companies', { platformKey: KEY, body: { name: 'X', adminName: 'X', adminEmail: 'x@x.co', market: 'mx' } })).status, 400);
+  assert.equal((await call('POST', '/platform/companies', { platformKey: KEY, body: { name: 'X', adminName: 'X', adminEmail: 'x@x.co', market: 'ar' } })).status, 400);
   const en = await call('POST', '/platform/companies', { platformKey: KEY, body: { name: 'Cool', adminName: 'J', adminEmail: 'j@cool.com', lang: 'en' } });
   assert.equal(en.data.company.market, 'us');                                                  // en inglés siempre es us
   const co = await company('Frío Total');
@@ -87,7 +87,7 @@ test('una empresa hispana de EE. UU. usa la app en español y cotiza en dólares
   const wompi = await call('PUT', '/company/wompi', { as: b.token, body: { publicKey: 'pub_test_AbCdEf123456',
     integritySecret: 'test_integrity_Integ123456', eventsSecret: 'test_events_Event123456' } });
   assert.equal(wompi.status, 400);
-  assert.match(wompi.data.message, /dólares/);
+  assert.match(wompi.data.message, /pesos colombianos/);
   // la orden que sale de la cotización queda en el idioma de la empresa (español), aunque sea de EE. UU.
   await call('POST', `/quotes/${q.data._id}/send`, { as: b.token });
   await call('POST', `/quotes/${q.data._id}/approve`, { as: b.token });
@@ -186,12 +186,12 @@ test('Caddy sirve /es-us/ igual que /en/ (carpeta con index.html y páginas sin 
 
 test('la interfaz de Servicios toma el mercado (no el idioma) para la moneda, los celulares y el enlace a la página', async () => {
   const fe = (f) => fs.readFileSync(path.join(__dirname, '..', 'frontend', 'src', f), 'utf8');
-  assert.match(fe('views/Quotes.jsx'), /const currency = usCompany\(user\.company\) \? 'USD' : 'COP';/);
+  assert.match(fe('views/Quotes.jsx'), /const currency = companyCurrency\(user\.company\);/);
   for (const f of ['views/Quotes.jsx', 'views/Orders.jsx', 'views/ServiceReport.jsx']) {
     assert.doesNotMatch(fe(f), /whatsappLink\([^)]*user\.company\?\.lang\)/, f);
     assert.match(fe(f), /phoneRegion\(user\.company\)/, f);
   }
-  assert.match(fe('ui.jsx'), /lang === 'en' \? 'en\/' : market === 'us' \? 'es-us\/' : ''/);
+  assert.match(fe('ui.jsx'), /lang === 'en' \? 'en\/' : market === 'us' \? 'es-us\/' : market === 'mx' \? 'es-mx\/' : ''/);
   assert.match(fe('views/PublicQuote.jsx'), /novaLink\('cotizacion', company\.name, company\.lang, company\.market\)/);
   assert.match(fe('views/PublicReport.jsx'), /novaLink\('informe', company\.name, company\.lang, company\.market\)/);
 });

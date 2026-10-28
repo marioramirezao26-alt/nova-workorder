@@ -32,10 +32,14 @@ export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&
 // indicativo. Si no se sabe con certeza a qué país va (un fijo, un número incompleto), WhatsApp se abre sin número para
 // elegir el contacto, en vez de mandarle el mensaje a un desconocido.
 // Una empresa de Estados Unidos (mercado us, o en inglés de antes): sus celulares son de +1 y cotiza en dólares,
-// aunque use la app en español.
+// aunque use la app en español. Una de México (mercado mx): celulares de +52 y cotiza en pesos mexicanos.
 export const usCompany = (company) => Boolean(company && (company.market === 'us' || company.lang === 'en'));
-// El tercer parámetro dice el país de los celulares: 'en' = Estados Unidos (+1), 'es' = Colombia (+57).
-export const phoneRegion = (company) => (usCompany(company) ? 'en' : 'es');
+export const companyMarket = (company) => (usCompany(company) ? 'us' : company && company.market === 'mx' ? 'mx' : 'co');
+export const colombiaCompany = (company) => companyMarket(company) === 'co';
+// La moneda de sus cotizaciones (la misma regla de src/utils/money.js).
+export const companyCurrency = (company) => ({ co: 'COP', us: 'USD', mx: 'MXN' })[companyMarket(company)];
+// El tercer parámetro dice el país de los celulares: 'en' = Estados Unidos (+1), 'mx' = México (+52), 'es' = Colombia (+57).
+export const phoneRegion = (company) => ({ co: 'es', us: 'en', mx: 'mx' })[companyMarket(company)];
 
 export const whatsappLink = (phone, text, lang = 'es') => {
   const raw = String(phone || '').trim();
@@ -43,6 +47,8 @@ export const whatsappLink = (phone, text, lang = 'es') => {
   let number = '';
   if (/^(\+|00)/.test(raw)) number = raw.startsWith('00') ? d.slice(2) : d;
   else if (lang === 'en') number = d.length === 10 && /^[2-9]/.test(d) ? `1${d}` : (d.length === 11 && d.startsWith('1') ? d : '');
+  // México: los celulares son de 10 dígitos (81… Monterrey, 55… Ciudad de México) y van con 52; el «521» de antes también.
+  else if (lang === 'mx') number = d.length === 10 ? `52${d}` : (/^52\d{10}$/.test(d) || /^521\d{10}$/.test(d) ? d : '');
   else number = d.length === 10 && d.startsWith('3') ? `57${d}` : (d.length === 12 && d.startsWith('573') ? d : '');
   if (number.length < 8 || number.length > 15) number = '';
   return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
@@ -61,20 +67,22 @@ export const novaLink = (source, companyName, lang = 'es', market = 'co') => {
   const ref = refCode(companyName);
   // utm_content, not ref: the landing reads «ref» as a customer referral code (GABY's referral channel)
   // la página de su mercado: /en/ (EE. UU. en inglés), /es-us/ (EE. UU. en español) o la de Colombia
-  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : market === 'us' ? 'es-us/' : ''}?utm_source=${source}${ref ? `&utm_content=${ref}` : ''}`;
+  return `https://novaworkorder.com/${lang === 'en' ? 'en/' : market === 'us' ? 'es-us/' : market === 'mx' ? 'es-mx/' : ''}?utm_source=${source}${ref ? `&utm_content=${ref}` : ''}`;
 };
 
 export const Empty = ({ children }) => <p className="muted empty">{children}</p>;
 
-// Plata: pesos enteros (COP) o dólares con centavos (USD).
-export const money = (value, currency = 'COP') => new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'es-CO', {
-  style: 'currency', currency, minimumFractionDigits: currency === 'USD' ? 2 : 0, maximumFractionDigits: currency === 'USD' ? 2 : 0,
+// Plata: pesos colombianos enteros (COP), dólares (USD) o pesos mexicanos (MXN, «$1,250.00») con centavos.
+export const withCents = (currency) => currency === 'USD' || currency === 'MXN';
+const MONEY_LOCALE = { USD: 'en-US', MXN: 'es-MX', COP: 'es-CO' };
+export const money = (value, currency = 'COP') => new Intl.NumberFormat(MONEY_LOCALE[currency] || 'es-CO', {
+  style: 'currency', currency, minimumFractionDigits: withCents(currency) ? 2 : 0, maximumFractionDigits: withCents(currency) ? 2 : 0,
 }).format(Number(value) || 0);
 
 // Los mismos totales que calcula el servidor (cada renglón redondeado y luego sumado), para verlos mientras se escribe.
 // El mismo redondeo de src/utils/money.js: sin el ruido del punto flotante (85 × 9,5 % = 8,08, no 8,07).
 const round = (v, currency) => {
-  const scale = currency === 'USD' ? 100 : 1;
+  const scale = currency === 'USD' || currency === 'MXN' ? 100 : 1;   // con centavos: dólares y pesos mexicanos
   return Math.round(Number((Number(v) * scale).toPrecision(15))) / scale;
 };
 export const quoteTotals = (items, currency) => {
