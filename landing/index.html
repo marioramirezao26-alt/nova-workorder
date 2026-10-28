@@ -44,6 +44,34 @@
   "offers":{"@type":"Offer","price":"39000","priceCurrency":"COP","priceSpecification":{"@type":"UnitPriceSpecification","price":"39000","priceCurrency":"COP","unitText":"tienda al mes","billingDuration":"P1M"}}}
 ]}
   </script>
+  <!-- Píxel de Meta (1088825597305014): solo se carga si la persona lo acepta en el aviso de abajo (Ley 1581). -->
+  <script>
+    (function () {
+      var CLAVE = 'nova-medicion';
+      function cargar() {
+        if (window.fbq) return;
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1088825597305014');
+        fbq('track', 'PageView');
+      }
+      var dijo = null;
+      try { dijo = localStorage.getItem(CLAVE); } catch (e) {}
+      if (dijo === 'si') cargar();
+      // window.NovaMedicion: la página le avisa al píxel de un registro o de un chat (solo si la persona aceptó).
+      window.NovaMedicion = {
+        dijo: function () { return dijo; },
+        decidir: function (si) { dijo = si ? 'si' : 'no'; try { localStorage.setItem(CLAVE, dijo); } catch (e) {} if (si) cargar(); },
+        evento: function (nombre, datos) { if (dijo === 'si' && window.fbq) window.fbq('track', nombre, datos || {}); }
+      };
+    })();
+  </script>
 </head>
 <body>
   <svg style="display:none" aria-hidden="true"><symbol id="i-cel" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M11 18h2"/></symbol><symbol id="i-tel" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></symbol><symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5l3 2"/></symbol><symbol id="i-edificio" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2M10 6h4M10 10h4M10 14h4M10 18h4"/></symbol><symbol id="i-grafica" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol><symbol id="i-paleta" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2C19.48 16.38 22 13.88 22 10.83 21.97 6.01 17.46 2 12 2z"/><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/></symbol><symbol id="i-enlace" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol><symbol id="i-carrito" viewBox="0 0 24 24"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></symbol><symbol id="i-tarjeta" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></symbol><symbol id="i-camion" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2M15 18H9M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol><symbol id="i-caja" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12M7.5 4.27l9 5.15"/></symbol><symbol id="i-recibo" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 17.5v-11"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-candado" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-chat" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></symbol><symbol id="i-llave" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol><symbol id="i-bolsa" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></symbol><symbol id="i-estrella" viewBox="0 0 24 24"><path d="M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.5l-5.87 3.08 1.12-6.54L2.5 9.41l6.56-.95z"/></symbol></svg>
@@ -747,6 +775,7 @@
             form.product.value = app;
             form.kind.value = kind;
             sync();
+            if (window.NovaMedicion) window.NovaMedicion.evento(kind === 'prueba' ? 'CompleteRegistration' : 'Lead', { content_name: app });
             if (kind === 'prueba') {
               // «Normalmente»: GABY puede no crear la cuenta sola (correo ya registrado, tope del día, correo apagado) y
               // entonces solo le avisa al equipo. Por eso la salida al chat y al correo si el acceso no llega.
@@ -1030,6 +1059,7 @@
         text = String(text || '').trim().slice(0, 500);
         if (!text || busy) return;
         busy = true;
+        if (window.NovaMedicion && !history.some(function (m) { return m.role === 'user'; })) window.NovaMedicion.evento('Contact');
         history.push({ role: 'user', content: text });
         save();
         msgs.push({ from: 'visitor', text: text });
@@ -1076,6 +1106,24 @@
           if (b.enabled) { fab.hidden = false; document.body.classList.add('chat-on'); modo(true); } else modo(false);
           if (live && !box.hidden) { recuperar(); startPoll(); }
         }).catch(function () {});
+    })();
+  </script>
+
+  <div class="medicion" id="medicion" role="region" aria-label="Medición de anuncios" hidden>
+    <p>Usamos el píxel de Meta para saber qué anuncios te trajeron hasta aquí. ¿Lo permites? <a href="/privacidad#medicion">Más información</a></p>
+    <div class="medicion-botones">
+      <button type="button" class="btn" id="medicion-no">No, gracias</button>
+      <button type="button" class="btn primary" id="medicion-si">Aceptar</button>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var caja = document.getElementById('medicion');
+      if (!caja || !window.NovaMedicion || window.NovaMedicion.dijo()) return;
+      caja.hidden = false;
+      function cerrar(si) { window.NovaMedicion.decidir(si); caja.hidden = true; }
+      document.getElementById('medicion-si').addEventListener('click', function () { cerrar(true); });
+      document.getElementById('medicion-no').addEventListener('click', function () { cerrar(false); });
     })();
   </script>
 </body>
