@@ -58,7 +58,7 @@ solicitudes de demo de la página.
   Si GoDaddy tiene otros MX, bórralos.
 
 ## 7. El chat «GABY · Ventas» de la página
-La burbuja «Pregúntale a GABY (IA)» (en el celular, el botón 💬 de la barra de abajo) aparece sola cuando el `.env` de
+La burbuja «Pregúntale a GABY (IA)» (en el celular, «Pregúntale a GABY» en la barra de abajo) aparece sola cuando el `.env` de
 NOVA tiene `OPENROUTER_API_KEY`. Usa la misma clave de OpenRouter de GABY; cópiala de un `.env` al otro **en el servidor**, sin que se vea ni pase por el chat:
 
 ```bash
@@ -71,6 +71,20 @@ systemctl restart nova
 - Topes de gasto: 30 mensajes por visitante cada hora y 300 por día entre todos (`CHAT_DAILY_LIMIT`). Con el modelo por
   defecto, 300 mensajes cuestan centavos de dólar.
 - Apagarlo sin borrar la clave: `echo CHAT_ENABLED=false >> /opt/nova-workorder/.env && systemctl restart nova`.
+- **Que lo atienda GABY** (la conversación queda en el CRM y Mario contesta desde el panel): NOVA necesita la misma
+  `GABY_WEBCHAT_KEY` del `.env` de GABY. Se copia en el servidor, sin que se vea:
+
+  ```bash
+  grep -q '^GABY_WEBCHAT_KEY=.' /opt/nova-workorder/.env || \
+    grep -E '^GABY_WEBCHAT_KEY=.' /opt/gaby-os/.env | head -1 >> /opt/nova-workorder/.env
+  grep -q '^WEBCHAT_IP_SALT=.' /opt/nova-workorder/.env || \
+    echo "WEBCHAT_IP_SALT=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")" >> /opt/nova-workorder/.env
+  grep -c '^GABY_WEBCHAT_KEY=.' /opt/nova-workorder/.env      # debe decir 1
+  systemctl restart nova
+  ```
+
+  GABY debe escuchar en `http://127.0.0.1:8000/api/webchat` (si no, `GABY_WEBCHAT_URL`). Si GABY se cae, el chat sigue
+  respondiendo con la IA de `OPENROUTER_API_KEY`. La sal no se cambia después: cambiarla cambia el `ip_hash` de todos.
 - Lo que sabe está en `src/utils/salesChat.js` (`FACTS`): si cambian los precios, cámbialos ahí, en `landing/index.html`
   (texto y `PRECIO_TECNICO` de la calculadora), en `landing/terminos.html` y en GABY (`GABY_NOVA_PRICE_PER_TECH`,
   `GABY_PEDIDOS_PRICE_PER_STORE`).

@@ -528,6 +528,15 @@
                     set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* modo privado */ } } };
       var utm = (location.search.match(/[?&]utm_source=([^&#]*)/) || [])[1];
       if (utm) store.set('nova-utm', decodeURIComponent(utm).slice(0, 60));
+      // Para la ficha de GABY (chat): las cinco utm_* del enlace con que llegó.
+      var utms = {}, hayUtm = false;
+      ['source', 'medium', 'campaign', 'content', 'term'].forEach(function (k) {
+        var m = location.search.match(new RegExp('[?&]utm_' + k + '=([^&#]*)'));
+        if (!m) return;
+        hayUtm = true;
+        try { utms[k] = decodeURIComponent(m[1].replace(/\+/g, ' ')).slice(0, 100); } catch (e) { /* mal codificado */ }
+      });
+      if (hayUtm) store.set('nova-utms', JSON.stringify(utms));
       if (!store.get('nova-ref') && document.referrer) store.set('nova-ref', document.referrer.slice(0, 500));
       var referral = (location.search.match(/[?&]ref=([a-z0-9-]{3,20})/i) || [])[1];      // recomendado por un cliente
       if (referral) store.set('nova-referral', referral.toLowerCase());
@@ -580,7 +589,16 @@
         if (chatOn !== false && window.NovaChat) window.NovaChat.abrir(b, b.getAttribute('data-chat'));
         else irAlFormulario(b.getAttribute('data-app'));
       });
-      window.NovaPagina = { chatModo: chatModo, chatOn: function () { return chatOn; } };
+      // De dónde viene el visitante, para su ficha en GABY: la app (la del botón que abrió el chat o la elegida en el
+      // formulario), las utm, el sitio que lo trajo, la recomendación y la ficha del enlace de GABY (?l=).
+      function origen(app) {
+        var u = {};
+        try { u = JSON.parse(store.get('nova-utms') || '{}') || {}; } catch (e) { u = {}; }
+        if (!u.source && store.get('nova-utm')) u.source = store.get('nova-utm');
+        return { app: app || form.product.value || '', utm: u, ref: store.get('nova-ref'), referral: store.get('nova-referral'),
+                 l: leadToken || '', path: location.pathname };
+      }
+      window.NovaPagina = { chatModo: chatModo, chatOn: function () { return chatOn; }, origen: origen };
       // El botón que acompaña los mensajes del formulario; con el chat apagado no hay botón (el texto da el correo).
       function chatButton(text, pregunta) {
         if (chatOn === false) return null;
@@ -837,7 +855,9 @@
       sync();
     })();
   </script>
-  <!-- Chat «GABY · Ventas»: una IA que responde precios y dudas. Aparece solo si el servidor tiene el chat encendido. -->
+  <!-- Chat «GABY · Ventas». Con GABY conectada (GABY_WEBCHAT_KEY en el servidor) lo atiende GABY: la conversación queda en
+       su CRM, se recupera al volver y Mario puede contestar desde su panel («Equipo NOVA»). Si no, responde la IA de
+       salesChat.js. Aparece solo si el servidor tiene el chat encendido. -->
   <button class="chat-fab" id="chat-fab" type="button" hidden aria-controls="chat-box"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chat"/></svg> Pregúntale a GABY (IA)</button>
   <section class="chat-box" id="chat-box" hidden role="dialog" aria-label="Chat con GABY, la asistente de NOVAWORKORDER">
     <div class="chat-head">
@@ -857,7 +877,7 @@
       <input id="chat-input" maxlength="500" autocomplete="off" placeholder="Escribe tu pregunta…" aria-label="Tu pregunta" />
       <button class="btn small" type="submit">Enviar</button>
     </form>
-    <p class="chat-note">Responde una IA y puede equivocarse. No escribas contraseñas ni datos de pago. <a href="/privacidad#chat">Privacidad</a></p>
+    <p class="chat-note">GABY es una asistente virtual con IA. Guardamos esta conversación para atenderte (<a href="/privacidad#chat">política de privacidad</a>). No escribas contraseñas ni datos de pago.</p>
   </section>
 
   <script>
@@ -866,7 +886,8 @@
       var log = document.getElementById('chat-log'), form = document.getElementById('chat-form'), input = document.getElementById('chat-input');
       var quick = document.getElementById('chat-quick'), cta = document.getElementById('chat-cta');
       var HELLO = '¡Hola! Soy GABY, la asistente virtual de NOVAWORKORDER. Te ayudo con precios, la prueba gratis y cuál app le sirve a tu negocio. ¿Qué quieres saber?';
-      // La conversación vive solo en esta pestaña (sessionStorage): el servidor no la guarda.
+      var POLL_MS = 8000;
+      // Lo que se envía al servidor de respaldo (salesChat) y lo que viaja con «Empieza gratis»: en esta pestaña.
       var history = [];
       try { history = JSON.parse(sessionStorage.getItem('nova-chat-log') || '[]') || []; } catch (e) { history = []; }
       function save() {
@@ -877,10 +898,43 @@
           sessionStorage.setItem('nova-chat', asked.slice(-600));
         } catch (e) { /* modo privado */ }
       }
-      function bubble(text, who) {
+      // La sesión: un código al azar que no dice nada del visitante, guardado en este navegador para recuperar la
+      // conversación con GABY al volver. Sin almacenamiento (modo privado), vale mientras la página esté abierta.
+      var SESION = /^[A-Za-z0-9_-]{16,64}$/;
+      var session = '';
+      try { session = localStorage.getItem('nova-chat-session') || ''; } catch (e) { session = ''; }
+      if (!SESION.test(session)) {
+        var bytes = new Uint8Array(18);
+        if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(bytes);
+        else for (var i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+        session = btoa(String.fromCharCode.apply(null, bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        try { localStorage.setItem('nova-chat-session', session); } catch (e) { /* modo privado */ }
+      }
+
+      // Lo que se ve: { id (los de GABY), from: visitor | gaby | mario, text }. Sin GABY, sale del historial de la pestaña.
+      var live = false;                    // el servidor dice que la conversación vive en GABY (se recupera y se consulta)
+      var msgs = history.map(function (m) { return { from: m.role === 'user' ? 'visitor' : 'gaby', text: m.content }; });
+      var ids = {}, lastId = '', acciones = [], handoff = false;
+      function merge(list) {
+        var nuevos = 0;
+        (list || []).forEach(function (m) {
+          if (!m || !m.id || ids[m.id]) return;
+          ids[m.id] = true; lastId = m.id;
+          // el mensaje que el visitante acaba de escribir ya se ve: solo recibe su id
+          var propio = m.from === 'visitor' && msgs.filter(function (x) { return !x.id && x.from === 'visitor' && x.text === m.text; })[0];
+          if (propio) { propio.id = m.id; return; }
+          msgs.push({ id: m.id, from: m.from, text: m.text });
+          if (m.from === 'mario') { history.push({ role: 'assistant', content: m.text }); save(); }
+          nuevos += 1;
+        });
+        return nuevos;
+      }
+      var SEGURA = /^(https:\/\/([a-z0-9-]+\.)*novaworkorder\.com([/?#]|$)|\/(?![/\\])|#)/i;   // igual que el servidor
+      function bubble(text, who, quien) {
         var p = document.createElement('p');
         p.className = 'chat-msg ' + who;
-        p.textContent = text;
+        if (quien) { var q = document.createElement('span'); q.className = 'chat-quien'; q.textContent = quien; p.appendChild(q); }
+        p.appendChild(document.createTextNode(text));
         log.appendChild(p);
         log.scrollTop = log.scrollHeight;
         return p;
@@ -888,22 +942,82 @@
       function render() {
         log.textContent = '';
         bubble(HELLO, 'bot');
-        history.forEach(function (m) { bubble(m.content, m.role === 'user' ? 'me' : 'bot'); });
-        quick.hidden = history.length > 0;
+        msgs.forEach(function (m) {
+          if (m.from === 'visitor') bubble(m.text, 'me');
+          else if (m.from === 'mario') bubble(m.text, 'bot team', 'Equipo NOVA');
+          else bubble(String(m.text).replace(/\*\*/g, ''), 'bot');
+        });
+        if (acciones.length) {
+          var fila = document.createElement('div');
+          fila.className = 'chat-acciones';
+          acciones.forEach(function (a) {
+            if (!a || !SEGURA.test(String(a.url || '')) || !a.label) return;
+            var b = document.createElement('a');
+            b.className = 'btn small chat-accion';
+            b.href = a.url;
+            b.textContent = a.label;
+            b.addEventListener('click', function () { close(false); });
+            fila.appendChild(b);
+          });
+          log.appendChild(fila);
+        }
+        if (handoff) {
+          var n = document.createElement('p');
+          n.className = 'chat-aviso';
+          n.textContent = 'Una persona del equipo NOVA sigue esta conversación y te responde aquí.';
+          log.appendChild(n);
+        }
+        log.scrollTop = log.scrollHeight;
+        quick.hidden = msgs.length > 0;
       }
-      var opener = null;
+
+      // Al abrir: la conversación guardada en GABY; mientras está abierto y la pestaña se ve, lo nuevo cada ~8 s.
+      var timer = null, pollOff = false;
+      function get(after) {
+        return fetch('/api/public/chat/messages?session=' + encodeURIComponent(session) + (after ? '&after=' + encodeURIComponent(after) : ''))
+          .then(function (r) { if (!r.ok) { if (r.status !== 503) pollOff = true; return null; } return r.json(); });
+      }
+      function poll() {
+        if (!live || pollOff || box.hidden || document.hidden) return;
+        get(lastId).then(function (b) {
+          if (!b) return;
+          var nuevos = merge(b.messages);
+          if (b.handoff && !handoff) { handoff = true; nuevos += 1; }
+          if (nuevos) render();
+        }).catch(function () {});
+      }
+      function startPoll() { stopPoll(); if (live && !pollOff && !box.hidden && !document.hidden) timer = setInterval(poll, POLL_MS); }
+      function stopPoll() { if (timer) { clearInterval(timer); timer = null; } }
+      document.addEventListener('visibilitychange', function () { if (document.hidden) stopPoll(); else if (!box.hidden) { poll(); startPoll(); } });
+      function recuperar() {
+        if (!live) return;
+        get('').then(function (b) {
+          if (!b || !b.messages || !b.messages.length) return;
+          msgs = []; ids = {};                 // la conversación guardada en GABY manda sobre la de la pestaña
+          merge(b.messages);
+          handoff = Boolean(b.handoff);
+          if (!box.hidden) render();
+        }).catch(function () {});
+      }
+
+      var opener = null, appDelBoton = '';
       // pregunta: el texto que trae el botón que lo abrió; queda escrito (sin enviarse) si el visitante no estaba escribiendo.
       function open(from, pregunta) {
         opener = from || null;
+        appDelBoton = (from && from.getAttribute && from.getAttribute('data-app')) || '';
         box.hidden = false; fab.hidden = true;
         document.body.classList.add('chat-open');
         render();
         if (pregunta && !input.value.trim()) input.value = String(pregunta).slice(0, 500);
         input.focus();
         try { input.setSelectionRange(input.value.length, input.value.length); } catch (e) { /* algunos navegadores */ }
+        pollOff = false;
+        recuperar();
+        startPoll();
       }
       window.NovaChat = { abrir: open };
       function close(volverFoco) {
+        stopPoll();
         box.hidden = true; fab.hidden = !document.body.classList.contains('chat-on');
         document.body.classList.remove('chat-open');
         if (volverFoco !== false && opener && opener.focus) opener.focus();
@@ -915,23 +1029,33 @@
         busy = true;
         history.push({ role: 'user', content: text });
         save();
-        bubble(text, 'me');
-        quick.hidden = true;
+        msgs.push({ from: 'visitor', text: text });
+        acciones = [];
+        render();
         var wait = bubble('GABY está escribiendo…', 'bot wait');
+        var page = window.NovaPagina ? window.NovaPagina.origen(appDelBoton) : { path: location.pathname };
         fetch('/api/public/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history.slice(-10) }) })
+          body: JSON.stringify({ messages: history.slice(-10), session: session, page: page, lang: 'es' }) })
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (b) { return { ok: r.ok, status: r.status, body: b }; }); })
           .then(function (res) {
             wait.remove();
-            if (!res.ok || !res.body.reply) { bubble(res.body.message || 'No pude responder. Déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com.', 'bot'); history.pop(); save();
+            var b = res.body || {};
+            if (!res.ok || !(b.reply || (b.messages && b.messages.length))) {
+              msgs.pop(); history.pop(); save(); render();
+              if (!input.value) input.value = text;                                  // para volver a intentar
+              bubble(b.message || 'No pude responder. Déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com.', 'bot');
               if (res.status === 503 && window.NovaPagina) window.NovaPagina.chatModo(false);   // apagado o sin cupo hoy
-              return; }
-            var reply = String(res.body.reply).replace(/\*\*/g, '');
-            history.push({ role: 'assistant', content: reply });
-            save();
-            bubble(reply, 'bot');
+              return;
+            }
+            var reply = String(b.reply || '').replace(/\*\*/g, '');
+            if (b.messages && b.messages.length) merge(b.messages);
+            else msgs.push({ from: 'gaby', text: reply });
+            if (reply) { history.push({ role: 'assistant', content: reply }); save(); }
+            acciones = Array.isArray(b.actions) ? b.actions : [];
+            if (b.handoff) handoff = true;
+            render();
           })
-          .catch(function () { wait.remove(); history.pop(); save(); bubble('Sin conexión. Intenta de nuevo en un momento.', 'bot'); })
+          .catch(function () { wait.remove(); msgs.pop(); history.pop(); save(); render(); if (!input.value) input.value = text; bubble('Sin conexión. Intenta de nuevo en un momento.', 'bot'); })
           .finally(function () { busy = false; });
       }
       fab.addEventListener('click', function () { open(fab); });
@@ -945,7 +1069,9 @@
       var modo = function (on) { if (window.NovaPagina) window.NovaPagina.chatModo(on); };
       fetch('/api/public/chat').then(function (r) { return r.ok ? r.json() : {}; })
         .then(function (b) {
+          live = Boolean(b.enabled && b.history);
           if (b.enabled) { fab.hidden = false; document.body.classList.add('chat-on'); modo(true); } else modo(false);
+          if (live && !box.hidden) { recuperar(); startPoll(); }
         }).catch(function () {});
     })();
   </script>

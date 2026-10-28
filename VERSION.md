@@ -2,6 +2,24 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### El chat de la página lo atiende GABY (CRM) con salesChat de respaldo (28-oct-2026)
+- Mario: «todo el que entre por ese chat queda en el CRM y GABY lo debe atender igual que por WhatsApp». GABY expone
+  `POST /api/webchat/message` y `GET /api/webchat/messages` (llave `x-webchat-key` = `GABY_WEBCHAT_KEY`, en los dos .env).
+- **Proxy (`src/utils/gabyWebchat.js`, `chatController.js`):** con `GABY_WEBCHAT_KEY` y una `session` válida
+  (`[A-Za-z0-9_-]{16,64}`), `POST /api/public/chat` manda a GABY solo el mensaje nuevo, `lang`, `page` limpio (app, cinco
+  utm, ref, referral, l, path) e `ip_hash` = sha256(ip + `WEBCHAT_IP_SALT`, o una sal derivada de `JWT_SECRET`): nunca
+  la IP. Lo que vuelve se limpia (`messages` de visitor/gaby/mario, `actions` solo hacia novaworkorder.com o la misma
+  página, `handoff`). Si GABY falla, no responde (20 s), no está configurada o el navegador no manda sesión (la página en
+  inglés), responde salesChat como antes. El 429 de GABY llega al visitante. Se conserva el límite de 30 por IP por hora.
+  `GET /api/public/chat/messages?session=&after=` hace proxy a GABY (1.000 consultas por IP por hora). Sesión o `after`
+  inválidos: 400 sin llegar a GABY.
+- **La burbuja:** sesión al azar en `localStorage` (con try/catch); al abrir recupera la conversación de GABY; mientras
+  está abierta y la pestaña visible consulta lo nuevo cada 8 s (para al cerrar o al ocultar la pestaña); muestra las
+  `actions` como botones y lo de Mario como «Equipo NOVA»; aviso fijo «GABY es una asistente virtual con IA. Guardamos
+  esta conversación para atenderte (política de privacidad)». `GET /api/public/chat` dice además `history`.
+- **Pendiente:** `privacidad.html` (6.1 dice que la conversación no se guarda): Mario pasa el texto nuevo.
+- Pruebas en `test/webchat.test.js` (GABY falso con un servidor http local).
+
 ### La página atiende por el chat de GABY, sin WhatsApp (28-oct-2026)
 - El WhatsApp de NOVA (+57 310 376 7561) dejó de recibir mensajes. Mario: «Quita el botón de WhatsApp en la página, que
   GABY atienda por el chat de la página no más».

@@ -7,8 +7,8 @@ const { visitLimiter } = require('../middleware/visitLimiter');
 const { recordVisit } = require('../controllers/analyticsController');
 const { getLogo } = require('../controllers/brandingController');
 const { validateObjectId } = require('../middleware/validateObjectId');
-const { chatLimiter } = require('../middleware/chatLimiter');
-const { chat, chatStatus } = require('../controllers/chatController');
+const { chatLimiter, chatPollLimiter } = require('../middleware/chatLimiter');
+const { chat, chatStatus, chatMessages } = require('../controllers/chatController');
 const { publicReviews } = require('../controllers/reviewController');
 
 // Rutas sin sesión que usa la página de ventas (novaworkorder.com). Caddy solo deja pasar /api/public/* en ese dominio.
@@ -47,14 +47,18 @@ router.post('/visit', visitLimiter, [
   validateRequest,
 ], recordVisit);
 
-// El chat «GABY · Ventas» de la página: responde precios y dudas. Sin OPENROUTER_API_KEY no aparece.
+// El chat «GABY · Ventas» de la página: responde precios y dudas. Con GABY_WEBCHAT_KEY lo atiende GABY (proxy, la
+// conversación queda en su CRM); si no, o si GABY falla, salesChat.js. Sin ninguno de los dos no aparece.
 router.get('/chat', chatStatus);
 router.post('/chat', chatLimiter, [
   body('messages').isArray({ min: 1, max: 30 }).withMessage('Escribe tu pregunta'),
   body('messages.*.content').isString().isLength({ max: 2000 }),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
+  body('session').optional({ nullable: true }).isString().isLength({ max: 64 }),
+  body('page').optional({ nullable: true }).isObject(),
   validateRequest,
 ], chat);
+router.get('/chat/messages', chatPollLimiter, chatMessages);
 
 // Las recomendaciones aprobadas de los clientes (la sección del final de la página; con 0, la sección no se muestra).
 router.get('/reviews', publicReviews);
