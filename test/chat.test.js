@@ -152,3 +152,46 @@ test('la página de Estados Unidos habla en inglés y con precios en dólares', 
   assert.equal(down.status, 503);
   assert.match(down.data.message, /can't answer/);
 });
+
+test('sin WhatsApp de NOVA: la página y el chat mandan al chat de la página y al correo', () => {
+  // 28-oct-2026: el número de NOVA (+57 310 376 7561) dejó de recibir mensajes. Mario: «que GABY atienda por el chat de
+  // la página no más». La llave de Bold (@BOLD3103767561) es otra cosa y se queda.
+  const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
+  const nuestroNumero = /wa\.me\/573103767561|\+?57 ?310 ?376 ?7561/;
+  const contactoWhatsApp = /escr[ií]b[ea]nos (por|al) WhatsApp|Soporte por WhatsApp|(Pregunta|Cuéntanos|seguir) por WhatsApp|me responde por WhatsApp|se abre WhatsApp/i;
+  for (const f of ['index.html', 'en/index.html']) {
+    const html = leer(f);
+    assert.doesNotMatch(html, nuestroNumero, f);
+    assert.doesNotMatch(html, contactoWhatsApp, f);
+    assert.doesNotMatch(html, /wa\.me\//, f);
+  }
+  const html = leer('index.html');
+  assert.doesNotMatch(html, /class="btn wa|id="i-wa"|waButton|mbar-wa|chat-wa/);
+  assert.match(html, /Soporte por chat y correo/);
+  assert.match(html, /¿Quién me responde en el chat\?/);
+  // los botones abren el chat (button con aria-label) y, si el chat no está, llevan al formulario
+  const botones = html.match(/<button type="button" class="btn gaby[^>]*>/g) || [];
+  assert.ok(botones.length >= 10, `solo ${botones.length} botones del chat`);
+  for (const b of botones) assert.match(b, /data-chat="[^"]*".*aria-label="Pregúntale a GABY/);
+  assert.match(html, /id="mbar-chat" data-chat=""/);                                     // la barra del celular
+  assert.match(html, /window\.NovaChat\.abrir\(b, b\.getAttribute\('data-chat'\)\)/);
+  assert.match(html, /irAlFormulario\(b\.getAttribute\('data-app'\)\)/);
+  assert.match(html, /res\.status === 503 && window\.NovaPagina\) window\.NovaPagina\.chatModo\(false\)/);
+  assert.match(html, /if \(b\.enabled\) \{[^}]*modo\(true\); \} else modo\(false\)/);
+  // lo del producto se queda: cotizaciones por WhatsApp, el pedido al WhatsApp de la tienda, los dolores
+  assert.match(html, /La mandas por WhatsApp con el mensaje ya escrito/);
+  assert.match(html, /Pedido a tu WhatsApp:/);
+  assert.match(html, /chats de WhatsApp\?/);
+  assert.match(html, /Tu WhatsApp \(opcional\)/);
+  assert.doesNotMatch(html, /Si después nos escribes desde este número/);
+
+  for (const t of [salesChat.FACTS, salesChat.SYSTEM]) {
+    assert.doesNotMatch(t, /310 376 7561|wa\.me/);
+    assert.doesNotMatch(t, /escribirnos por WhatsApp|responde por WhatsApp|seguir por WhatsApp|Soporte: WhatsApp/);
+  }
+  assert.match(salesChat.FACTS, /Soporte: este chat de la página .* contacto@novaworkorder\.com/);
+  assert.match(salesChat.SYSTEM, /el equipo te responde en contacto@novaworkorder\.com/);
+  assert.match(salesChat.SYSTEM, /«Empieza gratis» del chat/);
+  assert.match(salesChat.FACTS, /@BOLD3103767561/);
+  assert.doesNotMatch(salesChat.FACTS_EN + salesChat.SYSTEM_EN, /310 376 7561|wa\.me/);
+});

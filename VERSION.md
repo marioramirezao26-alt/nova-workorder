@@ -2,6 +2,24 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### La página atiende por el chat de GABY, sin WhatsApp (28-oct-2026)
+- El WhatsApp de NOVA (+57 310 376 7561) dejó de recibir mensajes. Mario: «Quita el botón de WhatsApp en la página, que
+  GABY atienda por el chat de la página no más».
+- **`landing/index.html`:** los 19 enlaces fijos a `wa.me/573103767561` (portada, filas de botones, Servicios, Pedidos,
+  precios, límites, preguntas, quién está detrás, formulario, pie, barra del celular y el «Prefiero seguir por WhatsApp»
+  del chat) y los que armaba el JS (`waButton` de los mensajes del formulario y la barra) pasan a botones «Pregúntale a GABY» (`button[data-chat]`, ícono de chat, `aria-label`) que abren la
+  burbuja con la pregunta de esa sección ya escrita, sin enviarla. La barra del celular queda en dos botones: «Empieza
+  gratis» y «Pregúntale a GABY». Dentro del chat, «Prefiero escribir por correo». Los mensajes del formulario mandan al
+  chat y a contacto@novaworkorder.com. Lo de WhatsApp como función del producto no cambia.
+- **Sin chat** (`GET /api/public/chat` con `enabled: false`, o un 503 del chat por el tope del día): esos botones dicen
+  «Pide información» y llevan al formulario en «información por correo», con la app elegida si el botón la trae. Sin
+  JavaScript se esconden.
+- **`salesChat.js`:** soporte = este chat y contacto@novaworkorder.com; lo que GABY no sabe, «el equipo te responde en
+  contacto@novaworkorder.com»; con interés, el botón «Empieza gratis» del chat; si preguntan por un WhatsApp o un teléfono,
+  no da números.
+- La analítica no cambia: WhatsApp nunca se contó (solo `visita` y un `clic` en «Empieza gratis»), así que tampoco se
+  cuentan los clics al chat.
+
 ### Landing más elegante y recomendaciones de clientes reales (27-oct-2026)
 - Pedido de Mario: una landing más elegante y, al final, recomendaciones de los clientes. **Decisión: no se publican
   reseñas ficticias** (Ley 1480 y la SIC lo tratan como publicidad engañosa, y Meta rechaza anuncios hacia páginas con
