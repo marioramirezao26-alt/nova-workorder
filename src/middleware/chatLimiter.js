@@ -11,4 +11,13 @@ const chatLimiter = limiter({
     : 'Hablamos mucho por hoy 😊. Para seguir, déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com.' }),
 });
 
-module.exports = { chatLimiter };
+// Lo nuevo de la conversación (la página pregunta cada ~8 s mientras el chat está abierto y visible): 1.000 por IP cada
+// hora, un poco más de dos pestañas abiertas toda la hora. Pasado el límite la página deja de preguntar.
+const chatPollLimiter = limiter({
+  name: 'chat-poll',
+  windowMs: 60 * 60 * 1000,
+  max: 1000,
+  onLimit: (req, res) => res.status(429).json({ message: 'Demasiadas consultas. Espera un rato.' }),
+});
+
+module.exports = { chatLimiter, chatPollLimiter };

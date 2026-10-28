@@ -131,7 +131,8 @@ PLATFORM_API_KEY=<llave de al menos 32 caracteres para la API de plataforma; vac
 OPENROUTER_API_KEY=<clave de OpenRouter para el chat de la página de ventas; vacía = sin chat>
 ```
 
-Ver `.env.example` para todas las variables (`TRUST_PROXY`, `MIGRATE_COMPANY_NAME`, `CHAT_MODEL`, `CHAT_DAILY_LIMIT`, `CHAT_ENABLED`).
+Ver `.env.example` para todas las variables (`TRUST_PROXY`, `MIGRATE_COMPANY_NAME`, `CHAT_MODEL`, `CHAT_DAILY_LIMIT`, `CHAT_ENABLED`,
+`GABY_WEBCHAT_KEY`, `GABY_WEBCHAT_URL`, `WEBCHAT_IP_SALT`).
 
 ### Pasar de la versión 1.0 a la 1.1
 
@@ -236,11 +237,20 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
   canal (utm_source del enlace o el sitio que lo trajo) y tipo de equipo. Los robots y los avances de enlaces no cuentan.
 - GET /api/public/reviews — las recomendaciones aprobadas (`name`, `role`, `company`, `city`, `rating`, `text`, `month`),
   sin datos de contacto y con caché de 5 minutos. Sin ninguna, la landing no muestra la sección
-- GET /api/public/chat — `{ enabled }`: si la página muestra la burbuja del chat «GABY · Ventas».
+- GET /api/public/chat — `{ enabled, history }`: si la página muestra la burbuja del chat «GABY · Ventas» y si la
+  conversación vive en GABY (`history`: la página la recupera y consulta lo nuevo).
 - POST /api/public/chat — `{ messages: [{ role, content }] }` → `{ reply }`. Una IA (OpenRouter) que solo sabe precios y
   funciones (`src/utils/salesChat.js`), sin herramientas ni acceso a datos. No guarda lo que escribe el visitante: solo
   cuenta conversaciones y mensajes por día (`ChatStat`). Topes: 30 mensajes por IP cada hora y `CHAT_DAILY_LIMIT` por día.
   Si después llena «Empieza gratis», la solicitud llega a GABY con `source: chat` y sus preguntas en el mensaje.
+  Con `GABY_WEBCHAT_KEY`, y si el navegador manda `session` (`[A-Za-z0-9_-]{16,64}`, al azar, en su localStorage) y
+  `page` (app, utm, ref, referral, l, path), es un proxy hacia GABY (`POST {GABY_WEBCHAT_URL}/message`, cabecera
+  `x-webchat-key`): viaja solo el mensaje nuevo y `ip_hash` = sha256(ip + `WEBCHAT_IP_SALT`), nunca la IP; la respuesta
+  trae además `{ messages, actions, handoff }`. Si GABY no responde (error, 503 o sin configurar) contesta salesChat; el
+  429 de GABY llega al visitante.
+- GET /api/public/chat/messages?session=&after= — proxy a `GET {GABY_WEBCHAT_URL}/messages`: la conversación guardada
+  (al abrir el chat) y lo nuevo (la página pregunta cada ~8 s mientras el chat está abierto y la pestaña visible; por
+  ejemplo, lo que Mario contesta desde el panel, que se muestra como «Equipo NOVA»). Tope: 1.000 consultas por IP por hora.
 
 ### Clientes
 - GET /api/clients

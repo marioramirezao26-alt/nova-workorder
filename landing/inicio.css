@@ -249,3 +249,10 @@ body.chat-open .mbar { display: none; }
   .flujo li::after { left: 40px; right: 0; top: 15px; bottom: auto; width: auto; height: 1px;
     background: linear-gradient(90deg, rgba(79,150,255,.45), rgba(79,150,255,.08)); }
 }
+
+/* chat con GABY conectada: lo que contesta el equipo, los botones que manda GABY y el aviso de que una persona sigue */
+.chat-msg.team { background: rgba(52,211,153,.09); border: 1px solid rgba(52,211,153,.32); }
+.chat-quien { display: block; margin-bottom: 3px; color: var(--ok); font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.chat-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; }
+.chat-accion { color: #fff; }
+.chat-aviso { margin: 0; align-self: center; color: var(--muted); font-size: .8rem; text-align: center; }

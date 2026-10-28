@@ -23,15 +23,15 @@ const ask = (messages) => call('POST', '/public/chat', { body: { messages } });
 
 test('sin clave de OpenRouter el chat no aparece y no responde', async () => {
   delete process.env.OPENROUTER_API_KEY;
-  assert.deepEqual((await call('GET', '/public/chat')).data, { enabled: false });
+  assert.deepEqual((await call('GET', '/public/chat')).data, { enabled: false, history: false });
   assert.equal((await ask([{ role: 'user', content: 'hola' }])).status, 503);
   process.env.OPENROUTER_API_KEY = 'x';
   process.env.CHAT_ENABLED = 'false';
-  assert.deepEqual((await call('GET', '/public/chat')).data, { enabled: false });
+  assert.deepEqual((await call('GET', '/public/chat')).data, { enabled: false, history: false });
 });
 
 test('responde con los últimos 10 turnos limpios y cuenta conversaciones y mensajes del día', async () => {
-  assert.deepEqual((await call('GET', '/public/chat')).data, { enabled: true });
+  assert.deepEqual((await call('GET', '/public/chat')).data, { enabled: true, history: false });
   const res = await ask([{ role: 'user', content: '  ¿Cuánto cuesta?  ' }]);
   assert.equal(res.status, 200);
   assert.match(res.data.reply, /49\.000/);
