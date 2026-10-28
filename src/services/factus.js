@@ -1,4 +1,5 @@
 const { seal, open } = require('../utils/secretBox');
+const { addDays, colombiaDay } = require('../utils/colombia');
 
 // Factura electrónica DIAN (Mejora 3) por medio de Factus, proveedor tecnológico autorizado: la empresa conecta SU cuenta
 // (sus credenciales van cifradas) y su rango de numeración. NOVA arma la factura con los renglones de la cotización
@@ -65,7 +66,7 @@ const nitDv = (nit) => {
 
 const two = (n) => (Math.round(Number(n) * 100) / 100).toFixed(2);
 // Fecha en Colombia (la de `from`, hoy si no, más `days`), AAAA-MM-DD (el servidor corre en UTC).
-const colombiaDate = (days = 0, from = null) => new Date(new Date(from || Date.now()).getTime() - 5 * 3600000 + days * 86400000).toISOString().slice(0, 10);
+const colombiaDate = (days = 0, from = null) => addDays(colombiaDay(from || new Date()), days);
 // Medio de pago (tabla DIAN) según cómo pagó en Wompi: tarjeta 48; PSE o transferencia 47 (Nequi y Daviplata debitan
 // una cuenta: transferencia); otro medio, ZZZ. El efectivo que registra la oficina va con 10.
 const WOMPI_METHOD = { CARD: '48', PSE: '47', BANCOLOMBIA_TRANSFER: '47', NEQUI: '47', DAVIPLATA: '47' };

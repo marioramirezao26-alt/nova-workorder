@@ -1,13 +1,10 @@
 const PageStat = require('../models/PageStat');
 const DemoRequest = require('../models/DemoRequest');
 const { channelOf } = require('../utils/channel');
+const { addDays, colombiaDay, startOfDay } = require('../utils/colombia');
 
 const PAGES = ['/', '/privacidad', '/terminos'];
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp\/|headless|lighthouse|pingdom|uptime|curl|wget|python/i;
-const OFFSET_MS = -5 * 60 * 60 * 1000;                             // Colombia, sin horario de verano
-
-const colombiaDay = (date = new Date()) => new Date(date.getTime() + OFFSET_MS).toISOString().slice(0, 10);
-
 const cleanPath = (path) => {
   const p = String(path || '/').split(/[?#]/)[0].replace(/\.html$/, '').replace(/\/+$/, '') || '/';
   return PAGES.includes(p) ? p : '/otra';
@@ -39,10 +36,10 @@ const getAnalytics = async (req, res) => {
   try {
     const days = Math.min(Math.max(parseInt(req.query.days, 10) || 7, 1), 90);
     const to = colombiaDay();
-    const from = colombiaDay(new Date(Date.now() - (days - 1) * 86400000));
+    const from = addDays(to, -(days - 1));
     const stats = await PageStat.find({ day: { $gte: from, $lte: to } }).lean();
-    // Las solicitudes se cuentan por su fecha en Colombia: desde la medianoche de `from` en UTC-5.
-    const since = new Date(new Date(`${from}T00:00:00.000Z`).getTime() - OFFSET_MS);
+    // Las solicitudes se cuentan por su fecha en Colombia: desde la medianoche de `from` en Colombia.
+    const since = startOfDay(from);
     const requests = await DemoRequest.find({ createdAt: { $gte: since } }).select('channel kind createdAt').lean();
 
     const channels = {};
@@ -85,4 +82,4 @@ const getAnalytics = async (req, res) => {
   }
 };
 
-module.exports = { recordVisit, getAnalytics, colombiaDay, cleanPath };
+module.exports = { recordVisit, getAnalytics, cleanPath };

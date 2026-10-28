@@ -7,7 +7,7 @@ const AuditLog = require('../models/AuditLog');
 const { companyScope } = require('../middleware/authMiddleware');
 const { publicBranding } = require('../utils/branding');
 const { currencyOf, totals } = require('../utils/money');
-const { colombiaDay } = require('./analyticsController');
+const { addDays, colombiaDay, endOfDay } = require('../utils/colombia');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
 const wompi = require('../services/wompi');
@@ -22,8 +22,7 @@ const fail = (status, message) => Object.assign(new Error(message), { statusCode
 const reply = (res, error, fallback) => res.status(error.statusCode || 500).json({ message: error.statusCode ? error.message : fallback });
 
 // «Válida hasta el 30 de octubre» = hasta el final de ese día en Colombia (el servidor corre en UTC).
-const endOfDay = (day) => new Date(`${day}T23:59:59.999-05:00`);
-const defaultValidUntil = () => endOfDay(colombiaDay(new Date(Date.now() + DEFAULT_VALID_DAYS * 86400000)));
+const defaultValidUntil = () => endOfDay(addDays(colombiaDay(), DEFAULT_VALID_DAYS));
 const expired = (q) => q.status === 'enviada' && q.validUntil < new Date();
 // Solo la factura de producción es definitiva; la de pruebas no tiene validez fiscal ni impide facturar en producción.
 // Una factura de antes de guardar el ambiente (sin env) se reconoce por su número: SETP es el prefijo del set de pruebas

@@ -22,9 +22,8 @@ export const formatDay = (value) =>
 export const formatDateTime = (value) =>
   value ? new Date(value).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
-export const isOverdue = (order) =>
-  order.dueDate && !['completada', 'cancelada'].includes(order.status)
-  && new Date(order.dueDate).toISOString().slice(0, 10) < new Date().toISOString().slice(0, 10);
+// Vencida según el día de Colombia, no el de UTC (ver dates.js).
+export { isOverdue } from './dates';
 
 export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 

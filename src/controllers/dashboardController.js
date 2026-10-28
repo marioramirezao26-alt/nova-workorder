@@ -1,5 +1,6 @@
 const WorkOrder = require('../models/WorkOrder');
 const { companyScope } = require('../middleware/authMiddleware');
+const { TZ } = require('../utils/colombia');
 
 const getDashboardSummary = async (req, res) => {
   try {
@@ -53,6 +54,7 @@ const getDashboardSummary = async (req, res) => {
       .limit(5)
       .populate('createdBy', 'name email');
 
+    // El mes de Colombia en que se creó (en UTC, la creada el 31 después de las 7 p. m. contaba en el mes siguiente).
     const monthlyTrend = await WorkOrder.aggregate([
       match,
       {
@@ -61,6 +63,7 @@ const getDashboardSummary = async (req, res) => {
             $dateToString: {
               format: '%Y-%m',
               date: '$createdAt',
+              timezone: TZ,
             },
           },
         },

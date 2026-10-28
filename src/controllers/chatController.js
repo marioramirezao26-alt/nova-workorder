@@ -1,7 +1,7 @@
 const ChatStat = require('../models/ChatStat');
 const salesChat = require('../utils/salesChat');
 const gaby = require('../utils/gabyWebchat');
-const { colombiaDay } = require('./analyticsController');
+const { colombiaDay } = require('../utils/colombia');
 
 const BUSY = 'Ahora no puedo responder. Déjanos tus datos en «Empieza gratis» o escríbenos a contacto@novaworkorder.com y te respondemos hoy.';
 const BUSY_EN = 'I can\'t answer right now. Leave your details in "Start free" or email us at contacto@novaworkorder.com and we\'ll reply today.';

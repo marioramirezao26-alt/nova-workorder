@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
 import { Empty, QuoteTag, formatDateTime, formatDay, money, nitDv, quoteTotals, whatsappLink } from '../ui';
+import { addDays, colombiaDay } from '../dates';
 
 // «Cotizaciones»: se arman en borrador, se envían al cliente con un enlace (WhatsApp o copiado) y el cliente la aprueba
 // o la rechaza sin cuenta. Al aprobarse se crea la orden de trabajo. Un usuario cliente ve aquí las suyas.
 const FILTERS = ['todas', 'borrador', 'enviada', 'aprobada', 'rechazada', 'vencida'];
 const FILTER_LABEL = { todas: 'Todas', borrador: 'Borradores', enviada: 'Enviadas', aprobada: 'Aprobadas', rechazada: 'Rechazadas', vencida: 'Vencidas' };
-const colombiaDay = (offsetDays = 0) => new Date(Date.now() - 5 * 3600000 + offsetDays * 86400000).toISOString().slice(0, 10);
 const newItem = (currency) => ({ description: '', qty: 1, unitPrice: '', taxRate: currency === 'USD' ? 0 : 19 });
 // El estado del último intento en Wompi, en palabras (Wompi lo manda en inglés).
 const TX_LABEL = { PENDING: 'en proceso', APPROVED: 'aprobado', DECLINED: 'rechazado', VOIDED: 'anulado', ERROR: 'con error' };
@@ -16,7 +16,7 @@ const testMark = (p) => (p?.test ? ` ${t('(prueba)')}` : '');
 
 function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
   const [clients, setClients] = useState([]);
-  const [form, setForm] = useState(initial || { client: '', title: '', notes: '', validUntil: colombiaDay(15), items: [newItem(currency)] });
+  const [form, setForm] = useState(initial || { client: '', title: '', notes: '', validUntil: addDays(colombiaDay(), 15), items: [newItem(currency)] });
   const [busy, setBusy] = useState(false);
   useEffect(() => { api.get('/clients?limit=100').then(({ data }) => setClients(data.items || [])).catch(() => {}); }, []);
   const setItem = (n, patch) => setForm({ ...form, items: form.items.map((i, k) => (k === n ? { ...i, ...patch } : i)) });
@@ -256,7 +256,7 @@ export default function Quotes({ api, user, go }) {
           editar se usa la moneda de la cotización, no la que tenga la empresa hoy. */}
       {form && (
         <QuoteForm key={form._id || 'nueva'} api={api} currency={form.currency || currency} onCancel={() => setForm(null)} onSaved={saved}
-          initial={form._id ? { _id: form._id, client: form.client?._id || form.client, title: form.title, notes: form.notes, validUntil: new Date(new Date(form.validUntil).getTime() - 5 * 3600000).toISOString().slice(0, 10),
+          initial={form._id ? { _id: form._id, client: form.client?._id || form.client, title: form.title, notes: form.notes, validUntil: colombiaDay(form.validUntil),
             items: form.items.map((i) => ({ description: i.description, qty: i.qty, unitPrice: i.unitPrice, taxRate: i.taxRate, excluded: Boolean(i.excluded) })) } : null} />
       )}
 
@@ -276,7 +276,7 @@ export default function Quotes({ api, user, go }) {
                 <div className="order-card-head">
                   <QuoteTag status={q.status} />
                   {q.status === 'aprobada' && <span className={`status-tag ${q.payment?.status === 'pagado' ? 'q-aprobada' : 'q-vencida'}`}>{t(PAY_TAG[q.payment?.status] || 'Por cobrar')}{testMark(q.payment)}</span>}
-                  <span className="due">#{q.number} · {t('válida hasta {d}', { d: formatDay(new Date(new Date(q.validUntil).getTime() - 5 * 3600000)) })}</span>
+                  <span className="due">#{q.number} · {t('válida hasta {d}', { d: formatDay(colombiaDay(q.validUntil)) })}</span>
                 </div>
                 <h3>{q.title}</h3>
                 <small className="muted">{q.client?.name || '—'} · <strong>{money(q.total, q.currency)}</strong></small>
