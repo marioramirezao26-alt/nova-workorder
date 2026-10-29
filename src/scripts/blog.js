@@ -206,6 +206,10 @@ const paginaArticulo = (a, todos) => {
       { '@type': 'ListItem', position: 2, name: t.blog, item: `${SITIO}${t.base}` },
       { '@type': 'ListItem', position: 3, name: a.titulo, item: `${SITIO}${url}` }] },
   ];
+  // Preguntas frecuentes del artículo (opcional, "faq": [[pregunta, respuesta], …]): las mismas que se ven en la página,
+  // para que Google y los asistentes de IA citen la respuesta directa.
+  if (a.faq && a.faq.length) extraLd.push({ '@type': 'FAQPage', mainEntity: a.faq.map(([q, r]) => ({ '@type': 'Question', name: q,
+    acceptedAnswer: { '@type': 'Answer', text: r } })) });
   return cabeza({ t, titulo, desc: a.descripcion, url, img: imgDe(a), imgAlt: a.portada.alt || a.titulo, tipo: 'article', alternos, extraLd,
     publicado: a.fecha }) + `
   <main id="contenido" tabindex="-1" class="blog-articulo">
