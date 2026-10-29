@@ -742,7 +742,8 @@
         var data = { product: a, kind: form.kind.value, consent: prueba && form.consent.checked, lang: 'es', market: 'mx' };
         ['company', 'name', 'email', 'phone', 'technicians', 'message', 'website'].forEach(function (k) { data[k] = form[k].value.trim(); });
         if (data.product === 'pedidos') data.technicians = '';
-        data.utm = store.get('nova-utm');                                   // siempre texto, nunca null
+        data.utm = store.get('nova-utm');
+        try { data.campaign = (JSON.parse(store.get('nova-utms') || '{}') || {}).campaign || ''; } catch (e) { data.campaign = ''; }   // pieza-<id> u otra campaña                                   // siempre texto, nunca null
         data.ref = store.get('nova-ref');
         data.referral = store.get('nova-referral');
         if (leadToken) data.l = leadToken;                                  // la ficha del chat con GABY
