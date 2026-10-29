@@ -58,6 +58,7 @@ const EN = {
   'Si lo dejas vacío, Factus lo calcula ({dv}).': 'If you leave it empty, Factus calculates it ({dv}).',
   'País (código de dos letras)': 'Country (two-letter code)',
   '0 % (exento)': '0% (exempt)',
+  '8 % (frontera)': '8% (border region)',
   'Excluido de IVA': 'VAT-excluded',
   'excluido de IVA': 'VAT-excluded',
   'Excluido': 'Excluded',

@@ -75,12 +75,14 @@ const request = async (method, path, { body, timeout }) => {
 };
 
 // POST {url}/message. Devuelve { status, data } con data ya limpio; un error de red o de tiempo sale como excepción.
-// market: 'us' (EE. UU., en dólares; lang 'en' siempre lo es) o 'co'. GABY cotiza según el mercado y habla según lang.
+// market: 'us' (EE. UU., en dólares; lang 'en' siempre lo es), 'mx' (México, en pesos mexicanos) o 'co'. GABY cotiza
+// según el mercado y habla según lang.
 const send = async ({ session, text, lang, market, page, ip }) => {
   const en = lang === 'en';
   const r = await request('POST', '/message', {
     timeout: SEND_TIMEOUT_MS,
-    body: { session, text: String(text).slice(0, 1000), lang: en ? 'en' : 'es', market: en || market === 'us' ? 'us' : 'co',
+    body: { session, text: String(text).slice(0, 1000), lang: en ? 'en' : 'es',
+      market: en || market === 'us' ? 'us' : market === 'mx' ? 'mx' : 'co',
       page: cleanPage(page), ip_hash: ipHash(ip) },
   });
   if (r.status !== 200) return { status: r.status, data: {} };

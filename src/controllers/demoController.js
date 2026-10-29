@@ -6,8 +6,13 @@ const fields = 'company name email phone lang market product technicians message
 
 // `l`: la ficha del chat con GABY (enlace de prueba). Uno que no tenga la forma esperada se ignora y la solicitud sigue:
 // un enlace mal copiado nunca debe impedir crear la prueba.
-// El mercado: la página en inglés (/en/) siempre es de Estados Unidos; la de /es-us/ manda market: 'us' en español.
-const marketOf = (b) => (b && (b.lang === 'en' || b.market === 'us') ? 'us' : 'co');
+// El mercado: la página en inglés (/en/) siempre es de Estados Unidos; la de /es-us/ manda market: 'us' en español y la
+// de /es-mx/, market: 'mx'. Cualquier otra cosa es Colombia.
+const marketOf = (b) => {
+  if (b && (b.lang === 'en' || b.market === 'us')) return 'us';
+  if (b && b.market === 'mx') return 'mx';
+  return 'co';
+};
 
 const leadTokenOf = (value) => (typeof value === 'string' && LEAD_TOKEN.test(value.trim()) ? value.trim() : null);
 

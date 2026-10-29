@@ -8,7 +8,7 @@ const Company = require('../models/Company');
 const wompi = require('../services/wompi');
 const factus = require('../services/factus');
 const { audit } = require('../utils/audit');
-const { isUS } = require('../utils/money');
+const { isColombia } = require('../utils/money');
 const { limiter } = require('../utils/rateStore');
 const { getOwnReview, saveOwnReview, withdrawOwnReview } = require('../controllers/reviewController');
 const { LIMITS } = require('../models/Review');
@@ -96,7 +96,7 @@ router.put('/wompi', protect, authorize('admin'), wompiLimiter, [
     if (new Set([env(publicKey), env(integritySecret), env(eventsSecret)]).size !== 1) {
       return res.status(400).json({ message: 'Las tres llaves deben ser del mismo ambiente: todas de producción o todas de pruebas' });
     }
-    if (isUS(req.company)) return res.status(400).json({ message: 'Wompi cobra en pesos colombianos: tu empresa trabaja en dólares' });
+    if (!isColombia(req.company)) return res.status(400).json({ message: 'Wompi cobra en pesos colombianos: tu empresa cotiza en otra moneda' });
     const merchant = await wompi.verifyMerchant(publicKey);
     if (merchant.error) return res.status(400).json({ message: merchant.error });
     const company = await Company.findById(req.company._id);
@@ -177,7 +177,7 @@ router.put('/factus', protect, authorize('admin'), factusLimiter, [
   validateRequest,
 ], async (req, res) => {
   try {
-    if (isUS(req.company)) return res.status(400).json({ message: 'La factura electrónica DIAN es para empresas en Colombia' });
+    if (!isColombia(req.company)) return res.status(400).json({ message: 'La factura electrónica DIAN es para empresas en Colombia' });
     const company = await Company.findById(req.company._id);
     company.factus = { env: req.body.env, ...factus.sealCredentials(req.body), numberingRangeId: req.body.numberingRangeId, connectedAt: new Date() };
     factus.forget(company._id);                          // los tokens de antes no prueban nada

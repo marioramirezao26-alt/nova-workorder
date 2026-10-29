@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { t } from '../i18n';
-import { Empty, QuoteTag, formatDateTime, formatDay, money, nitDv, phoneRegion, quoteTotals, usCompany, whatsappLink } from '../ui';
+import { Empty, QuoteTag, companyCurrency, formatDateTime, formatDay, money, nitDv, phoneRegion, quoteTotals, whatsappLink, withCents } from '../ui';
 import { addDays, colombiaDay } from '../dates';
 
 // «Cotizaciones»: se arman en borrador, se envían al cliente con un enlace (WhatsApp o copiado) y el cliente la aprueba
 // o la rechaza sin cuenta. Al aprobarse se crea la orden de trabajo. Un usuario cliente ve aquí las suyas.
 const FILTERS = ['todas', 'borrador', 'enviada', 'aprobada', 'rechazada', 'vencida'];
 const FILTER_LABEL = { todas: 'Todas', borrador: 'Borradores', enviada: 'Enviadas', aprobada: 'Aprobadas', rechazada: 'Rechazadas', vencida: 'Vencidas' };
-const newItem = (currency) => ({ description: '', qty: 1, unitPrice: '', taxRate: currency === 'USD' ? 0 : 19 });
+// El impuesto con que arranca cada renglón: IVA de Colombia (19 %) o de México (16 %); en dólares, el que escriba el negocio.
+const DEFAULT_TAX = { COP: 19, MXN: 16, USD: 0 };
+const newItem = (currency) => ({ description: '', qty: 1, unitPrice: '', taxRate: DEFAULT_TAX[currency] ?? 0 });
+// «IVA» en Colombia y en México; «Impuesto» en dólares (el sales tax de cada estado).
+export const taxLabel = (currency) => (currency === 'USD' ? 'Impuesto' : 'IVA');
 // El estado del último intento en Wompi, en palabras (Wompi lo manda en inglés).
 const TX_LABEL = { PENDING: 'en proceso', APPROVED: 'aprobado', DECLINED: 'rechazado', VOIDED: 'anulado', ERROR: 'con error' };
 const PAY_TAG = { pagado: 'Pagada', anticipo: 'Anticipo' };
@@ -51,9 +55,16 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
           <div key={n} className="quote-line">
             <input required maxLength={200} aria-label={t('Descripción')} placeholder={t('Descripción')} value={item.description} onChange={(e) => setItem(n, { description: e.target.value })} />
             <input required type="number" min="0.01" step="0.01" aria-label={t('Cant.')} value={item.qty} onChange={(e) => setItem(n, { qty: e.target.value })} />
-            <input required type="number" min="0" step={currency === 'USD' ? '0.01' : '1'} aria-label={t('Precio unitario')} value={item.unitPrice} onChange={(e) => setItem(n, { unitPrice: e.target.value })} />
+            <input required type="number" min="0" step={withCents(currency) ? '0.01' : '1'} aria-label={t('Precio unitario')} value={item.unitPrice} onChange={(e) => setItem(n, { unitPrice: e.target.value })} />
             {currency === 'USD' ? (
               <input type="number" min="0" max="30" step="any" aria-label={t('Impuesto %')} value={item.taxRate} onChange={(e) => setItem(n, { taxRate: e.target.value })} />
+            ) : currency === 'MXN' ? (
+              // IVA de México: 16 % general, 8 % en la región fronteriza y 0 % (tasa cero o exento)
+              <select aria-label={t('IVA')} value={String(item.taxRate)} onChange={(e) => setItem(n, { taxRate: e.target.value, excluded: false })}>
+                <option value="16">16 %</option>
+                <option value="8">{t('8 % (frontera)')}</option>
+                <option value="0">0 %</option>
+              </select>
             ) : (
               // al 0 % es exento; «excluido» (art. 476 E.T.) va también al 0 % pero la factura lo marca aparte
               <select aria-label={t('IVA')} value={item.excluded ? 'excluido' : String(item.taxRate)}
@@ -71,7 +82,7 @@ function QuoteForm({ api, currency, initial, onSaved, onCancel }) {
       </div>
       <dl className="quote-sums">
         <div><dt>{t('Subtotal')}</dt><dd>{money(sums.subtotal, currency)}</dd></div>
-        <div><dt>{t(currency === 'USD' ? 'Impuesto' : 'IVA')}</dt><dd>{money(sums.tax, currency)}</dd></div>
+        <div><dt>{t(taxLabel(currency))}</dt><dd>{money(sums.tax, currency)}</dd></div>
         <div className="grand"><dt>{t('Total')}</dt><dd>{money(sums.total, currency)}</dd></div>
       </dl>
       <label>{t('Válida hasta')}<input type="date" required min={colombiaDay()} value={form.validUntil} onChange={(e) => setForm({ ...form, validUntil: e.target.value })} /></label>
@@ -180,7 +191,7 @@ function InvoiceBox({ api, quote, env, onDone }) {
 }
 
 export default function Quotes({ api, user, go }) {
-  const currency = usCompany(user.company) ? 'USD' : 'COP';
+  const currency = companyCurrency(user.company);
   const canWrite = user.role === 'admin' || user.role === 'tecnico';
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState('todas');
@@ -289,7 +300,7 @@ export default function Quotes({ api, user, go }) {
                         <tr key={n}><td>{i.qty} × {i.description}{i.excluded ? ` · ${t('excluido de IVA')}` : ''}</td><td className="num">{money(i.amount, q.currency)}</td></tr>
                       ))}
                       <tr className="sum"><td>{t('Subtotal')}</td><td className="num">{money(q.subtotal, q.currency)}</td></tr>
-                      <tr className="sum"><td>{t(q.currency === 'USD' ? 'Impuesto' : 'IVA')}</td><td className="num">{money(q.tax, q.currency)}</td></tr>
+                      <tr className="sum"><td>{t(taxLabel(q.currency))}</td><td className="num">{money(q.tax, q.currency)}</td></tr>
                       <tr className="grand"><td>{t('Total')}</td><td className="num">{money(q.total, q.currency)}</td></tr>
                     </tbody>
                   </table>

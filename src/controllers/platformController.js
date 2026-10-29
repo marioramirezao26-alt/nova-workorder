@@ -78,8 +78,9 @@ const view = async (company) => ({
 const createCompany = async (req, res) => {
   try {
     const { name, adminName, adminEmail, maxTechnicians = null, status = 'activa', lang = 'es' } = req.body;
-    // El mercado va aparte del idioma (una empresa hispana de EE. UU.: es + us); en inglés siempre es us.
-    const market = lang === 'en' || req.body.market === 'us' ? 'us' : 'co';
+    // El mercado va aparte del idioma (una empresa hispana de EE. UU.: es + us; una de México: es + mx); en inglés
+    // siempre es us.
+    const market = lang === 'en' || req.body.market === 'us' ? 'us' : req.body.market === 'mx' ? 'mx' : 'co';
     const email = String(adminEmail).toLowerCase();
 
     if (await User.findOne({ email })) {

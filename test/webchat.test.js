@@ -132,6 +132,13 @@ test('a GABY le llega el mercado: /es-us/ es us en español; la página en ingl�
   assert.equal(got[0].body.page.path, '/es-us/');
 });
 
+test('a GABY le llega el mercado mx desde /es-mx/ (en español); la página en inglés sigue siendo us', async () => {
+  await ask({ session: SESION, messages: turnos, page: { ...PAGE, path: '/es-mx/' }, lang: 'es', market: 'mx' });
+  await ask({ session: SESION, messages: turnos, page: PAGE, lang: 'en', market: 'mx' });
+  assert.deepEqual(got.map((r) => [r.body.lang, r.body.market]), [['es', 'mx'], ['en', 'us']]);
+  assert.equal(got[0].body.page.path, '/es-mx/');
+});
+
 test('si GABY falla, no responde o no está configurada, contesta salesChat y el visitante no se queda sin respuesta', async () => {
   mode = '503';
   let res = await ask({ session: SESION, messages: [{ role: 'user', content: 'a' }] });

@@ -6,7 +6,7 @@ const WorkOrder = require('../models/WorkOrder');
 const AuditLog = require('../models/AuditLog');
 const { companyScope } = require('../middleware/authMiddleware');
 const { publicBranding } = require('../utils/branding');
-const { currencyOf, marketOf, totals } = require('../utils/money');
+const { currencyOf, defaultTaxRate, marketOf, totals } = require('../utils/money');
 const { addDays, colombiaDay, endOfDay } = require('../utils/colombia');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
@@ -86,7 +86,7 @@ const buildItems = (raw, currency) => {
     description: String((i && i.description) || '').trim().slice(0, 200),
     qty: Math.round(Number(i && i.qty) * 100) / 100,          // dos decimales, y se valida ya redondeada (0,004 queda en 0)
     unitPrice: Number(i && i.unitPrice),
-    taxRate: i && i.taxRate !== undefined && i.taxRate !== '' ? Number(i.taxRate) : (currency === 'COP' ? 19 : 0),
+    taxRate: i && i.taxRate !== undefined && i.taxRate !== '' ? Number(i.taxRate) : defaultTaxRate(currency),
     excluded: currency === 'COP' && Boolean(i && i.excluded),   // excluido de IVA: va al 0 %
   })).map((i) => (i.excluded ? { ...i, taxRate: 0 } : i));
   if (!items.length || items.length > 50) throw fail(400, 'La cotización lleva entre 1 y 50 renglones');

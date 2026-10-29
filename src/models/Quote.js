@@ -26,7 +26,7 @@ const quoteSchema = new mongoose.Schema(
     title: { type: String, required: [true, 'El título es obligatorio'], trim: true, maxlength: 150 },
     notes: { type: String, default: '', trim: true, maxlength: 2000 },     // condiciones, garantía, forma de pago…
     items: { type: [itemSchema], validate: [(v) => v.length >= 1 && v.length <= 50, 'La cotización lleva entre 1 y 50 renglones'] },
-    currency: { type: String, enum: ['COP', 'USD'], required: true },
+    currency: { type: String, enum: ['COP', 'USD', 'MXN'], required: true },
     subtotal: { type: Number, required: true },
     tax: { type: Number, required: true },
     total: { type: Number, required: true },

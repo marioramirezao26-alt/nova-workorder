@@ -55,7 +55,8 @@ const viaGaby = async (req, res, { session, text, en, first }) => {
 };
 
 // POST /api/public/chat — { messages: [{ role: 'user' | 'assistant', content }], session?, page?, lang?, market? } → { reply }.
-// market 'us' (la página /es-us/): en español pero con precios en dólares; lang 'en' siempre es us.
+// market 'us' (la página /es-us/): en español pero con precios en dólares; 'mx' (/es-mx/): en pesos mexicanos; lang 'en'
+// siempre es us.
 // Con `session` y GABY configurada, solo el último mensaje viaja a GABY (que guarda la conversación) y la respuesta trae
 // también { messages, actions, handoff }. Sin sesión (la página en inglés) o si GABY falla, responde salesChat con el
 // historial que guarda el navegador, y aquí no se guarda lo que escribe.

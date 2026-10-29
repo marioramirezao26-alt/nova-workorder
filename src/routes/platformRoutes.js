@@ -1,5 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
+const { MARKETS } = require('../utils/money');
 const { platformAuth } = require('../middleware/platformAuth');
 const { validateRequest } = require('../middleware/validateRequest');
 const { validateObjectId } = require('../middleware/validateObjectId');
@@ -22,7 +23,7 @@ router.post('/companies', [
   body('maxTechnicians').optional({ nullable: true }).isInt({ min: 0, max: 10000 }).withMessage('maxTechnicians debe ser un entero'),
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
   body('lang').optional().isIn(['es', 'en']).withMessage('Idioma inválido: es o en'),
-  body('market').optional().isIn(['co', 'us']).withMessage('Mercado inválido: co o us'),
+  body('market').optional().isIn(MARKETS).withMessage('Mercado inválido: co, us o mx'),
   validateRequest,
 ], createCompany);
 router.get('/companies/:id', validateObjectId, getCompany);
@@ -31,7 +32,7 @@ router.patch('/companies/:id', validateObjectId, [
   body('maxTechnicians').optional({ nullable: true }).isInt({ min: 0, max: 10000 }).withMessage('maxTechnicians debe ser un entero'),
   body('status').optional().isIn(STATUSES).withMessage('Estado inválido'),
   body('lang').optional().isIn(['es', 'en']).withMessage('Idioma inválido: es o en'),
-  body('market').optional().isIn(['co', 'us']).withMessage('Mercado inválido: co o us'),
+  body('market').optional().isIn(MARKETS).withMessage('Mercado inválido: co, us o mx'),
   validateRequest,
 ], updateCompany);
 

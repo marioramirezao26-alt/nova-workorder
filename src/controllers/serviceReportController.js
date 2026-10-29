@@ -7,7 +7,7 @@ const Company = require('../models/Company');
 const { companyScope } = require('../middleware/authMiddleware');
 const { publicBranding } = require('../utils/branding');
 const { audit } = require('../utils/audit');
-const { isUS, marketOf } = require('../utils/money');
+const { marketOf } = require('../utils/money');
 
 // Informe de servicio (Mejora 1): checklist por tipo de servicio, fotos de antes y después, firma del cliente en el
 // celular del técnico y un enlace público con el informe (para imprimir o guardar en PDF) que se le comparte al cliente.
@@ -28,8 +28,10 @@ const orderFilter = (req) => {
   return filter;
 };
 
-// Zona horaria de la empresa para las horas que ve el cliente: Colombia, o Estados Unidos (hora del Este) según el mercado.
-const timeZoneOf = (company) => (isUS(company) ? 'America/New_York' : 'America/Bogota');
+// Zona horaria de la empresa para las horas que ve el cliente, según el mercado: Colombia, Estados Unidos (hora del Este)
+// o México (Ciudad de México).
+const TIME_ZONES = { co: 'America/Bogota', us: 'America/New_York', mx: 'America/Mexico_City' };
+const timeZoneOf = (company) => TIME_ZONES[marketOf(company)];
 
 const findOrder = async (req) => {
   const order = await WorkOrder.findOne({ $and: [orderFilter(req), { _id: req.params.id }] });
