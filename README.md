@@ -237,7 +237,8 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 - POST /api/public/demo — «Empieza gratis» o «Pide tu demo»; guarda el canal de llegada (`utm`/`ref`)
 - POST /api/public/visit — contador anónimo (`event`: visita o clic). Sin cookies ni IP: solo suma por día, página,
   canal (utm_source del enlace o el sitio que lo trajo), tipo de equipo y mercado. El mercado lo saca el servidor de la
-  ruta (`path`): /es-us → us, /en → us-en, /es-mx → mx y lo demás → co. Los robots y los avances de enlaces no cuentan.
+  ruta (`path`): /es-us → us, /en → us-en (también /en/blog/), /es-mx → mx y lo demás → co (también /blog/). El blog
+  manda el mismo contador (lo pone src/scripts/blog.js). Los robots y los avances de enlaces no cuentan.
 - GET /api/public/reviews — las recomendaciones aprobadas (`name`, `role`, `company`, `city`, `rating`, `text`, `month`),
   sin datos de contacto y con caché de 5 minutos. Sin ninguna, la landing no muestra la sección
 - GET /api/public/chat — `{ enabled, history }`: si la página muestra la burbuja del chat «GABY · Ventas» y si la

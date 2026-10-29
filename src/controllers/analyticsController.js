@@ -10,7 +10,9 @@ const MARKETS = PageStat.MARKETS;                                  // co, us, us
 const BOT = /bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp\/|headless|lighthouse|pingdom|uptime|curl|wget|python/i;
 const cleanPath = (path) => {
   const p = String(path || '/').split(/[?#]/)[0].replace(/\.html$/, '').replace(/\/+$/, '') || '/';
-  return PAGES.includes(p) ? p : '/otra';
+  if (PAGES.includes(p)) return p;
+  if (/^(\/en)?\/blog(\/[a-z0-9-]{1,60})?$/.test(p)) return p.startsWith('/en/') ? '/en/blog' : '/blog';   // el blog, junto
+  return '/otra';
 };
 
 // El mercado de una visita sale de la ruta que manda la página (location.pathname), en el servidor: /es-us → us,

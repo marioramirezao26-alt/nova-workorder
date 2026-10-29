@@ -123,3 +123,29 @@ test('el índice viejo (sin mercado) se cambia por el nuevo al arrancar, y así 
   assert.equal(await PageStat.countDocuments(key), 2);
   await mongoose.model('PageStat').syncIndexes();
 });
+
+test('el blog también cuenta: /blog/ es co y /en/blog/ es us-en, cada uno con el mismo contador de las portadas', async () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const leer = (f) => fs.readFileSync(path.join(__dirname, '..', 'landing', f), 'utf8');
+  for (const f of ['blog/index.html', 'blog/plantilla-orden-de-servicio/index.html', 'en/blog/index.html',
+    'en/blog/organize-work-orders-without-paper/index.html']) {
+    const html = leer(f);
+    assert.match(html, /fetch\('\/api\/public\/visit'/, `${f}: sin contador`);
+    assert.match(html, /track\('visita'\)/);
+    assert.match(html, /track\('clic'\)/);
+  }
+  assert.equal(marketOfPath('/blog/'), 'co');
+  assert.equal(marketOfPath('/blog/plantilla-orden-de-servicio/'), 'co');
+  assert.equal(marketOfPath('/en/blog/organize-work-orders-without-paper/'), 'us-en');
+  assert.equal(cleanPath('/blog/plantilla-orden-de-servicio/'), '/blog');
+  assert.equal(cleanPath('/en/blog/'), '/en/blog');
+  assert.equal(cleanPath('/blog/<script>'), '/otra');
+  await visit({ event: 'visita', path: '/blog/plantilla-orden-de-servicio/' });
+  await visit({ event: 'visita', path: '/en/blog/' });
+  await visit({ event: 'clic', path: '/en/blog/write-a-quote-customers-approve-fast/' });
+  const { data } = await call('GET', '/platform/analytics?days=1', { platformKey: KEY });
+  assert.equal(data.byMarket.find((m) => m.market === 'co').visits, 1);
+  assert.deepEqual(data.byMarket.find((m) => m.market === 'us-en'), { market: 'us-en', visits: 1, clicks: 1, requests: 0, trials: 0, conversion: 0 });
+  assert.deepEqual(data.pages.map((p) => p.path).sort(), ['/blog', '/en/blog']);
+});
