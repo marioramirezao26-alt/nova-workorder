@@ -2,7 +2,7 @@ const DemoRequest = require('../models/DemoRequest');
 const { LEAD_TOKEN } = DemoRequest;
 const { channelOf, REF } = require('../utils/channel');
 
-const fields = 'company name email phone lang market product technicians message source channel referral leadToken kind consentAt status receivedAt createdAt';
+const fields = 'company name email phone lang market product technicians message source channel referral campaign leadToken kind consentAt status receivedAt createdAt';
 
 // `l`: la ficha del chat con GABY (enlace de prueba). Uno que no tenga la forma esperada se ignora y la solicitud sigue:
 // un enlace mal copiado nunca debe impedir crear la prueba.
@@ -12,6 +12,11 @@ const marketOf = (b) => {
   if (b && (b.lang === 'en' || b.market === 'us')) return 'us';
   if (b && b.market === 'mx') return 'mx';
   return 'co';
+};
+
+const campaignOf = (value) => {
+  const c = String(value || '').trim().toLowerCase().slice(0, 60);
+  return /^[a-z0-9_-]+$/.test(c) ? c : null;
 };
 
 const leadTokenOf = (value) => (typeof value === 'string' && LEAD_TOKEN.test(value.trim()) ? value.trim() : null);
@@ -35,7 +40,7 @@ const requestDemo = async (req, res) => {
     await DemoRequest.create({ company, name, email, phone, lang, market, product: product || 'servicios', technicians, message, source: req.body.source === 'chat' ? 'chat' : 'web',
       kind: kind || 'demo', channel: channelOf({ utm: req.body.utm, ref: req.body.ref, referral: req.body.referral }),
       referral: REF.test(String(req.body.referral || '').toLowerCase()) ? String(req.body.referral).toLowerCase() : null,
-      leadToken: leadTokenOf(req.body.l), consentAt: kind === 'prueba' ? new Date() : null });
+      campaign: campaignOf(req.body.campaign), leadToken: leadTokenOf(req.body.l), consentAt: kind === 'prueba' ? new Date() : null });
     return res.status(201).json({ ok: true });
   } catch (error) {
     return res.status(500).json({ message: req.body.lang === 'en' ? 'We could not save your request. Email us at contacto@novaworkorder.com.'

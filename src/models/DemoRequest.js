@@ -27,6 +27,9 @@ const demoRequestSchema = new mongoose.Schema(
     channel: { type: String, trim: true, maxlength: 20, default: null },
     // Código de recomendación del cliente que compartió su enlace (?ref=…): GABY le regala un mes cuando este pague.
     referral: { type: String, trim: true, lowercase: true, maxlength: 20, default: null },
+    // La campaña del enlace con que llegó (utm_campaign): «pieza-<id>» de una publicación de Luna, el código de un anuncio
+    // o de un lote. Solo letras, números, guiones y guion bajo; GABY la usa en el grafo para saber qué pieza trajo a quién.
+    campaign: { type: String, trim: true, lowercase: true, maxlength: 60, match: /^[a-z0-9_-]+$/, default: null },
     // La ficha de GABY de quien llegó con el enlace de prueba del chat (?l=…): un código opaco (no dice quién es), corto y
     // solo con letras y números. GABY une la prueba a esa ficha antes que por correo o celular.
     leadToken: { type: String, trim: true, maxlength: 32, match: LEAD_TOKEN, default: null },

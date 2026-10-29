@@ -102,3 +102,20 @@ test('la landing lee el enlace de GABY (?l=&app=&t=) y lo manda en el formulario
   assert.match(html, /if \(enlace\.app\) form\.product\.value = enlace\.app;/);                // la app ya elegida
   assert.match(html, /form\.technicians\.value = String\(enlace\.size\)/);                      // y los técnicos
 });
+
+test('la campaña del enlace (utm_campaign, p. ej. pieza-42) se guarda validada y GABY la lee', async () => {
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, campaign: 'Pieza-42' } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, email: 'b@x.co', campaign: '<script>' } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, email: 'c@x.co', campaign: { $gt: '' } } })).status, 201);
+  assert.equal((await call('POST', '/public/demo', { body: { ...demo, email: 'd@x.co' } })).status, 201);
+  const items = (await call('GET', '/platform/demo-requests', { platformKey: KEY })).data.items;
+  assert.deepEqual(items.map((d) => [d.email, d.campaign]),
+    [['laura@friototal.com', 'pieza-42'], ['b@x.co', null], ['c@x.co', null], ['d@x.co', null]]);
+});
+
+test('las cuatro portadas mandan la campaña del enlace en el formulario', () => {
+  const fs = require('node:fs');
+  for (const f of ['index.html', 'es-us/index.html', 'es-mx/index.html', 'en/index.html']) {
+    assert.match(fs.readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8'), /data\.campaign = /, f);
+  }
+});
