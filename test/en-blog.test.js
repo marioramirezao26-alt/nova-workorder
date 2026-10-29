@@ -194,11 +194,11 @@ test('sitemap.xml válido y completo, y robots.txt lo anuncia', () => {
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'deploy', 'Caddyfile'), 'utf8'), /try_files \{path\} \{path\}\.html \{path\}\/index\.html/);
 });
 
-test('el blog: 6 artículos en español y 2 en inglés, útiles, honestos y con su SEO', () => {
+test('el blog: 8 artículos en español y 2 en inglés, útiles, honestos y con su SEO', () => {
   const todos = blog.articulos();
   const es = todos.filter((a) => a.lang === 'es');
   const en = todos.filter((a) => a.lang === 'en');
-  assert.equal(es.length, 6);
+  assert.equal(es.length, 8);
   assert.equal(en.length, 2);
   for (const a of todos) {
     const n = blog.palabras(a.cuerpo);
