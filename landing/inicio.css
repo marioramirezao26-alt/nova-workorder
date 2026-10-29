@@ -1,4 +1,4 @@
-/* Solo para index.html (no toca /en ni los legales). Móvil primero: base hasta 720 px. */
+/* Para las portadas (/, /en/, /es-us/, /es-mx/; las secciones de /en/ tienen id en inglés). No toca los legales. Móvil primero: base hasta 720 px. */
 :root { --srv: #4f96ff; --ped: #ffb35c; }
 section[id] { scroll-margin-top: 76px; }
 main:focus { outline: none; }
@@ -87,8 +87,8 @@ section.ped-sec::before { background: linear-gradient(90deg, transparent, var(--
 .features.compact .feature .icon { grid-row: span 2; width: 38px; height: 38px; margin: 0; border-radius: 10px; }
 .features.compact .feature .icon .ico { width: 19px; height: 19px; }
 .features.compact .feature h3 { margin: 0; font-size: 1.02rem; }
-#pedidos .feature .icon { color: #ffc98c; background: linear-gradient(180deg, rgba(255,179,92,.16), rgba(255,179,92,.05)); border-color: rgba(255,179,92,.26); }
-#sin-riesgo .feature .icon { color: var(--ok); background: linear-gradient(180deg, rgba(52,211,153,.15), rgba(52,211,153,.05)); border-color: rgba(52,211,153,.28); }
+:is(#pedidos, #stores) .feature .icon { color: #ffc98c; background: linear-gradient(180deg, rgba(255,179,92,.16), rgba(255,179,92,.05)); border-color: rgba(255,179,92,.26); }
+:is(#sin-riesgo, #no-risk) .feature .icon { color: var(--ok); background: linear-gradient(180deg, rgba(52,211,153,.15), rgba(52,211,153,.05)); border-color: rgba(52,211,153,.28); }
 .incluye { margin-top: 16px; }
 .incluye ul, .limites ul { padding-left: 38px; margin: 0 0 18px; color: var(--dim); display: grid; gap: 8px; }
 .incluye b { color: var(--text); }
@@ -108,9 +108,9 @@ section.ped-sec::before { background: linear-gradient(90deg, transparent, var(--
 .dos-pasos .step::before { left: 18px; top: 18px; }
 .dos-pasos .step h4 { margin: 0 0 4px; font-size: 1.02rem; }
 .video-titulo { margin: 64px 0 18px; text-align: center; font-size: 1.25rem; }
-#como-empiezas .promo { margin-bottom: 0; }
+:is(#como-empiezas, #get-started) .promo { margin-bottom: 0; }
 
-#precios .price .amount small { display: block; margin-top: 10px; }
+:is(#precios, #pricing) .price .amount small { display: block; margin-top: 10px; }
 .price.ped { border-color: rgba(255,179,92,.4); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 40px 80px -40px rgba(255,173,77,.35); }
 .price.ped::before { background: linear-gradient(90deg, transparent, rgba(255,210,155,.9), transparent); }
 .calc { margin: 22px 0 0; align-self: stretch; padding: 18px; border-radius: 14px; background: rgba(4,10,20,.45); border: 1px solid var(--line); }
@@ -147,7 +147,7 @@ form.card label small { color: var(--muted); font-size: .8rem; }
 form.card [aria-invalid="true"], #product-field:has([aria-invalid="true"]) label { border-color: #ff9e9e; }
 form.card input[aria-invalid="true"]:focus { border-color: #ff9e9e; box-shadow: 0 0 0 3px rgba(255,120,120,.25); }
 form.card .consent input[aria-invalid="true"] { outline: 2px solid #ff9e9e; outline-offset: 2px; }
-#demo .wrap { grid-template-areas: "intro form" "aside form"; grid-template-rows: auto 1fr; row-gap: 20px; }
+:is(#demo, #start) .wrap { grid-template-areas: "intro form" "aside form"; grid-template-rows: auto 1fr; row-gap: 20px; }
 .demo-intro { grid-area: intro; } #demo-form { grid-area: form; } .demo-aside { grid-area: aside; }
 .demo-aside .lead { margin-top: 0; }
 .linkish { background: none; border: 0; color: var(--accent2); text-decoration: underline; text-underline-offset: 3px; font: inherit; cursor: pointer; padding: 8px 0; }
@@ -176,11 +176,11 @@ body.chat-open .mbar { display: none; }
   .cta-row, .split .cta { flex-wrap: wrap; gap: 10px; }
   .cta-row { margin-top: 28px; }
   .cta-row .btn, .split .cta .btn { flex: 1 1 0; min-width: 0; min-height: 48px; padding: 10px 8px; font-size: .92rem; line-height: 1.25; text-align: center; text-wrap: balance; }
-  #servicios .screen { display: none; }
-  #sin-riesgo .features { gap: 8px; }
-  #sin-riesgo .feature { padding: 12px 14px; align-items: center; }
-  #sin-riesgo .icon { grid-row: auto; width: 30px; height: 30px; }
-  #sin-riesgo .feature p, :is(#servicios, #pedidos) .feature:nth-child(n+5) { display: none; }
+  :is(#servicios, #features) .screen { display: none; }
+  :is(#sin-riesgo, #no-risk) .features { gap: 8px; }
+  :is(#sin-riesgo, #no-risk) .feature { padding: 12px 14px; align-items: center; }
+  :is(#sin-riesgo, #no-risk) .icon { grid-row: auto; width: 30px; height: 30px; }
+  :is(#sin-riesgo, #no-risk) .feature p, :is(#servicios, #features, #pedidos, #stores) .feature:nth-child(n+5) { display: none; }
   .solo-movil { display: list-item; }
   main > section:not(.hero) { padding: 56px 0; }
   main > section:not(.hero) .lead { font-size: 1.02rem; }
@@ -203,10 +203,10 @@ body.chat-open .mbar { display: none; }
 }
 @media (max-width: 520px) {
   .calc-total b { display: block; }
-  #pedidos .phones { gap: 10px; }
-  #pedidos .phones .phone { width: calc(50% - 5px); padding: 6px; border-radius: 24px; }
-  #pedidos .phones .phone img { border-radius: 19px; }
-  #pedidos .phones .phone.back { margin: 24px 0 0; }
+  :is(#pedidos, #stores) .phones { gap: 10px; }
+  :is(#pedidos, #stores) .phones .phone { width: calc(50% - 5px); padding: 6px; border-radius: 24px; }
+  :is(#pedidos, #stores) .phones .phone img { border-radius: 19px; }
+  :is(#pedidos, #stores) .phones .phone.back { margin: 24px 0 0; }
 }
 @media (max-width: 420px) {
   .brand small { display: none; }
@@ -240,7 +240,7 @@ body.chat-open .mbar { display: none; }
   .dos-pasos { grid-template-columns: 1fr 1fr; gap: 32px; }
 }
 @media (max-width: 900px) {
-  #demo .wrap { grid-template-areas: "intro" "form" "aside"; grid-template-rows: none; row-gap: 22px; }
+  :is(#demo, #start) .wrap { grid-template-areas: "intro" "form" "aside"; grid-template-rows: none; row-gap: 22px; }
 }
 @media (min-width: 1024px) {
   .features.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -269,9 +269,9 @@ body.chat-open .mbar { display: none; }
 @media (max-width: 720px) { .medicion { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); } }
 
 /* Así funciona de Pedidos con su color, y el enlace discreto al WhatsApp de NOVA (preguntas y pie) */
-#pedidos .flujo li::before { color: var(--ped); border-color: rgba(255,179,92,.5); box-shadow: 0 0 0 4px rgba(255,179,92,.07); }
-#pedidos .flujo li::after { background: linear-gradient(180deg, rgba(255,179,92,.45), rgba(255,179,92,.08)); }
-@media (min-width: 1024px) { #pedidos .flujo li::after { background: linear-gradient(90deg, rgba(255,179,92,.45), rgba(255,179,92,.08)); } }
+:is(#pedidos, #stores) .flujo li::before { color: var(--ped); border-color: rgba(255,179,92,.5); box-shadow: 0 0 0 4px rgba(255,179,92,.07); }
+:is(#pedidos, #stores) .flujo li::after { background: linear-gradient(180deg, rgba(255,179,92,.45), rgba(255,179,92,.08)); }
+@media (min-width: 1024px) { :is(#pedidos, #stores) .flujo li::after { background: linear-gradient(90deg, rgba(255,179,92,.45), rgba(255,179,92,.08)); } }
 .wa-link { margin: 18px 0 0; text-align: center; font-size: .92rem; }
 .wa-link a, footer .wa-pie { display: inline-flex; align-items: center; gap: 6px; color: var(--dim); }
 .wa-link a { padding: 8px 4px; }
