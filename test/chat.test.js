@@ -166,7 +166,7 @@ test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discret
     assert.doesNotMatch(html, nuestroNumero, f);
     assert.doesNotMatch(html, contactoWhatsApp, f);
   }
-  assert.doesNotMatch(leer('en/index.html'), /wa\.me\//);
+  // /en/ quedó como las de español (29-oct-2026): el mismo WhatsApp discreto, en inglés; test/en-blog.test.js lo revisa.
   const html = leer('index.html');
   const enlaces = html.match(/wa\.me\/[^"?]*/g) || [];
   assert.equal(enlaces.length, 3, 'preguntas, pie y respaldo sin chat');
