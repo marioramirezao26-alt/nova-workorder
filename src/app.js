@@ -24,6 +24,7 @@ const quotePublicRoutes = require('./routes/quotePublicRoutes');
 const wompiRoutes = require('./routes/wompiRoutes');
 const webhooks = require('./utils/webhooks');
 const Client = require('./models/Client');
+const PageStat = require('./models/PageStat');
 
 dotenv.config();
 
@@ -109,6 +110,8 @@ const startServer = async () => {
     await connectDB();
     // El correo del cliente pasó a ser opcional: cambia el índice viejo por el nuevo (una vez; luego no hace nada).
     await Client.syncEmailIndex().catch((error) => console.error('No se pudo actualizar el índice de correo de clientes:', error.message));
+    // Los contadores de la página ahora separan por mercado: cambia el índice viejo por el nuevo (una vez).
+    await PageStat.syncMarketIndex().catch((error) => console.error('No se pudo actualizar el índice de la analítica:', error.message));
 
     const PORT = process.env.PORT || 5000;
     const HOST = process.env.HOST || '0.0.0.0';             // en el servidor: 127.0.0.1 (lo publica Caddy)

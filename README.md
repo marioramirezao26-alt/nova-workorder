@@ -221,7 +221,9 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
   `ordersLast24h` y `activeTechnicians7d` (técnicos con órdenes iniciadas o completadas en 7 días). Solo fechas y conteos.
 - PATCH /api/platform/companies/:id — `status` (prueba, activa, suspendida), `maxTechnicians`, `name`
 - GET /api/platform/demo-requests · POST /api/platform/demo-requests/:id/ack — solicitudes de la página de ventas (con su canal)
-- GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día
+- GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día;
+  por país: `byMarket` (co, us, us-en, mx en todo el periodo, con `conversion`), `byMarketDay` (día y mercado) y `sinPais`
+  (los contadores de «/otra» de antes de guardar el mercado, que no se pueden repartir)
 - GET /api/platform/reviews?status=pendiente · POST /api/platform/reviews/:id/approve · POST /api/platform/reviews/:id/reject
   (`reason` opcional) — recomendaciones de los clientes para novaworkorder.com; solo las aprobadas se publican
 
@@ -234,7 +236,9 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 ### Página de ventas (sin sesión)
 - POST /api/public/demo — «Empieza gratis» o «Pide tu demo»; guarda el canal de llegada (`utm`/`ref`)
 - POST /api/public/visit — contador anónimo (`event`: visita o clic). Sin cookies ni IP: solo suma por día, página,
-  canal (utm_source del enlace o el sitio que lo trajo) y tipo de equipo. Los robots y los avances de enlaces no cuentan.
+  canal (utm_source del enlace o el sitio que lo trajo), tipo de equipo y mercado. El mercado lo saca el servidor de la
+  ruta (`path`): /es-us → us, /en → us-en (también /en/blog/), /es-mx → mx y lo demás → co (también /blog/). El blog
+  manda el mismo contador (lo pone src/scripts/blog.js). Los robots y los avances de enlaces no cuentan.
 - GET /api/public/reviews — las recomendaciones aprobadas (`name`, `role`, `company`, `city`, `rating`, `text`, `month`),
   sin datos de contacto y con caché de 5 minutos. Sin ninguna, la landing no muestra la sección
 - GET /api/public/chat — `{ enabled, history }`: si la página muestra la burbuja del chat «GABY · Ventas» y si la

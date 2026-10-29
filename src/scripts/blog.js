@@ -122,6 +122,34 @@ ${t.nav.map(([h, x]) => `        <a href="${h}">${x}</a>`).join('\n')}
   </header>
 `;
 
+// El mismo contador anónimo de las portadas (sin cookies): una visita al abrir y un clic al tocar «Empieza gratis».
+// El servidor saca el mercado de la ruta: /blog/ → co y /en/blog/ → us-en.
+const BALIZA = `  <script>
+    (function () {
+      var store = { get: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+                    set: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* modo privado */ } } };
+      var utm = (location.search.match(/[?&]utm_source=([^&#]*)/) || [])[1];
+      if (utm) store.set('nova-utm', decodeURIComponent(utm).slice(0, 60));
+      if (!store.get('nova-ref') && document.referrer) store.set('nova-ref', document.referrer.slice(0, 500));
+      var referral = (location.search.match(/[?&]ref=([a-z0-9-]{3,20})/i) || [])[1];
+      if (referral) store.set('nova-referral', referral.toLowerCase());
+      function track(event) {
+        try {
+          fetch('/api/public/visit', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: event, path: location.pathname, utm: store.get('nova-utm'), ref: store.get('nova-ref'),
+              referral: store.get('nova-referral') }) })
+            .catch(function () {});
+        } catch (e) { /* sin red */ }
+      }
+      track('visita');
+      var clicked = false;
+      document.addEventListener('click', function (ev) {
+        var a = ev.target.closest && ev.target.closest('.cta-blog .btn, .top .btn');
+        if (a && !clicked) { clicked = true; track('clic'); }
+      });
+    })();
+  </script>`;
+
 const pie = (t) => `
   <footer>
     <div class="wrap">
@@ -131,6 +159,7 @@ ${t.pieLinks.map(([h, x]) => `        <a href="${h}"${h === '/en/blog/' ? ' href
       </nav>
     </div>
   </footer>
+${BALIZA}
 </body>
 </html>
 `;
