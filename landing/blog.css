@@ -1,0 +1,68 @@
+/* El blog (/blog/ y /en/blog/): lo arma src/scripts/blog.js. Usa las variables y los botones de estilos.css. */
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.sr:focus { position: fixed; top: 10px; left: 10px; width: auto; height: auto; margin: 0; padding: 10px 14px; clip: auto; z-index: 50;
+  background: var(--accent); color: #fff; border-radius: 10px; }
+.blog-articulo, .blog-indice { padding: 28px 0 88px; }
+.blog-articulo .wrap { max-width: 760px; }
+.migas { font-size: 0.88rem; color: var(--muted); margin-bottom: 26px; }
+.migas a { color: var(--dim); text-decoration: none; }
+.migas a:hover { color: var(--text); text-decoration: underline; }
+.migas [aria-current] { color: var(--muted); }
+
+.blog-articulo h1 { font-size: clamp(1.9rem, 5vw, 2.7rem); line-height: 1.12; letter-spacing: -0.025em; margin: 6px 0 14px; }
+.blog-articulo .meta { color: var(--muted); font-size: 0.92rem; margin: 0 0 24px; }
+.portada-blog { display: block; width: 100%; height: auto; border-radius: var(--radius-lg); border: 1px solid var(--line); box-shadow: var(--shadow); }
+
+.articulo-cuerpo { margin-top: 30px; font-size: 1.06rem; }
+.articulo-cuerpo p, .articulo-cuerpo li { color: #d4e2f5; line-height: 1.75; }
+.articulo-cuerpo h2 { font-size: 1.45rem; letter-spacing: -0.015em; margin: 42px 0 12px; line-height: 1.25; }
+.articulo-cuerpo h3 { font-size: 1.15rem; margin: 28px 0 8px; }
+.articulo-cuerpo ul, .articulo-cuerpo ol { padding-left: 22px; }
+.articulo-cuerpo li { margin: 6px 0; }
+.articulo-cuerpo strong { color: var(--text); }
+.articulo-cuerpo a { color: var(--accent2); }
+.articulo-cuerpo .caja, .articulo-cuerpo .plantilla { background: var(--surface-bg); border: 1px solid var(--line-strong); border-radius: var(--radius);
+  padding: 16px 20px; margin: 22px 0; box-shadow: var(--shadow); }
+.articulo-cuerpo .caja { border-left: 4px solid var(--warn); }
+.articulo-cuerpo .plantilla { font-size: 0.95rem; overflow-wrap: anywhere; }
+.articulo-cuerpo .plantilla p { margin: 0 0 12px; line-height: 1.9; }
+.articulo-cuerpo .plantilla p:last-child { margin-bottom: 0; }
+/* «Cómo ayuda NOVAWORKORDER»: el último bloque, separado del consejo */
+.articulo-cuerpo h2:last-of-type { padding-top: 26px; border-top: 1px solid var(--line); }
+
+.cta-blog { margin: 40px 0 0; padding: 26px 24px; text-align: center; border-radius: var(--radius-lg); border: 1px solid rgba(79, 150, 255, 0.35);
+  background: radial-gradient(ellipse at 50% 0%, rgba(79, 150, 255, 0.18), transparent 70%), var(--surface); box-shadow: var(--shadow-lg); }
+.cta-blog h2 { margin: 0 0 8px; font-size: 1.5rem; }
+.cta-blog p { color: var(--dim); margin: 0 0 16px; }
+.cta-blog .small { margin: 16px 0 0; font-size: 0.9rem; color: var(--muted); }
+.cta-blog .small a { color: var(--accent2); }
+
+.relacionados { margin-top: 52px; }
+.relacionados h2 { font-size: 1.35rem; margin-bottom: 16px; }
+
+.tarjetas { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.blog-articulo .tarjetas { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.blog-articulo .tarjeta-desc { display: none; }
+.blog-articulo .tarjeta-titulo { flex: 1; font-size: 1rem; }
+.blog-indice .tarjetas { margin-top: 34px; }
+.tarjeta a { display: flex; flex-direction: column; height: 100%; text-decoration: none; color: var(--text); background: var(--surface-bg);
+  border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); transition: border-color .2s var(--ease), transform .2s var(--ease); }
+.tarjeta a:hover { border-color: rgba(79, 150, 255, 0.45); transform: translateY(-2px); }
+.tarjeta img { display: block; width: 100%; height: auto; aspect-ratio: 1200 / 630; }
+.tarjeta-cat { margin: 14px 16px 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent2); }
+.tarjeta-titulo { margin: 6px 16px 0; font-family: var(--font-display); font-weight: 700; font-size: 1.08rem; line-height: 1.3; }
+.tarjeta-desc { margin: 8px 16px 0; color: var(--dim); font-size: 0.92rem; line-height: 1.55; flex: 1; }
+.tarjeta-leer { margin: 14px 16px 16px; color: var(--accent2); font-weight: 600; font-size: 0.92rem; }
+.blog-indice .cta-blog { max-width: 760px; margin: 48px auto 0; }
+
+@media (max-width: 900px) {
+  .tarjetas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .blog-articulo .tarjetas { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .tarjetas, .blog-articulo .tarjetas { grid-template-columns: 1fr; }
+  .articulo-cuerpo { font-size: 1rem; }
+  .cta-blog { padding: 22px 16px; }
+}

@@ -2,6 +2,22 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### /en/ renovada, SEO técnico de las portadas y blog (29-oct-2026)
+- **`landing/en/`:** la misma página que /es-us/ en inglés sencillo de EE. UU. (Services y Store, US$29 por técnico y US$19
+  por tienda, PayPal, 7 días gratis sin tarjeta, `lang: 'en'` y `market: 'us'` en el formulario, el chat con GABY y el
+  píxel con consentimiento; WhatsApp discreto solo al final de las preguntas, en el pie y como respaldo sin chat).
+  Secciones con id en inglés (`#features`, `#stores`, `#pricing`, `#faq`, `#start`; `inicio.css` las conoce). Capturas
+  nuevas de las dos apps en inglés con datos de Austin, TX (`img/*-en.webp`). `en/privacy` y `en/terms` al día (Store,
+  el chat que guarda la conversación, el píxel con consentimiento). Las comparaciones con Jobber y Housecall Pro dicen
+  que ya hay cotizaciones e informe con fotos y firma (facturas no), sin «real time» ni «Book a demo»; socios igual.
+  `salesChat.js`: `FACTS_EN` / `SYSTEM_EN` son ahora `FACTS_US_ES` en inglés.
+- **SEO de las cuatro portadas:** FAQPage en JSON-LD con las preguntas que se ven (`src/scripts/faqLanding.js`),
+  `eligibleRegion` CO en las ofertas de /, canonical y hreflang en los legales de Colombia.
+- **Blog** en `/blog/` (6 artículos en español para Colombia, México y los hispanos de EE. UU.) y `/en/blog/` (2 en
+  inglés), con Article, BreadcrumbList, Open Graph, portada propia y enlaces entre artículos; «Blog» en el pie de las
+  portadas en español; sitemap con lastmod. Fuente en `docs/blog/`, se arma con `node src/scripts/blog.js`.
+- Pruebas en `test/en-blog.test.js`; `test/chat.test.js` ya no exige /en/ sin WhatsApp.
+
 ### /es-mx/: la página para México y el mercado mx de punta a punta (28-oct-2026)
 - Etapa 2 del plan México/EE. UU. Mario: quien se registre en `novaworkorder.com/es-mx/` es cliente de México ($299 MXN
   por técnico y $249 MXN por tienda al mes, mensualidad en pesos mexicanos por PayPal) con la app y los correos en español.

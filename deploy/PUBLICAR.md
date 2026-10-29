@@ -94,6 +94,16 @@ systemctl restart nova
 - La página para México es `landing/es-mx/` (novaworkorder.com/es-mx/): igual, se publica sola con `landing/`. Sus
   precios (pesos mexicanos) están en `FACTS_MX` de `src/utils/salesChat.js`, en `landing/es-mx/` (texto, `PRECIO_TECNICO`
   y `terminos.html`) y en GABY (`GABY_NOVA_PRICE_MXN`, `GABY_PEDIDOS_PRICE_MXN`).
+- `landing/en/` (novaworkorder.com/en/) es la misma página que /es-us/ en inglés: `lang: 'en'`, `market: 'us'`, US$29 por
+  técnico y US$19 por tienda (texto, `PRECIO_TECNICO` y `en/terms.html`). Sus secciones tienen id en inglés (`#features`,
+  `#stores`, `#pricing`, `#faq`, `#start`): GABY manda a `/en/#stores` y las comparaciones a `/en/#start`.
+- Las preguntas frecuentes de las cuatro portadas van también en su JSON-LD (FAQPage). Si cambias una pregunta, corre
+  `node src/scripts/faqLanding.js` (las pruebas avisan si quedó desactualizado).
+- El blog (`/blog/` en español y `/en/blog/` en inglés) se escribe en `docs/blog/es/` y `docs/blog/en/` (un .html por
+  artículo, con sus datos en el comentario JSON del principio) y se arma con `node src/scripts/blog.js`, que también
+  pone los artículos en `landing/sitemap.xml`. Las portadas (`landing/img/blog/<slug>.jpg`) salen de
+  `python3 docs/blog/portadas.py` (Playwright y la fuente Inter). Se publica sola con `landing/`; Caddy lo sirve igual que
+  /es-us/ (`try_files {path} {path}.html {path}/index.html`).
 
 ## Comandos útiles en el servidor
 - Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.
