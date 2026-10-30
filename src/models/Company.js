@@ -87,6 +87,13 @@ const companySchema = new mongoose.Schema(
       numberingRangeId: { type: Number, default: null },
       connectedAt: { type: Date, default: null },
     },
+    // Cuenta de demostración (src/scripts/crearDemoServicios.js, para grabar videos): datos inventados, no es un cliente.
+    // La API de plataforma no la lista para GABY (ni uso, ni cobros, ni crecimiento) y, pedida por su id, sale marcada.
+    demo: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     // Último ingreso (login) de cualquier usuario de la empresa, para el uso que lee GABY. Se escribe como mucho una vez
     // por minuto (ver authController) y no toca `updatedAt`.
     lastLoginAt: {

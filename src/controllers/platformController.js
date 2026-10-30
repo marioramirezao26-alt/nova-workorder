@@ -72,6 +72,8 @@ const view = async (company) => ({
   lang: company.lang || 'es',
   market: marketOf(company),
   createdAt: company.createdAt,
+  // Cuenta de demostración (datos inventados para grabar videos): no es un cliente, no se cobra ni cuenta en el uso.
+  demo: Boolean(company.demo),
   usage: await usage(company),
 });
 
@@ -108,7 +110,10 @@ const createCompany = async (req, res) => {
 
 const listCompanies = async (req, res) => {
   try {
-    const companies = await Company.find().sort({ createdAt: -1 }).limit(500);
+    // Las cuentas de demostración no salen en la lista (GABY suma el uso y cobra con ella); con ?demo=incluir salen,
+    // marcadas con `demo: true`.
+    const filter = req.query.demo === 'incluir' ? {} : { demo: { $ne: true } };
+    const companies = await Company.find(filter).sort({ createdAt: -1 }).limit(500);
     res.status(200).json({ items: await Promise.all(companies.map(view)) });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error al listar las empresas' });
@@ -131,6 +136,10 @@ const updateCompany = async (req, res) => {
     if (!company) return res.status(404).json({ message: 'Empresa no encontrada' });
 
     const { name, status, maxTechnicians, lang, market } = req.body;
+    // Una cuenta de demostración no entra a los cobros: GABY no la suspende ni la reactiva.
+    if (company.demo && status !== undefined) {
+      return res.status(409).json({ message: 'Es una cuenta de demostración: no se cobra ni se suspende' });
+    }
     if (name !== undefined) company.name = name;
     if (lang !== undefined) company.lang = lang;
     if (market !== undefined) company.market = market;

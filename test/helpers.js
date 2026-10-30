@@ -63,4 +63,7 @@ const login = async (email, password) => {
 
 const origin = () => base.replace(/\/api$/, '');
 
-module.exports = { start, stop, reset, call, company, login, KEY, origin };
+// La base de pruebas, para correr los scripts (src/scripts) contra ella.
+const mongoUri = () => mongo.getUri();
+
+module.exports = { start, stop, reset, call, company, login, KEY, origin, mongoUri };

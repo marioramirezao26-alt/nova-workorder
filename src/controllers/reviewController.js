@@ -47,6 +47,10 @@ const getOwnReview = async (req, res) => {
 // no aprueba el nuevo sin que Mario lo lea.
 const saveOwnReview = async (req, res) => {
   try {
+    // Una cuenta de demostración tiene datos inventados: su «recomendación» sería un testimonio falso en la página.
+    if (req.company && req.company.demo) {
+      return res.status(403).json({ message: 'Es una cuenta de demostración: no puede enviar recomendaciones' });
+    }
     const now = new Date();
     const data = {
       tenant: req.user.tenant,

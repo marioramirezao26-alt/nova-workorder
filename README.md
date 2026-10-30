@@ -200,6 +200,31 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
 - Técnico: tecnico@nova.com
 - Cliente: cliente@nova.com
 
+## Cuenta de demostración para grabar videos
+
+«Frío Ejemplo SAS (demostración)»: una empresa de refrigeración inventada para grabar la pantalla sin datos de nadie
+(Ley 1581). Trae logo y colores, una administradora y 3 técnicos, 8 clientes de ejemplo (direcciones genéricas de
+Bogotá y celulares `300 000 00…`), 16 órdenes de los últimos 30 días en los 4 estados (con checklist, fotos «antes /
+después» generadas sin personas, firma y enlace de informe), 2 plantillas de checklist y 3 cotizaciones (aprobada con
+su orden, enviada esperando respuesta y rechazada). «Reportes» muestra órdenes por día, por estado y por técnico.
+
+En el servidor (como el usuario `nova`, que lee el `.env`):
+
+```bash
+cd /opt/nova-workorder && sudo -u nova node src/scripts/crearDemoServicios.js --reiniciar
+```
+
+- `--reiniciar` borra todo lo de la cuenta (lo que se haya creado o cambiado grabando) y la deja como nueva, con las
+  fechas corridas a hoy. Correrlo antes de cada grabación. Sin `--reiniciar` solo agrega lo que falte y no duplica nada.
+  También: `npm run demo-servicios -- --reiniciar`.
+- Usuario: `admin@frio-ejemplo.example` (administradora). Técnicos: `andres@`, `camila@` y `julian@frio-ejemplo.example`.
+- Clave (la misma para los 4): si el `.env` tiene `DEMO_PASSWORD` (mínimo 8 caracteres; la pone Mario, nunca va en el
+  código ni en el chat) se usa esa. Si no, la primera vez el script genera una y la imprime **una sola vez**; las
+  siguientes no la cambia. `--nueva-clave` genera e imprime otra.
+- La empresa queda con `demo: true`: no sale en `GET /api/platform/companies` (lo que GABY suma para el uso, los cobros
+  y el tablero de crecimiento), por su id sale con `demo: true`, la API de plataforma no la deja suspender ni reactivar
+  (409) y no puede enviar recomendaciones a la página (serían testimonios inventados).
+
 ## Endpoints principales
 
 ### Autenticación
@@ -220,6 +245,8 @@ Crea o actualiza estas cuentas con la contraseña de `SEED_PASSWORD`:
   empresa, ISO UTC o `null`), `lastActivityAt` (última orden o cotización creada o cambiada, ISO o `null`),
   `ordersLast24h` y `activeTechnicians7d` (técnicos con órdenes iniciadas o completadas en 7 días). Solo fechas y conteos.
 - PATCH /api/platform/companies/:id — `status` (prueba, activa, suspendida), `maxTechnicians`, `name`
+- Cuentas de demostración (`demo: true`): la lista no las trae (con `?demo=incluir`, sí, marcadas); por su id salen con
+  `demo: true` y cambiarles el `status` responde 409
 - GET /api/platform/demo-requests · POST /api/platform/demo-requests/:id/ack — solicitudes de la página de ventas (con su canal)
 - GET /api/platform/analytics?days=7 — visitas, clics en «Empieza gratis», solicitudes y conversión por canal y por día;
   por país: `byMarket` (co, us, us-en, mx en todo el periodo, con `conversion`), `byMarketDay` (día y mercado) y `sinPais`
