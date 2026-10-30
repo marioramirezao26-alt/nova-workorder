@@ -14,6 +14,9 @@ install -m 644 "$DEST/deploy/nova-respaldo.service" /etc/systemd/system/nova-res
 install -m 644 "$DEST/deploy/nova-respaldo.timer" /etc/systemd/system/nova-respaldo.timer
 # La página de ventas (novaworkorder.com) es estática: Caddy la sirve desde /var/www/novaworkorder.
 rm -rf /var/www/novaworkorder && mkdir -p /var/www && cp -r "$DEST/landing" /var/www/novaworkorder && chmod -R a+rX /var/www/novaworkorder
+# IndexNow: les avisa a Bing (ChatGPT, Copilot) y a los demás buscadores qué páginas cambiaron. Si falla, no frena nada.
+node "$DEST/src/scripts/indexnow.js" --web /var/www/novaworkorder --llave "$DEST/deploy/.indexnow" \
+  --estado "$DEST/deploy/.indexnow-estado.json" || echo ">> IndexNow no avisó esta vez"
 # Detrás de Caddy: la IP real del visitante (límites del formulario y del inicio de sesión por IP).
 grep -q '^TRUST_PROXY=.' "$DEST/.env" || { sed -i '/^TRUST_PROXY=$/d' "$DEST/.env"; echo 'TRUST_PROXY=1' >> "$DEST/.env"; }
 install -m 644 "$DEST/deploy/Caddyfile" /etc/caddy/Caddyfile

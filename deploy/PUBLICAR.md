@@ -104,6 +104,11 @@ systemctl restart nova
   pone los artículos en `landing/sitemap.xml`. Las portadas (`landing/img/blog/<slug>.jpg`) salen de
   `python3 docs/blog/portadas.py` (Playwright y la fuente Inter). Se publica sola con `landing/`; Caddy lo sirve igual que
   /es-us/ (`try_files {path} {path}.html {path}/index.html`).
+- **IndexNow:** cada actualización (`actualizar.sh`) les avisa a Bing (que alimenta a ChatGPT y Copilot), Yandex y los
+  demás buscadores de IndexNow qué páginas del sitemap cambiaron (`src/scripts/indexnow.js`). No hay cuenta ni clave que
+  poner: la llave la crea el servidor la primera vez en `deploy/.indexnow` (fuera del repositorio) y se publica como
+  `/<llave>.txt` para que el buscador compruebe que el sitio es nuestro. Si el aviso falla, no frena la actualización y se
+  reintenta en la siguiente. Para ver qué avisaría sin enviar: `node src/scripts/indexnow.js --probar`.
 
 ## Comandos útiles en el servidor
 - Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.
