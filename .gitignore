@@ -6,3 +6,6 @@ node_modules/
 dist/
 build/
 coverage/
+# IndexNow: la llave y el estado los crea el servidor (deploy/actualizar.sh)
+deploy/.indexnow
+deploy/.indexnow-estado.json
