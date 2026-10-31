@@ -109,6 +109,13 @@ systemctl restart nova
   poner: la llave la crea el servidor la primera vez en `deploy/.indexnow` (fuera del repositorio) y se publica como
   `/<llave>.txt` para que el buscador compruebe que el sitio es nuestro. Si el aviso falla, no frena la actualización y se
   reintenta en la siguiente. Para ver qué avisaría sin enviar: `node src/scripts/indexnow.js --probar`.
+- **Robots de IA (P-034 A1):** Caddy guarda en `/var/log/caddy/robots-ia.log` solo los accesos de OAI-SearchBot,
+  ChatGPT-User, PerplexityBot, Perplexity-User, Claude-SearchBot, Claude-User, Googlebot y bingbot. Por cada acceso quedan
+  la fecha, la ruta (sin lo que va después del «?»), el código y el nombre del robot. No quedan la IP, las cookies ni los
+  demás encabezados (Ley 1581). El archivo es legible para todos (el pulso de Ada lo lee como usuario `claude`) y rota
+  solo: 10 MB por archivo, se guardan 6.
+- **Canal «ia» en la analítica:** las visitas que llegan de chatgpt.com, perplexity.ai, copilot.microsoft.com, claude.ai y
+  gemini.google.com, o con `utm_source=chatgpt.com`, cuentan como «ia», no como «buscador» ni «otro».
 
 ## Comandos útiles en el servidor
 - Otros sitios en el mismo Caddy (NOVA PEDIDOS): `/etc/caddy/sitios/*.caddy`, importados al final del Caddyfile.

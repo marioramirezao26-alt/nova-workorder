@@ -28,6 +28,14 @@ test('el canal sale del utm_source o del sitio que trajo al visitante', () => {
   assert.equal(channelOf({ ref: 'https://www.g2.com/products/novaworkorder/reviews' }), 'directorio');
   assert.equal(channelOf({ ref: 'https://www.capterra.com/p/1/x/' }), 'directorio');
   assert.equal(channelOf({ utm: 'saasworthy' }), 'directorio');
+  // P-034 A2: los asistentes de IA son su propio canal; Gemini no es «buscador» aunque sea de Google
+  assert.equal(channelOf({ utm: 'chatgpt.com' }), 'ia');
+  assert.equal(channelOf({ ref: 'https://chatgpt.com/' }), 'ia');
+  assert.equal(channelOf({ ref: 'https://www.perplexity.ai/search/x' }), 'ia');
+  assert.equal(channelOf({ ref: 'https://copilot.microsoft.com/' }), 'ia');
+  assert.equal(channelOf({ ref: 'https://claude.ai/chat/1' }), 'ia');
+  assert.equal(channelOf({ ref: 'https://gemini.google.com/app' }), 'ia');
+  assert.equal(channelOf({ ref: 'https://www.google.com/' }), 'buscador');
   assert.equal(fromReferrer('https://novaworkorder.com/privacidad'), 'directo');
   assert.equal(channelOf({}), 'directo');
   assert.equal(cleanPath('/privacidad.html?x=1'), '/privacidad');
