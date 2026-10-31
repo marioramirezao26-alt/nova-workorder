@@ -194,17 +194,23 @@ test('sitemap.xml válido y completo, y robots.txt lo anuncia', () => {
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'deploy', 'Caddyfile'), 'utf8'), /try_files \{path\} \{path\}\.html \{path\}\/index\.html/);
 });
 
-test('el blog: 8 artículos en español y 2 en inglés, útiles, honestos y con su SEO', () => {
+test('el blog: artículos en español y en inglés, útiles, honestos y con su SEO', () => {
   const todos = blog.articulos();
   const es = todos.filter((a) => a.lang === 'es');
   const en = todos.filter((a) => a.lang === 'en');
-  assert.equal(es.length, 8);
-  assert.equal(en.length, 2);
+  assert.ok(es.length >= 8, `español: ${es.length}`);                  // P-034 A4: sin cuenta fija, crece con cada artículo
+  assert.ok(en.length >= 2, `inglés: ${en.length}`);
   for (const a of todos) {
     const n = blog.palabras(a.cuerpo);
     assert.ok(n >= 700 && n <= 1200, `${a.slug}: ${n} palabras`);
     // nada inventado: ni cifras de mercado, ni testimonios, ni clientes, ni «tiempo real»
-    assert.doesNotMatch(a.cuerpo, /\d+\s?%|por ciento|percent|estudios? (dicen|muestran)|según (un|una) (estudio|encuesta)|studies show|survey/i, a.slug);
+    // P-034 A4: una cifra o un «según…» solo si el mismo párrafo enlaza la fuente externa
+    const CIFRA = /\d+\s?%|por ciento|percent|estudios? (dicen|muestran)|según (un|una) (estudio|encuesta)|studies show|survey/i;
+    for (const parrafo of blog.parrafos(a.cuerpo)) {
+      if (/<a\s[^>]*href="https?:\/\/(?!(www\.)?novaworkorder\.com)[^"]+"/.test(parrafo)) continue;
+      assert.doesNotMatch(parrafo, CIFRA, a.slug);
+    }
+    assert.doesNotMatch(a.cuerpo.replace(/<(p|li|td|blockquote)\b[^>]*>[\s\S]*?<\/\1>/g, ''), CIFRA, a.slug);   // ni en títulos
     assert.doesNotMatch(a.cuerpo, /testimoni|nuestros clientes (dicen|nos)|our customers (say|tell)|clientes felices|happy customers|tiempo real|real[- ]time/i, a.slug);
     assert.match(a.cuerpo, /<h2>(Cómo ayuda NOVAWORKORDER|How NOVAWORKORDER helps)<\/h2>/, a.slug);
 

@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://novaworkorder.com/</loc></url>
-  <url><loc>https://novaworkorder.com/privacidad</loc></url>
-  <url><loc>https://novaworkorder.com/terminos</loc></url>
-  <url><loc>https://novaworkorder.com/es-us/</loc></url>
-  <url><loc>https://novaworkorder.com/es-us/privacidad</loc></url>
-  <url><loc>https://novaworkorder.com/es-us/terminos</loc></url>
-  <url><loc>https://novaworkorder.com/es-mx/</loc></url>
-  <url><loc>https://novaworkorder.com/es-mx/privacidad</loc></url>
-  <url><loc>https://novaworkorder.com/es-mx/terminos</loc></url>
-  <url><loc>https://novaworkorder.com/en/</loc></url>
-  <url><loc>https://novaworkorder.com/en/privacy</loc></url>
-  <url><loc>https://novaworkorder.com/en/terms</loc></url>
-  <url><loc>https://novaworkorder.com/en/compare/</loc></url>
-  <url><loc>https://novaworkorder.com/en/compare/jobber/</loc></url>
-  <url><loc>https://novaworkorder.com/en/compare/housecall-pro/</loc></url>
-  <url><loc>https://novaworkorder.com/en/partners/</loc></url>
+  <url><loc>https://novaworkorder.com/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/privacidad</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/terminos</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-us/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-us/privacidad</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-us/terminos</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-mx/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-mx/privacidad</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-mx/terminos</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/privacy</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/terms</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/compare/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/compare/jobber/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/compare/housecall-pro/</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/partners/</loc><lastmod>2026-10-28</lastmod></url>
+  <url><loc>https://novaworkorder.com/precios</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-mx/precios</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-us/precios</loc><lastmod>2026-10-31</lastmod></url>
+  <url><loc>https://novaworkorder.com/en/pricing</loc><lastmod>2026-10-31</lastmod></url>
   <!-- blog: lo escribe src/scripts/blog.js -->
   <url><loc>https://novaworkorder.com/blog/</loc><lastmod>2026-10-30</lastmod></url>
   <url><loc>https://novaworkorder.com/blog/organizar-ordenes-de-trabajo-sin-papel/</loc><lastmod>2026-10-29</lastmod></url>
@@ -29,5 +33,7 @@
   <url><loc>https://novaworkorder.com/en/blog/</loc><lastmod>2026-10-29</lastmod></url>
   <url><loc>https://novaworkorder.com/en/blog/organize-work-orders-without-paper/</loc><lastmod>2026-10-29</lastmod></url>
   <url><loc>https://novaworkorder.com/en/blog/write-a-quote-customers-approve-fast/</loc><lastmod>2026-10-29</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-mx/blog/</loc><lastmod>2026-10-30</lastmod></url>
+  <url><loc>https://novaworkorder.com/es-us/blog/</loc><lastmod>2026-10-30</lastmod></url>
   <!-- /blog -->
 </urlset>

@@ -205,7 +205,9 @@ test('el mes de la reseña es el de Colombia, no el del servidor en UTC', () => 
 test('la landing muestra la sección solo con reseñas aprobadas y sin reseñas de ejemplo en el código', () => {
   const leer = (f) => fs.readFileSync(path.join(__dirname, '..', 'landing', f), 'utf8');
   const js = leer('resenas.js');
-  for (const f of ['index.html', 'en/index.html']) {
+  // P-034 A10: en inglés no hay reseñas reales todavía: ni la sección vacía ni el script
+  assert.doesNotMatch(leer('en/index.html'), /id="resenas"|resenas\.js|Reviews from our customers/);
+  for (const f of ['index.html']) {
     const html = leer(f);
     assert.match(html, /<section id="resenas"[^>]*\bhidden\b/, `${f}: la sección arranca oculta`);
     assert.match(html, /<script src="\/resenas\.js" defer><\/script>/, f);
