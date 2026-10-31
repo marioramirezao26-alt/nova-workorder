@@ -30,6 +30,29 @@ www.{$NOVA_SITIO} {
 
 {$NOVA_SITIO} {
 	import seguridad
+	# P-034 A1: quién de los motores de IA (y Google y Bing) lee la página. Solo esos robots, con fecha, ruta y código;
+	# sin IP, sin cookies, sin lo que va después del «?» y sin los demás encabezados (Ley 1581). Lo lee el pulso de Ada
+	# (nova-cerebro, scripts/aeo_pulso.py) como usuario claude: el archivo es legible para todos y rota solo.
+	@no_es_robot_ia not header_regexp User-Agent (?i)(OAI-SearchBot|ChatGPT-User|PerplexityBot|Perplexity-User|Claude-SearchBot|Claude-User|Googlebot|bingbot)
+	log_skip @no_es_robot_ia
+	log_append user_agent {http.request.header.User-Agent}
+	log {
+		output file /var/log/caddy/robots-ia.log {
+			mode 0644
+			roll_size 10MiB
+			roll_keep 6
+		}
+		format filter {
+			request>headers delete
+			request>remote_ip delete
+			request>remote_port delete
+			request>client_ip delete
+			request>tls delete
+			request>uri regexp \?.* ""
+			resp_headers delete
+			user_id delete
+		}
+	}
 	# solo el formulario «Pide tu demo» llega a la app desde este dominio
 	handle /api/public/* {
 		reverse_proxy 127.0.0.1:5000

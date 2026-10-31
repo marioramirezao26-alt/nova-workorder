@@ -1,7 +1,7 @@
 // De dónde llegó un visitante de la página de ventas: el `utm_source` del enlace (los posts de GABY lo llevan) o, si
 // no hay, el sitio que lo trajo (referrer). Solo se guarda el nombre del canal, nunca el enlace completo.
-const CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'whatsapp', 'buscador', 'correo', 'producthunt', 'directorio', 'referido',
-  'directo', 'otro'];
+const CHANNELS = ['instagram', 'facebook', 'linkedin', 'tiktok', 'youtube', 'whatsapp', 'ia', 'buscador', 'correo', 'producthunt', 'directorio',
+  'referido', 'directo', 'otro'];
 
 const ALIASES = {
   ig: 'instagram', instagram: 'instagram',
@@ -11,6 +11,9 @@ const ALIASES = {
   youtube: 'youtube', yt: 'youtube',
   whatsapp: 'whatsapp', wa: 'whatsapp',
   google: 'buscador', bing: 'buscador', buscador: 'buscador',
+  // P-034 A2: los asistentes de IA (ChatGPT pone ?utm_source=chatgpt.com en sus enlaces)
+  'chatgpt.com': 'ia', chatgpt: 'ia', openai: 'ia', perplexity: 'ia', 'perplexity.ai': 'ia', copilot: 'ia', claude: 'ia',
+  'claude.ai': 'ia', gemini: 'ia', ia: 'ia',
   email: 'correo', correo: 'correo', mail: 'correo', brevo: 'correo',
   producthunt: 'producthunt', ph: 'producthunt',
   // Directorios de software (G2 y su red: Capterra, GetApp, Software Advice; SaaSworthy)
@@ -25,6 +28,8 @@ const HOSTS = [
   [/(^|\.)tiktok\.com$/, 'tiktok'],
   [/(^|\.)(youtube\.com|youtu\.be)$/, 'youtube'],
   [/(^|\.)(whatsapp\.com|wa\.me)$/, 'whatsapp'],
+  // P-034 A2: antes que la regla de google., que contaba a Gemini como «buscador»
+  [/(^|\.)(chatgpt\.com|chat\.openai\.com|perplexity\.ai|copilot\.microsoft\.com|claude\.ai|gemini\.google\.com)$/, 'ia'],
   [/(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|yahoo\.com|ecosia\.org)$/, 'buscador'],
   [/(^|\.)(mail\.google\.com|outlook\.live\.com|outlook\.office\.com)$/, 'correo'],
   [/(^|\.)producthunt\.com$/, 'producthunt'],

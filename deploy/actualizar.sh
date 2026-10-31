@@ -19,6 +19,8 @@ node "$DEST/src/scripts/indexnow.js" --web /var/www/novaworkorder --llave "$DEST
   --estado "$DEST/deploy/.indexnow-estado.json" || echo ">> IndexNow no avisó esta vez"
 # Detrás de Caddy: la IP real del visitante (límites del formulario y del inicio de sesión por IP).
 grep -q '^TRUST_PROXY=.' "$DEST/.env" || { sed -i '/^TRUST_PROXY=$/d' "$DEST/.env"; echo 'TRUST_PROXY=1' >> "$DEST/.env"; }
+# P-034 A1: el registro de robots de IA vive aquí; la carpeta se puede recorrer para que el usuario claude lo lea
+install -d -m 755 -o caddy -g caddy /var/log/caddy 2>/dev/null || mkdir -p /var/log/caddy
 install -m 644 "$DEST/deploy/Caddyfile" /etc/caddy/Caddyfile
 bash "$DEST/deploy/caddy-entorno.sh"            # conserva el dominio; agrega o refresca la IP pública
 systemctl daemon-reload
