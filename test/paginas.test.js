@@ -25,7 +25,7 @@ test('cada mercado tiene su página de precios, con los mismos precios de su por
     assert.match(html, /<h1>/);
     assert.doesNotMatch(html, /data-chat/);                               // el chat necesita el JS de la portada
     assert.doesNotMatch(html, /href="#(?!i-)/);                           // todo «#…» va a la portada
-    assert.match(html, new RegExp(`href="${p.inicio}#demo"`));
+    assert.match(html, new RegExp(`href="${p.inicio}#${p.lang === 'en-US' ? 'start' : 'demo'}"`));
     assert.match(html, /<use href="#i-/);                                  // los íconos siguen funcionando
     for (const x of paginas.PRECIOS) assert.match(html, new RegExp(`hreflang="${x.lang}" href="https://novaworkorder\\.com${x.ruta}"`));
   }
@@ -85,7 +85,8 @@ test('datos estructurados: la marca y la fundación sin quitar el nombre legal; 
   for (const f of ['index.html', 'es-mx/index.html', 'es-us/index.html', 'en/index.html']) {
     const html = leer(f);
     assert.match(html, /"name":"NOVA Desarrollos","alternateName":"NOVAWORKORDER"/, f);
-    assert.match(html, /"foundingDate":"2026","foundingLocation":\{"@type":"Place","name":"Cúcuta, Norte de Santander, Colombia"\}/, f);
+    assert.match(html, /"alternateName":"NOVAWORKORDER","brand":\{"@type":"Brand","name":"NOVAWORKORDER"\},\s*"foundingDate":"2026"/, f);
+    assert.doesNotMatch(html, /foundingLocation/, f);                 // la marca no se ata a Colombia (Mario, 28-oct-2026)
   }
   for (const f of ['en/compare/index.html', 'en/compare/jobber/index.html', 'en/compare/housecall-pro/index.html']) {
     assert.match(leer(f), /"dateModified":"\d{4}-\d{2}-\d{2}"/, f);

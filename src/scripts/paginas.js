@@ -150,7 +150,7 @@ const llms = () => {
   const linea = (a) => `- [${a.titulo}](${SITIO}${blog.urlDe(a)}): ${a.descripcion}`;
   return `# NOVAWORKORDER
 
-> NOVAWORKORDER es un programa en línea para negocios pequeños. Servicios: las órdenes de trabajo de los técnicos en su celular, con cotizaciones, informes con fotos y firma del cliente. Pedidos: una tienda en línea con su propio enlace, sin comisión por venta. Se prueba 7 días gratis, sin tarjeta. Es de NOVA Desarrollos, de Cúcuta, Colombia.
+> NOVAWORKORDER es un programa en línea para negocios pequeños. Servicios: las órdenes de trabajo de los técnicos en su celular, con cotizaciones, informes con fotos y firma del cliente. Pedidos: una tienda en línea con su propio enlace, sin comisión por venta. Se prueba 7 días gratis, sin tarjeta. Es de NOVA Desarrollos.
 
 ## Precios
 

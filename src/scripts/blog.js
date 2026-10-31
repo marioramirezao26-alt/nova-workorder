@@ -98,10 +98,10 @@ const urlDe = (a) => (a.seccion === 'comparar'
   : `${IDIOMAS[a.lang].base}${a.slug}/`);
 const imgDe = (a) => `/img/blog/${a.slug}.jpg`;
 
-// P-034 A9: el nombre legal se queda (sale en términos y privacidad); la marca va en alternateName y brand
+// P-034 A9: el nombre legal se queda (sale en términos y privacidad); la marca va en alternateName y brand. Sin
+// foundingLocation: Mario decidió el 28-oct-2026 que la marca no se ata a Colombia como origen (test/chat.test.js).
 const ORG = { '@type': 'Organization', '@id': `${SITIO}/#org`, name: 'NOVA Desarrollos', alternateName: 'NOVAWORKORDER',
   brand: { '@type': 'Brand', name: 'NOVAWORKORDER' }, foundingDate: '2026',
-  foundingLocation: { '@type': 'Place', name: 'Cúcuta, Norte de Santander, Colombia' },
   url: `${SITIO}/`, logo: `${SITIO}/img/icono-180.png` };
 
 const cabeza = ({ t, titulo, desc, url, img, imgAlt, tipo, alternos, extraLd, publicado }) => `<!doctype html>
