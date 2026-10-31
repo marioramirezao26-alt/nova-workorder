@@ -714,7 +714,11 @@ const EN = {
 
 const DICTS = { en: EN };
 
-const browserLang = () => (typeof navigator !== 'undefined' && /^en\b/i.test(navigator.language || '') ? 'en' : 'es');
+// P-035: Google lee la app con un navegador en inglés y mostraba la descripción en inglés a quien busca desde Colombia.
+// Los robots de los buscadores siempre la ven en español; una persona, en el idioma de su navegador.
+const ROBOT = /bot|crawler|spider|slurp|bingpreview|google-inspectiontool/i;
+const browserLang = () => (typeof navigator !== 'undefined' && !ROBOT.test(navigator.userAgent || '')
+  && /^en\b/i.test(navigator.language || '') ? 'en' : 'es');
 const saved = () => {
   try { return localStorage.getItem(KEY); } catch { return null; }
 };
