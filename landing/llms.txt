@@ -1,0 +1,35 @@
+# NOVAWORKORDER
+
+> NOVAWORKORDER es un programa en línea para negocios pequeños. Servicios: las órdenes de trabajo de los técnicos en su celular, con cotizaciones, informes con fotos y firma del cliente. Pedidos: una tienda en línea con su propio enlace, sin comisión por venta. Se prueba 7 días gratis, sin tarjeta. Es de NOVA Desarrollos, de Cúcuta, Colombia.
+
+## Precios
+
+- [Colombia](https://novaworkorder.com/precios): Servicios $49.000 COP por técnico al mes; Pedidos $39.000 COP por tienda al mes; precio final, mes a mes.
+- [México](https://novaworkorder.com/es-mx/precios)
+- [Estados Unidos, en español](https://novaworkorder.com/es-us/precios)
+- [United States, in English](https://novaworkorder.com/en/pricing)
+
+## Blog en español
+
+- [Cómo organizar las órdenes de trabajo de tus técnicos sin papel](https://novaworkorder.com/blog/organizar-ordenes-de-trabajo-sin-papel/): Una guía paso a paso para dejar el cuaderno y los mensajes sueltos: qué anotar en cada orden, cómo repartir el trabajo y cómo cerrar cada servicio con pruebas.
+- [Plantilla de orden de servicio: qué debe llevar](https://novaworkorder.com/blog/plantilla-orden-de-servicio/): Los campos que no pueden faltar en una orden de servicio técnico, para qué sirve cada uno y una plantilla lista para copiar.
+- [Cómo vender por WhatsApp con un catálogo en línea sin pagar comisión](https://novaworkorder.com/blog/vender-por-whatsapp-con-catalogo-sin-comision/): Opciones para mostrar tus productos con precio y recibir pedidos ordenados por WhatsApp, sin regalar un porcentaje de cada venta. Pros, contras y cómo empezar.
+- [¿Qué debe llevar un checklist de mantenimiento de aire acondicionado?](https://novaworkorder.com/blog/checklist-mantenimiento-aire-acondicionado/): Qué debe llevar un checklist de mantenimiento de aire acondicionado: seguridad, filtros, serpentines, drenaje, conexiones, refrigerante y cierre, con fuentes de Colombia y EE. UU.
+- [Cómo hacer una cotización que el cliente apruebe rápido](https://novaworkorder.com/blog/cotizacion-que-el-cliente-aprueba-rapido/): Qué debe decir una cotización de servicio técnico para que el cliente la entienda, confíe y la apruebe sin vueltas: estructura, opciones, vigencia, envío y seguimiento.
+- [Cómo cobrar contra entrega sin perder pedidos](https://novaworkorder.com/blog/cobrar-contra-entrega-sin-perder-pedidos/): Reglas prácticas para recibir pagos contra entrega sin que se te caigan pedidos ni se te pierda plata: confirmar, fijar condiciones, organizar las entregas y cuadrar al final del día.
+- [¿Cuánto cuesta un programa de órdenes de servicio para técnicos en Colombia?](https://novaworkorder.com/blog/cuanto-cuesta-programa-ordenes-de-servicio/): Cuánto cuesta NOVAWORKORDER Servicios en Colombia: $49.000 por técnico al mes, precio final, sin permanencia y con 7 días gratis. Qué incluye, cómo se cobra y precios en México y EE. UU.
+- [¿Cómo organizar los pedidos que llegan por WhatsApp e Instagram?](https://novaworkorder.com/blog/organizar-pedidos-whatsapp-instagram/): Cómo organizar los pedidos que llegan por WhatsApp e Instagram: un solo lugar, una ficha por pedido y su estado. Con NOVAWORKORDER Pedidos, $39.000 por tienda al mes, sin comisión por venta.
+
+## Blog in English
+
+- [How to organize your technicians' work orders without paper](https://novaworkorder.com/en/blog/organize-work-orders-without-paper/): A step-by-step guide to leaving the notebook and scattered texts behind: what to write on every work order, how to hand out jobs and how to close each one with proof.
+- [How to write a quote your customers approve fast](https://novaworkorder.com/en/blog/write-a-quote-customers-approve-fast/): What a service quote should say so customers understand it, trust it and approve it without back-and-forth: structure, options, expiration, sending and follow-up.
+
+## Comparisons
+
+- [NOVAWORKORDER vs. Jobber](https://novaworkorder.com/en/compare/jobber/)
+- [NOVAWORKORDER vs. Housecall Pro](https://novaworkorder.com/en/compare/housecall-pro/)
+
+## Contacto
+
+- Correo: contacto@novaworkorder.com

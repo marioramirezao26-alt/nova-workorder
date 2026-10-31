@@ -31,7 +31,8 @@
   <noscript><style>[data-chat] { display: none !important; }</style></noscript>
   <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
- {"@type":"Organization","@id":"https://novaworkorder.com/#org","name":"NOVA Desarrollos","brand":{"@type":"Brand","name":"NOVAWORKORDER"},
+ {"@type":"Organization","@id":"https://novaworkorder.com/#org","name":"NOVA Desarrollos","alternateName":"NOVAWORKORDER","brand":{"@type":"Brand","name":"NOVAWORKORDER"},
+  "foundingDate":"2026","foundingLocation":{"@type":"Place","name":"Cúcuta, Norte de Santander, Colombia"},
   "url":"https://novaworkorder.com/","logo":"https://novaworkorder.com/img/icono-180.png","email":"contacto@novaworkorder.com",
   "sameAs":["https://www.instagram.com/novaworkorder.co","https://www.facebook.com/1289023594304433"],
   "contactPoint":[{"@type":"ContactPoint","contactType":"sales","email":"contacto@novaworkorder.com","availableLanguage":["en","es"]}]},
@@ -496,21 +497,7 @@
       </div>
     </section>
 
-    <!-- Recomendaciones de clientes reales: cada administrador deja la suya desde la app, con su permiso, y NOVA la revisa
-         antes de publicarla. Oculta por defecto: resenas.js la muestra solo si hay al menos una aprobada. -->
-    <section id="resenas" class="resenas" hidden aria-labelledby="resenas-titulo">
-      <div class="wrap">
-        <div class="center">
-          <p class="eyebrow">Reviews</p>
-          <h2 id="resenas-titulo">What businesses using NOVAWORKORDER say</h2>
-          <p class="lead">Reviews from our customers, published with their permission and in their own words.</p>
-        </div>
-        <ul class="resenas-lista" id="resenas-lista"></ul>
-        <div class="cta-row">
-          <a class="btn" href="#start" data-kind="prueba">Start your 7 days free</a>
-        </div>
-      </div>
-    </section>
+    <!-- P-034 A10: la sección de reseñas vuelve cuando haya reseñas reales en inglés (no se deja oculta en el HTML). -->
   </main>
 
   <footer>
@@ -540,7 +527,6 @@
     <button type="button" class="btn gaby" id="mbar-chat" data-chat="" aria-controls="chat-box" aria-label="Ask GABY in the chat on this page (AI virtual assistant)"><svg class="ico" aria-hidden="true" focusable="false"><use href="#i-chat"/></svg> <span>Ask GABY</span></button>
   </nav>
 
-  <script src="/resenas.js" defer></script>
   <script src="/enlace.js"></script>
   <script src="/animar.js" defer></script>
   <script>

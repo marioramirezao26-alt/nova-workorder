@@ -64,9 +64,17 @@ www.{$NOVA_SITIO} {
 		header /img/* Cache-Control "public, max-age=604800"
 		header /video/* Cache-Control "public, max-age=604800"
 	}
+	# P-034 A6: una ruta que no existe da 404 de verdad, con una página útil (antes era un 302 al inicio, que los buscadores
+	# leían como contenido duplicado). Los anuncios van a la raíz y no se afectan. /precios y /en/pricing ya existen.
 	handle_errors {
 		@noexiste expression {err.status_code} == 404
-		redir @noexiste https://{$NOVA_SITIO}/ 302
+		handle @noexiste {
+			root * /var/www/novaworkorder
+			rewrite * /404.html
+			file_server {
+				status 404
+			}
+		}
 	}
 }
 

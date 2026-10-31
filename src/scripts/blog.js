@@ -2,6 +2,10 @@
 // en un comentario JSON al principio y el cuerpo después. Escribe:
 //   landing/blog/index.html y landing/blog/<slug>/index.html          (español: Colombia, México e hispanos de EE. UU.)
 //   landing/en/blog/index.html y landing/en/blog/<slug>/index.html    (inglés, EE. UU.)
+//   landing/es-mx/blog/ y landing/es-us/blog/ (P-034 A8): los artículos de docs/blog/es-mx|es-us/ y la lista de los de
+//     español general; el texto propio de cada mercado lo pone Ada.
+//   Comparaciones (P-034 A8): un artículo con "seccion": "comparar" va a <inicio>comparar/<slug>/ (/comparar/,
+//     /es-mx/comparar/…) con su índice, en vez del blog. Llevan dateModified desde "actualizado".
 //   la parte del blog en landing/sitemap.xml (entre <!-- blog --> y <!-- /blog -->)
 // Las portadas (landing/img/blog/<slug>.jpg, 1200×630) las hace docs/blog/portadas.py.
 // Uso: node src/scripts/blog.js   (después de cambiar un artículo). test/en-blog.test.js revisa el resultado.
@@ -24,7 +28,7 @@ const IDIOMAS = {
     saltar: 'Saltar al contenido', menu: 'Principal', migas: 'Estás aquí', pie: 'Pie de página',
     nav: [['/#servicios', 'Servicios'], ['/#pedidos', 'Pedidos']],
     ctaTop: ['#empieza', 'Empieza gratis'],
-    lectura: (n) => `${n} min de lectura`, por: 'Por el equipo de NOVAWORKORDER',
+    lectura: (n) => `${n} min de lectura`, por: 'Por el equipo de NOVAWORKORDER', actualizado: 'actualizado el',
     fecha: (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
     ctaTitulo: 'Pruébalo con tu negocio', ctaTexto: '7 días gratis, sin tarjeta y sin instalar nada. Al final decides si sigues.',
     ctaBoton: ['/#demo', 'Empieza gratis'],
@@ -41,7 +45,7 @@ const IDIOMAS = {
     saltar: 'Skip to content', menu: 'Main', migas: 'You are here', pie: 'Footer',
     nav: [['/en/#features', 'Services'], ['/en/#stores', 'Store']],
     ctaTop: ['#empieza', 'Start free'],
-    lectura: (n) => `${n} min read`, por: 'By the NOVAWORKORDER team',
+    lectura: (n) => `${n} min read`, por: 'By the NOVAWORKORDER team', actualizado: 'updated',
     fecha: (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }),
     ctaTitulo: 'Try it with your business', ctaTexto: '7 days free, no credit card and nothing to install. Then you decide.',
     ctaBoton: ['/en/#start', 'Start free'],
@@ -51,8 +55,25 @@ const IDIOMAS = {
   },
 };
 
+// P-034 A8: los mercados en español con su propio blog. Heredan todo del español y cambian rutas, idioma y llamado.
+const mercado = (codigo, html, og, pais, notas) => ({
+  ...IDIOMAS.es, html, og, base: `/${codigo}/blog/`, inicio: `/${codigo}/`, mercado: true,
+  tituloBlog: `Blog de NOVAWORKORDER en ${pais}: órdenes de trabajo, cotizaciones y ventas por WhatsApp`,
+  nav: [[`/${codigo}/#servicios`, 'Servicios'], [`/${codigo}/#pedidos`, 'Pedidos']],
+  ctaBoton: [`/${codigo}/#demo`, 'Empieza gratis'], ctaPaises: notas,
+  pieLinks: [[`/${codigo}/blog/`, 'Blog'], [`/${codigo}/`, `NOVAWORKORDER en ${pais}`], ['/blog/', 'Blog en Colombia'],
+    [`/${codigo}/privacidad`, 'Privacidad'], ['mailto:contacto@novaworkorder.com', 'contacto@novaworkorder.com'], ['/en/blog/', 'English']],
+});
+IDIOMAS['es-mx'] = mercado('es-mx', 'es-MX', 'es_MX', 'México', 'Precios en pesos mexicanos en la página de <a href="/es-mx/#precios">México</a>.');
+IDIOMAS['es-us'] = mercado('es-us', 'es-US', 'es_US', 'Estados Unidos', 'Precios en dólares en la página de <a href="/es-us/#precios">Estados Unidos</a>.');
+const hreflang = (lang) => IDIOMAS[lang].html === 'en-US' ? 'en-US' : IDIOMAS[lang].html;
+const esEspanol = (lang) => lang !== 'en';
+const SECCION = { es: 'comparar', en: 'compare' };
+
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const ld = (obj) => JSON.stringify(obj).replace(/</g, '\\u003c');
+// Párrafos y elementos de lista de un cuerpo (para revisar que cada cifra lleve su fuente en el mismo párrafo).
+const parrafos = (html) => (html.match(/<(p|li|td|blockquote)\b[^>]*>[\s\S]*?<\/\1>/g) || []);
 const palabras = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/g, ' ').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 
 // { datos, cuerpo } de un archivo de docs/blog/<idioma>/.
@@ -72,10 +93,15 @@ const articulos = () => Object.keys(IDIOMAS).flatMap((lang) => {
     .sort((a, b) => (a.orden || 99) - (b.orden || 99));
 });
 
-const urlDe = (a) => `${IDIOMAS[a.lang].base}${a.slug}/`;
+const urlDe = (a) => (a.seccion === 'comparar'
+  ? `${IDIOMAS[a.lang].inicio}${esEspanol(a.lang) ? SECCION.es : SECCION.en}/${a.slug}/`
+  : `${IDIOMAS[a.lang].base}${a.slug}/`);
 const imgDe = (a) => `/img/blog/${a.slug}.jpg`;
 
-const ORG = { '@type': 'Organization', '@id': `${SITIO}/#org`, name: 'NOVA Desarrollos', brand: { '@type': 'Brand', name: 'NOVAWORKORDER' },
+// P-034 A9: el nombre legal se queda (sale en términos y privacidad); la marca va en alternateName y brand
+const ORG = { '@type': 'Organization', '@id': `${SITIO}/#org`, name: 'NOVA Desarrollos', alternateName: 'NOVAWORKORDER',
+  brand: { '@type': 'Brand', name: 'NOVAWORKORDER' }, foundingDate: '2026',
+  foundingLocation: { '@type': 'Place', name: 'Cúcuta, Norte de Santander, Colombia' },
   url: `${SITIO}/`, logo: `${SITIO}/img/icono-180.png` };
 
 const cabeza = ({ t, titulo, desc, url, img, imgAlt, tipo, alternos, extraLd, publicado }) => `<!doctype html>
@@ -187,8 +213,8 @@ const paginaArticulo = (a, todos) => {
   const url = urlDe(a);
   const par = a.alterno ? todos.find((x) => x.slug === a.alterno && x.lang !== a.lang) : null;
   if (a.alterno && !par) throw new Error(`${a.slug}: no existe el alterno ${a.alterno}`);
-  const alternos = [[a.lang === 'es' ? 'es' : 'en-US', url]];
-  if (par) alternos.push([par.lang === 'es' ? 'es' : 'en-US', urlDe(par)], ['x-default', a.lang === 'es' ? url : urlDe(par)]);
+  const alternos = [[hreflang(a.lang), url]];
+  if (par) alternos.push([hreflang(par.lang), urlDe(par)], ['x-default', esEspanol(a.lang) ? url : urlDe(par)]);
   const rel = (a.relacionados || []).map((s) => {
     const r = todos.find((x) => x.slug === s && x.lang === a.lang);
     if (!r) throw new Error(`${a.slug}: no existe el relacionado ${s}`);
@@ -196,14 +222,15 @@ const paginaArticulo = (a, todos) => {
   });
   const n = palabras(a.cuerpo);
   const min = Math.max(1, Math.round(n / 200));
-  const titulo = `${a.titulo} | ${a.lang === 'es' ? 'Blog de NOVAWORKORDER' : 'NOVAWORKORDER blog'}`;
+  const comparar = a.seccion === 'comparar';
+  const titulo = `${a.titulo} | ${esEspanol(a.lang) ? (comparar ? 'Comparaciones de NOVAWORKORDER' : 'Blog de NOVAWORKORDER') : 'NOVAWORKORDER blog'}`;
   const extraLd = [
     { '@type': 'Article', '@id': `${SITIO}${url}#articulo`, headline: a.titulo, description: a.descripcion, image: `${SITIO}${imgDe(a)}`,
       datePublished: a.fecha, dateModified: a.actualizado || a.fecha, inLanguage: t.html, wordCount: n, articleSection: a.categoria,
       author: { '@id': `${SITIO}/#org` }, publisher: { '@id': `${SITIO}/#org` }, mainEntityOfPage: `${SITIO}${url}` },
     { '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: t.nombreInicio, item: `${SITIO}${t.inicio}` },
-      { '@type': 'ListItem', position: 2, name: t.blog, item: `${SITIO}${t.base}` },
+      { '@type': 'ListItem', position: 2, name: comparar ? 'Comparar' : t.blog, item: `${SITIO}${comparar ? indiceComparar(a.lang) : t.base}` },
       { '@type': 'ListItem', position: 3, name: a.titulo, item: `${SITIO}${url}` }] },
   ];
   // Preguntas frecuentes del artículo (opcional, "faq": [[pregunta, respuesta], …]): las mismas que se ven en la página,
@@ -215,11 +242,11 @@ const paginaArticulo = (a, todos) => {
   <main id="contenido" tabindex="-1" class="blog-articulo">
     <article class="wrap">
       <nav class="migas" aria-label="${t.migas}">
-        <a href="${t.inicio}">${t.nombreInicio}</a> <span aria-hidden="true">›</span> <a href="${t.base}">${t.blog}</a> <span aria-hidden="true">›</span> <span aria-current="page">${esc(a.categoria)}</span>
+        <a href="${t.inicio}">${t.nombreInicio}</a> <span aria-hidden="true">›</span> <a href="${comparar ? indiceComparar(a.lang) : t.base}">${comparar ? 'Comparar' : t.blog}</a> <span aria-hidden="true">›</span> <span aria-current="page">${esc(a.categoria)}</span>
       </nav>
       <p class="eyebrow">${esc(a.categoria)}</p>
       <h1>${esc(a.titulo)}</h1>
-      <p class="meta"><time datetime="${a.fecha}">${t.fecha(a.fecha)}</time> · ${t.lectura(min)} · ${t.por}</p>
+      <p class="meta"><time datetime="${a.fecha}">${t.fecha(a.fecha)}</time>${a.actualizado && a.actualizado !== a.fecha ? ` · ${t.actualizado} <time datetime="${a.actualizado}">${t.fecha(a.actualizado)}</time>` : ''} · ${t.lectura(min)} · ${t.por}</p>
       <img class="portada-blog" src="${imgDe(a)}" width="1200" height="630" alt="${esc(a.portada.alt || a.titulo)}" />
       <div class="articulo-cuerpo">
 ${a.cuerpo.split('\n').map((l) => (l ? `        ${l}` : '')).join('\n')}
@@ -236,11 +263,23 @@ ${rel.length ? `
 ` + pie(t);
 };
 
+const indiceComparar = (lang) => `${IDIOMAS[lang].inicio}${esEspanol(lang) ? SECCION.es : SECCION.en}/`;
+const delBlog = (todos) => todos.filter((a) => a.seccion !== 'comparar');
+
+// Lo que sale en el índice de un idioma o mercado: los suyos y, en México y EE. UU., también los de español general.
+const listaDe = (lang, todos) => {
+  const propios = delBlog(todos).filter((a) => a.lang === lang);
+  return IDIOMAS[lang].mercado ? [...propios, ...delBlog(todos).filter((a) => a.lang === 'es')] : propios;
+};
+
 const paginaIndice = (lang, todos) => {
   const t = IDIOMAS[lang];
-  const lista = todos.filter((a) => a.lang === lang);
-  const otro = lang === 'es' ? 'en' : 'es';
-  const alternos = [[lang === 'es' ? 'es' : 'en-US', t.base], [otro === 'es' ? 'es' : 'en-US', IDIOMAS[otro].base], ['x-default', IDIOMAS.es.base]];
+  const lista = listaDe(lang, todos);
+  const alternos = t.mercado
+    ? [[t.html, t.base], ['es', IDIOMAS.es.base], ['x-default', IDIOMAS.es.base]]
+    : [[hreflang(lang), t.base], [hreflang(lang === 'es' ? 'en' : 'es'), IDIOMAS[lang === 'es' ? 'en' : 'es'].base],
+      ...(lang === 'es' ? Object.keys(IDIOMAS).filter((k) => IDIOMAS[k].mercado).map((k) => [IDIOMAS[k].html, IDIOMAS[k].base]) : []),
+      ['x-default', IDIOMAS.es.base]];
   const extraLd = [
     { '@type': 'Blog', '@id': `${SITIO}${t.base}#blog`, name: t.tituloBlog, description: t.descBlog, url: `${SITIO}${t.base}`, inLanguage: t.html,
       publisher: { '@id': `${SITIO}/#org` },
@@ -275,25 +314,90 @@ const escribir = (rel, html) => {
   fs.writeFileSync(f, html);
 };
 
+// P-034 A9: el archivo de cada URL fija del mapa (/es-us/ → es-us/index.html, /privacidad → privacidad.html).
+const archivoDeRuta = (ruta) => {
+  const rel = ruta.replace(/^\//, '');
+  for (const c of [path.join(rel, 'index.html'), `${rel}.html`, rel]) {
+    const f = path.join(LANDING, c);
+    if (c && fs.existsSync(f) && fs.statSync(f).isFile()) return f;
+  }
+  return null;
+};
+
+// Fecha del último cambio de un archivo según git (AAAA-MM-DD); null sin git (en el servidor el mapa ya viene hecho).
+const ultimoCambio = (archivo) => {
+  try {
+    const out = require('node:child_process').execFileSync('git', ['log', '-1', '--format=%cs', '--', archivo],
+      { cwd: RAIZ, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(out) ? out : null;
+  } catch (e) {
+    return null;
+  }
+};
+
+// Las URL que no son del blog llevan <lastmod> con la fecha de su archivo (si git la sabe; si no, se deja la que tenía).
+const lastmodFijos = (xml) => xml.replace(/  <url><loc>(https:\/\/novaworkorder\.com)([^<]*)<\/loc>(?:<lastmod>([^<]*)<\/lastmod>)?<\/url>/g,
+  (todo, sitio, ruta, antes) => {
+    const archivo = archivoDeRuta(ruta || '/');
+    const fecha = (archivo && ultimoCambio(archivo)) || antes;
+    return fecha ? `  <url><loc>${sitio}${ruta}</loc><lastmod>${fecha}</lastmod></url>` : todo;
+  });
+
+// P-034 A8: índice de comparaciones de un idioma o mercado (solo si tiene alguna)
+const paginaComparar = (lang, todos) => {
+  const t = IDIOMAS[lang];
+  const lista = todos.filter((a) => a.seccion === 'comparar' && a.lang === lang);
+  const url = indiceComparar(lang);
+  const titulo = esEspanol(lang) ? 'Compara NOVAWORKORDER con otros programas' : 'Compare NOVAWORKORDER';
+  const desc = esEspanol(lang) ? 'Comparaciones honestas de NOVAWORKORDER con otros programas de órdenes de servicio: precios, qué incluye cada uno y para quién es mejor.'
+    : 'Honest comparisons of NOVAWORKORDER with other field service tools.';
+  const extraLd = [{ '@type': 'CollectionPage', '@id': `${SITIO}${url}#pagina`, name: titulo, url: `${SITIO}${url}`, inLanguage: t.html,
+    dateModified: lista.map((a) => a.actualizado || a.fecha).sort().pop(), publisher: { '@id': `${SITIO}/#org` } }];
+  return cabeza({ t, titulo: `${titulo} | NOVAWORKORDER`, desc, url, img: imgDe(lista[0]), imgAlt: lista[0].portada.alt || lista[0].titulo,
+    tipo: 'website', alternos: [[hreflang(lang), url]], extraLd }) + `
+  <main id="contenido" tabindex="-1" class="blog-indice">
+    <div class="wrap">
+      <div class="center">
+        <p class="eyebrow">${esEspanol(lang) ? 'Comparar' : 'Compare'}</p>
+        <h1>${esc(titulo)}</h1>
+        <p class="lead">${esc(desc)}</p>
+      </div>
+      <ul class="tarjetas">${lista.map((a) => tarjeta(a, t)).join('')}
+      </ul>
+${cta(t)}
+    </div>
+  </main>
+` + pie(t);
+};
+
 const sitemap = (todos) => {
   const f = path.join(LANDING, 'sitemap.xml');
-  const xml = fs.readFileSync(f, 'utf8');
-  const ultima = (lang) => todos.filter((a) => a.lang === lang).map((a) => a.actualizado || a.fecha).sort().pop();
+  const xml = lastmodFijos(fs.readFileSync(f, 'utf8').replace(/  <!-- blog[^>]*-->\n[\s\S]*?  <!-- \/blog -->\n/, ''));
+  const ultima = (lista) => lista.map((a) => a.actualizado || a.fecha).sort().pop();
   const urls = [];
   for (const lang of Object.keys(IDIOMAS)) {
-    if (!todos.some((a) => a.lang === lang)) continue;
-    urls.push(`  <url><loc>${SITIO}${IDIOMAS[lang].base}</loc><lastmod>${ultima(lang)}</lastmod></url>`);
-    for (const a of todos.filter((x) => x.lang === lang)) urls.push(`  <url><loc>${SITIO}${urlDe(a)}</loc><lastmod>${a.actualizado || a.fecha}</lastmod></url>`);
+    const lista = listaDe(lang, todos);
+    if (lista.length) urls.push(`  <url><loc>${SITIO}${IDIOMAS[lang].base}</loc><lastmod>${ultima(lista)}</lastmod></url>`);
+    for (const a of delBlog(todos).filter((x) => x.lang === lang)) urls.push(`  <url><loc>${SITIO}${urlDe(a)}</loc><lastmod>${a.actualizado || a.fecha}</lastmod></url>`);
+    const comp = todos.filter((a) => a.seccion === 'comparar' && a.lang === lang);
+    if (comp.length && esEspanol(lang)) {          // /en/compare/ es a mano y ya está en el mapa
+      urls.push(`  <url><loc>${SITIO}${indiceComparar(lang)}</loc><lastmod>${ultima(comp)}</lastmod></url>`);
+      for (const a of comp) urls.push(`  <url><loc>${SITIO}${urlDe(a)}</loc><lastmod>${a.actualizado || a.fecha}</lastmod></url>`);
+    }
   }
   const bloque = `  <!-- blog: lo escribe src/scripts/blog.js -->\n${urls.join('\n')}\n  <!-- /blog -->\n`;
-  const limpio = xml.replace(/  <!-- blog[^>]*-->\n[\s\S]*?  <!-- \/blog -->\n/, '');
-  fs.writeFileSync(f, limpio.replace('</urlset>', `${bloque}</urlset>`));
+  fs.writeFileSync(f, xml.replace('</urlset>', `${bloque}</urlset>`));
 };
 
 const construir = () => {
   const todos = articulos();
   for (const a of todos) escribir(path.join(urlDe(a), 'index.html'), paginaArticulo(a, todos));
-  for (const lang of Object.keys(IDIOMAS)) if (todos.some((a) => a.lang === lang)) escribir(path.join(IDIOMAS[lang].base, 'index.html'), paginaIndice(lang, todos));
+  for (const lang of Object.keys(IDIOMAS)) {
+    if (listaDe(lang, todos).length) escribir(path.join(IDIOMAS[lang].base, 'index.html'), paginaIndice(lang, todos));
+    if (esEspanol(lang) && todos.some((a) => a.seccion === 'comparar' && a.lang === lang)) {
+      escribir(path.join(indiceComparar(lang), 'index.html'), paginaComparar(lang, todos));
+    }
+  }
   sitemap(todos);
   return todos;
 };
@@ -302,4 +406,4 @@ if (require.main === module) {
   for (const a of construir()) console.log(`${urlDe(a)}  ${palabras(a.cuerpo)} palabras`);
 }
 
-module.exports = { articulos, palabras, urlDe, imgDe, construir };
+module.exports = { articulos, palabras, parrafos, urlDe, imgDe, construir };
