@@ -36,6 +36,11 @@ router.post('/demo', demoLimiter, [
   body('source').optional({ checkFalsy: true }).isIn(['web', 'chat']),
   body('lang').optional({ checkFalsy: true }).isIn(['es', 'en']),
   body('market').optional({ checkFalsy: true }).isIn(MARKETS),
+  // P-047: la autorización para avisarle a Meta y los datos con que Meta empareja el registro (todo opcional)
+  body('meta_ok').optional().isBoolean({ strict: true }),
+  body('event_id').optional({ checkFalsy: true }).isString().isLength({ max: 64 }),
+  body('fbp').optional({ checkFalsy: true }).isString().isLength({ max: 250 }),
+  body('fbc').optional({ checkFalsy: true }).isString().isLength({ max: 250 }),
   validateRequest,
 ], requestDemo);
 

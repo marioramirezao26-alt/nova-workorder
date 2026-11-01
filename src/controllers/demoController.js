@@ -1,8 +1,9 @@
 const DemoRequest = require('../models/DemoRequest');
 const { LEAD_TOKEN } = DemoRequest;
 const { channelOf, REF } = require('../utils/channel');
+const metaConversiones = require('../services/metaConversiones');
 
-const fields = 'company name email phone lang market product technicians message source channel referral campaign leadToken kind consentAt status receivedAt createdAt';
+const fields = 'company name email phone lang market product technicians message source channel referral campaign leadToken kind consentAt metaConsentAt status receivedAt createdAt';
 
 // `l`: la ficha del chat con GABY (enlace de prueba). Uno que no tenga la forma esperada se ignora y la solicitud sigue:
 // un enlace mal copiado nunca debe impedir crear la prueba.
@@ -18,6 +19,9 @@ const campaignOf = (value) => {
   const c = String(value || '').trim().toLowerCase().slice(0, 60);
   return /^[a-z0-9_-]+$/.test(c) ? c : null;
 };
+
+// P-047: los avisos a Meta en curso (las pruebas los esperan; en producción nadie los espera).
+const avisos = new Set();
 
 const leadTokenOf = (value) => (typeof value === 'string' && LEAD_TOKEN.test(value.trim()) ? value.trim() : null);
 
@@ -36,12 +40,23 @@ const requestDemo = async (req, res) => {
         : 'Para empezar tu prueba acepta los términos y la política de privacidad' });
     }
     const lang = req.body.lang === 'en' ? 'en' : 'es';
+    const autorizoMeta = kind === 'prueba' && req.body.meta_ok === true;
     const market = marketOf(req.body);
     await DemoRequest.create({ company, name, email, phone, lang, market, product: product || 'servicios', technicians, message, source: req.body.source === 'chat' ? 'chat' : 'web',
       kind: kind || 'demo', channel: channelOf({ utm: req.body.utm, ref: req.body.ref, referral: req.body.referral }),
       referral: REF.test(String(req.body.referral || '').toLowerCase()) ? String(req.body.referral).toLowerCase() : null,
-      campaign: campaignOf(req.body.campaign), leadToken: leadTokenOf(req.body.l), consentAt: kind === 'prueba' ? new Date() : null });
-    return res.status(201).json({ ok: true });
+      campaign: campaignOf(req.body.campaign), leadToken: leadTokenOf(req.body.l), consentAt: kind === 'prueba' ? new Date() : null,
+      metaConsentAt: autorizoMeta ? new Date() : null });
+    res.status(201).json({ ok: true });
+    // P-047: después de responder, y solo con la casilla marcada; un fallo de Meta no toca la prueba
+    if (autorizoMeta) {
+      const aviso = metaConversiones.avisarRegistro({ autorizo: true, email, eventId: req.body.event_id, ip: req.ip,
+        userAgent: req.get('user-agent'), url: req.get('referer'), fbp: req.body.fbp, fbc: req.body.fbc,
+        product: product || 'servicios', market }).catch(() => ({ enviado: false }));
+      avisos.add(aviso);
+      aviso.finally(() => avisos.delete(aviso));
+    }
+    return undefined;
   } catch (error) {
     return res.status(500).json({ message: req.body.lang === 'en' ? 'We could not save your request. Email us at contacto@novaworkorder.com.'
       : 'No pudimos registrar tu solicitud. Escríbenos a contacto@novaworkorder.com.' });
@@ -75,4 +90,4 @@ const ackDemoRequest = async (req, res) => {
   }
 };
 
-module.exports = { requestDemo, listDemoRequests, ackDemoRequest, marketOf };
+module.exports = { requestDemo, listDemoRequests, ackDemoRequest, marketOf, avisos };
