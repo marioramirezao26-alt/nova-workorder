@@ -37,6 +37,8 @@ const demoRequestSchema = new mongoose.Schema(
     kind: { type: String, enum: ['demo', 'prueba'], default: 'demo' },
     // Una prueba exige aceptar los términos y la política de privacidad: cuándo los aceptó.
     consentAt: { type: Date, default: null },
+    // P-047: cuándo autorizó que NOVA le avise a Meta su registro (la casilla opcional del formulario); null = no autorizó
+    metaConsentAt: { type: Date, default: null },
     // nueva: aún no la lee GABY · recibida: ya es un prospecto en NOVA · Ventas
     status: { type: String, enum: ['nueva', 'recibida'], default: 'nueva', index: true },
     receivedAt: { type: Date, default: null },

@@ -75,11 +75,11 @@
         dijo: function () { return dijo; },
         decidir: function (si) { dijo = si ? 'si' : 'no'; try { localStorage.setItem(CLAVE, dijo); } catch (e) {} if (si) cargar(); },
         // Cada evento lleva el mercado de la página (co aquí; us en /es-us/) para separarlos en Meta.
-        evento: function (nombre, datos) {
+        evento: function (nombre, datos, opciones) {
           if (dijo !== 'si' || !window.fbq) return;
           var d = { market: 'co' };
           for (var k in (datos || {})) if (Object.prototype.hasOwnProperty.call(datos, k)) d[k] = datos[k];
-          window.fbq('track', nombre, d);
+          window.fbq('track', nombre, d, opciones || {});
         }
       };
     })();
@@ -482,6 +482,7 @@
           <label class="wide" id="message-field" hidden><span id="message-label">¿Qué quieres saber? (opcional)</span><textarea name="message" rows="3" maxlength="1000"></textarea></label>
           <label class="trap" aria-hidden="true">No llenes este campo<input name="website" tabindex="-1" autocomplete="off" /></label>
           <label class="wide consent" id="consent-field"><input type="checkbox" name="consent" /> <span>Acepto los <a href="/terminos">términos</a> y la <a href="/privacidad">política de privacidad</a>.</span></label>
+          <label class="wide consent" id="meta-field"><input type="checkbox" name="meta_ok" /> <span>Opcional: autorizo que NOVA le avise a Meta (Facebook e Instagram) que creé mi prueba, con mi correo cifrado, solo para saber qué anuncios funcionan (<a href="/privacidad#medicion">más información</a>).</span></label>
           <p class="small wide" id="contact-note" hidden>Al enviar aceptas que te contactemos sobre NOVAWORKORDER según nuestra <a href="/privacidad">política de privacidad</a>.</p>
           <button class="btn wide" type="submit" id="demo-submit" disabled>Crear mi cuenta gratis</button>
           <p class="small wide center" id="submit-note">Sin tarjeta&nbsp;· 7 días gratis&nbsp;· al final decides si sigues</p>
@@ -683,6 +684,7 @@
         techs.hidden = a !== 'servicios';
         messageField.hidden = prueba;
         consent.hidden = !prueba;
+        document.getElementById('meta-field').hidden = !prueba;   // P-047: la autorización para avisarle a Meta
         note.hidden = prueba;
         companyLabel.textContent = a === 'servicios' ? 'Nombre de tu empresa' : a === 'pedidos' ? 'Nombre de tu negocio' : 'Nombre de tu empresa o negocio';
         messageLabel.textContent = a === 'pedidos' ? '¿Qué vendes? (opcional)' : '¿Qué quieres saber? (opcional)';
@@ -764,6 +766,16 @@
         msg.className = 'msg';
         msg.textContent = 'Enviando…';
         var data = { product: a, kind: form.kind.value, consent: prueba && form.consent.checked };
+        // P-047: el mismo id para el píxel y para el aviso del servidor (Meta no lo cuenta dos veces). El servidor solo le
+        // avisa a Meta si la persona marcó la casilla; _fbp y _fbc existen solo si antes aceptó el píxel.
+        var eventId = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+        if (prueba) {
+          var galleta = function (n) { var m = document.cookie.match(new RegExp('(?:^|; )' + n + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : ''; };
+          data.meta_ok = form.meta_ok.checked === true;
+          data.event_id = eventId;
+          data.fbp = galleta('_fbp');
+          data.fbc = galleta('_fbc');
+        }
         ['company', 'name', 'email', 'phone', 'technicians', 'message', 'website'].forEach(function (k) { data[k] = form[k].value.trim(); });
         if (data.product === 'pedidos') data.technicians = '';
         data.utm = store.get('nova-utm');
@@ -792,7 +804,7 @@
             form.product.value = app;
             form.kind.value = kind;
             sync();
-            if (window.NovaMedicion) window.NovaMedicion.evento(kind === 'prueba' ? 'CompleteRegistration' : 'Lead', { content_name: app });
+            if (window.NovaMedicion) window.NovaMedicion.evento(kind === 'prueba' ? 'CompleteRegistration' : 'Lead', { content_name: app }, kind === 'prueba' ? { eventID: eventId } : undefined);
             if (kind === 'prueba') {
               // «Normalmente»: GABY puede no crear la cuenta sola (correo ya registrado, tope del día, correo apagado) y
               // entonces solo le avisa al equipo. Por eso la salida al chat y al correo si el acceso no llega.
