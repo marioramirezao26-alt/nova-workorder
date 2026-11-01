@@ -1122,7 +1122,15 @@
           live = Boolean(b.enabled && b.history);
           if (b.enabled) { fab.hidden = false; document.body.classList.add('chat-on'); modo(true); } else modo(false);
           if (live && !box.hidden) { recuperar(); startPoll(); }
+          porEnlace(Boolean(b.enabled));
         }).catch(function () {});
+      // P-045: un enlace que termina en #chat (los mensajes automáticos de WhatsApp Business) abre el chat al cargar; si el
+      // chat está apagado, lleva al formulario. También si el #chat llega después (otro enlace de la misma página).
+      function porEnlace(on) {
+        if (location.hash !== '#chat' || !box.hidden) return;
+        if (on) open(null); else { var d = document.getElementById('demo'); if (d) d.scrollIntoView(); }
+      }
+      window.addEventListener('hashchange', function () { porEnlace(document.body.classList.contains('chat-on')); });
     })();
   </script>
 
