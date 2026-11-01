@@ -221,3 +221,17 @@ test('la marca no se ata a Colombia como origen y el chat habla sencillo', () =>
   assert.match(html, /\$49\.000 <small>COP por técnico al mes, precio final/);
   assert.match(html, /Nequi/);
 });
+
+// P-045: un enlace con #chat (los mensajes automáticos de WhatsApp Business) abre el chat al cargar, en las 4 portadas.
+test('el enlace con #chat abre el chat de GABY, o el formulario si el chat está apagado', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  for (const [f, destino] of [['index.html', 'demo'], ['es-us/index.html', 'demo'], ['es-mx/index.html', 'demo'], ['en/index.html', 'start']]) {
+    const html = fs.readFileSync(path.join(__dirname, '..', 'landing', f), 'utf8');
+    assert.match(html, /function porEnlace\(on\) \{\n\s+if \(location\.hash !== '#chat' \|\| !box\.hidden\) return;/, f);
+    assert.match(html, new RegExp(`if \\(on\\) open\\(null\\); else \\{ var d = document\\.getElementById\\('${destino}'\\)`), f);
+    assert.match(html, /porEnlace\(Boolean\(b\.enabled\)\);/, f);
+    assert.match(html, /window\.addEventListener\('hashchange', function \(\) \{ porEnlace\(/, f);
+    assert.ok(html.includes(`id="${destino}"`), `${f}: existe #${destino}`);
+  }
+});
