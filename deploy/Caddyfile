@@ -30,6 +30,12 @@ www.{$NOVA_SITIO} {
 
 {$NOVA_SITIO} {
 	import seguridad
+	# Seguridad (Bruno, 3-nov-2026): nadie mete la página dentro de otra para engañar al visitante. Solo limita quién la
+	# enmarca, así que no rompe el chat, los videos ni los scripts; la CSP completa va aparte, primero en modo de prueba.
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		Content-Security-Policy "frame-ancestors 'self'"
+	}
 	# P-034 A1: quién de los motores de IA (y Google y Bing) lee la página. Solo esos robots, con fecha, ruta y código;
 	# sin IP, sin cookies, sin lo que va después del «?» y sin los demás encabezados (Ley 1581). Lo lee el pulso de Ada
 	# (nova-cerebro, scripts/aeo_pulso.py) como usuario claude: el archivo es legible para todos y rota solo.
