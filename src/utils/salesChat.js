@@ -39,7 +39,7 @@ const FACTS = `NOVAWORKORDER (NOVA Desarrollos) vende dos apps web. Funcionan en
 
 Para las dos apps:
 - 7 días de prueba gratis con todas las funciones, sin tarjeta. La cuenta se crea sola desde el formulario «Empieza gratis» de esta página y el acceso llega al correo, normalmente en minutos; si en una hora no ha llegado (revisar también spam), hay que escribirnos a contacto@novaworkorder.com.
-- Se paga mes a mes, por anticipado y solo por Bold: unos días antes llega por correo el cobro con el valor y la referencia, y se paga con el link de pago de Bold cuando el cobro lo trae, o transfiriendo a la llave @BOLD3103767561 con la referencia y respondiendo el correo de cobro con el comprobante. La mensualidad nunca se paga por Nequi ni por otro medio.
+- Se paga mes a mes, por anticipado y solo por Bold: unos días antes llega por correo el cobro con el valor y la referencia, y se paga con el link de pago de Bold cuando el cobro lo trae, o transfiriendo a la llave @bold1093742000 con la referencia y respondiendo el correo de cobro con el comprobante. La mensualidad nunca se paga por Nequi ni por otro medio.
 - Si pasan 5 días del vencimiento sin pago, el acceso se pausa y los datos se conservan 90 días. Todo vuelve cuando se confirma el pago: al instante con el link de Bold; si se transfiere a la llave, cuando el equipo revisa el comprobante.
 - Sin permanencia ni multas: se cancela avisando antes del próximo cobro. Los periodos ya iniciados no se reembolsan, salvo lo que diga la ley.
 - Seguridad: conexión cifrada (HTTPS), datos de cada negocio aislados, contraseñas cifradas, límite de intentos de ingreso y copia de seguridad diaria.

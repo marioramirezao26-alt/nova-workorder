@@ -64,7 +64,7 @@ test('el último turno debe ser del visitante; las reglas no dejan al modelo inv
 });
 
 test('el chat dice lo mismo que la página: la mensualidad solo por Bold y nada de lo que ya se corrigió', () => {
-  assert.match(salesChat.FACTS, /@BOLD3103767561/);
+  assert.match(salesChat.FACTS, /@bold1093742000/);
   assert.doesNotMatch(salesChat.FACTS, /mes a mes por Nequi/);
   assert.doesNotMatch(salesChat.FACTS, /sin límite/);
   assert.doesNotMatch(salesChat.FACTS, /últimos meses de un vistazo/);
@@ -157,7 +157,7 @@ test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discret
   // 28-oct-2026: el número viejo de NOVA (+57 310 376 7561) dejó de recibir mensajes y no vuelve. Mario: GABY atiende por
   // el chat de la página; el WhatsApp Business nuevo (+57 321 392 7697, lo atiende él) va solo como «¿Prefieres
   // WhatsApp?» al final de las preguntas, en el pie y como respaldo si el chat está apagado: nunca en la portada ni en la
-  // barra del celular. La llave de Bold (@BOLD3103767561) es otra cosa y se queda.
+  // barra del celular. La llave de Bold (@bold1093742000, P-061) es otra cosa y se queda.
   const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
   const nuestroNumero = /wa\.me\/573103767561|\+?57 ?310 ?376 ?7561/;
   const contactoWhatsApp = /escr[ií]b[ea]nos (por|al) WhatsApp|Soporte por WhatsApp|(Pregunta|Cuéntanos|seguir) por WhatsApp|me responde por WhatsApp|se abre WhatsApp/i;
@@ -205,7 +205,7 @@ test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discret
   assert.match(salesChat.FACTS, /Soporte: este chat de la página .* contacto@novaworkorder\.com/);
   assert.match(salesChat.SYSTEM, /el equipo te responde en contacto@novaworkorder\.com/);
   assert.match(salesChat.SYSTEM, /«Empieza gratis» del chat/);
-  assert.match(salesChat.FACTS, /@BOLD3103767561/);
+  assert.match(salesChat.FACTS, /@bold1093742000/);
   assert.doesNotMatch(salesChat.FACTS_EN + salesChat.SYSTEM_EN, /310 376 7561|wa\.me/);
 });
 

@@ -2,6 +2,13 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Llave de cobro nueva: @bold1093742000 (P-061, 3-nov-2026)
+- Mario cambió la cuenta de cobro el 2-nov-2026 y lo confirmó el 3-nov. La llave Bre-B vieja (@BOLD3103767561) lleva el
+  número 310 retirado y ya no sale en nada que vea un cliente: portada (también el FAQ en JSON-LD), precios, términos y
+  los datos del chat de ventas (`src/utils/salesChat.js`) dan **@bold1093742000**.
+- `test/llave-cobro.test.js`: ningún archivo de `landing/` ni de `src/` lleva la llave vieja, y la portada, su FAQ y el
+  chat dan la nueva.
+
 ### /en/ renovada, SEO técnico de las portadas y blog (29-oct-2026)
 - **`landing/en/`:** la misma página que /es-us/ en inglés sencillo de EE. UU. (Services y Store, US$29 por técnico y US$19
   por tienda, PayPal, 7 días gratis sin tarjeta, `lang: 'en'` y `market: 'us'` en el formulario, el chat con GABY y el
