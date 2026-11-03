@@ -2,6 +2,15 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Sin QR de pago: Bold o la llave (P-065, 3-nov-2026)
+- Mario, 3-nov-2026: «quitemos el pago por QR, solo dejemos la llave». En Colombia se paga con Bold o a la llave Bre-B:
+  los artículos del blog de precio de Servicios (`7-cuanto-cuesta-servicios`, también su pregunta frecuente) y de pedidos
+  por WhatsApp e Instagram (`8-pedidos-whatsapp-instagram`) ya no nombran el código QR, y llevan `"actualizado":
+  "2026-11-03"` (dateModified, la fecha visible y el lastmod del sitemap). El código QR impreso de la tienda (artículo 3)
+  abre la tienda y no cambia.
+- `test/llave-cobro.test.js`: ningún archivo de `landing/` ni de `docs/blog/`, ni los datos del chat, da el QR como forma
+  de pago.
+
 ### Llave de cobro nueva: @bold1093742000 (P-061, 3-nov-2026)
 - Mario cambió la cuenta de cobro el 2-nov-2026 y lo confirmó el 3-nov. La llave Bre-B vieja (@BOLD3103767561) lleva el
   número 310 retirado y ya no sale en nada que vea un cliente: portada (también el FAQ en JSON-LD), precios, términos y
