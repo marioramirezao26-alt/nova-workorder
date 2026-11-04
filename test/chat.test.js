@@ -155,7 +155,8 @@ test('la página de Estados Unidos habla en inglés y con precios en dólares', 
 
 test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discreto en preguntas y en el pie', () => {
   // 28-oct-2026: el número viejo de NOVA (+57 310 376 7561) dejó de recibir mensajes y no vuelve. Mario: GABY atiende por
-  // el chat de la página; el WhatsApp Business nuevo (+57 321 392 7697, lo atiende él) va solo como «¿Prefieres
+  // el chat de la página; el WhatsApp Business nuevo (+57 321 392 7697; desde el bot de Dapta responde GABY y una
+  // persona del equipo puede responder a mano desde la app) va solo como «¿Prefieres
   // WhatsApp?» al final de las preguntas, en el pie y como respaldo si el chat está apagado: nunca en la portada ni en la
   // barra del celular. La llave de Bold (@bold1093742000, P-061) es otra cosa y se queda.
   const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
