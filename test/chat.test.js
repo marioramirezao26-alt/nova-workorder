@@ -155,7 +155,8 @@ test('la página de Estados Unidos habla en inglés y con precios en dólares', 
 
 test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discreto en preguntas y en el pie', () => {
   // 28-oct-2026: el número viejo de NOVA (+57 310 376 7561) dejó de recibir mensajes y no vuelve. Mario: GABY atiende por
-  // el chat de la página; el WhatsApp Business nuevo (+57 321 392 7697, lo atiende él) va solo como «¿Prefieres
+  // el chat de la página; el WhatsApp nuevo (+57 321 392 7697; desde el 5-nov-2026 en la API de Meta, lo responde GABY con
+  // IA y Mario puede responder a través de GABY) va solo como «¿Prefieres
   // WhatsApp?» al final de las preguntas, en el pie y como respaldo si el chat está apagado: nunca en la portada ni en la
   // barra del celular. La llave de Bold (@bold1093742000, P-061) es otra cosa y se queda.
   const leer = (f) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'landing', f), 'utf8');
@@ -207,6 +208,68 @@ test('el chat con GABY es lo principal; el WhatsApp de NOVA es un enlace discret
   assert.match(salesChat.SYSTEM, /«Empieza gratis» del chat/);
   assert.match(salesChat.FACTS, /@bold1093742000/);
   assert.doesNotMatch(salesChat.FACTS_EN + salesChat.SYSTEM_EN, /310 376 7561|wa\.me/);
+});
+
+test('el WhatsApp de NOVA (+57 321 392 7697) lo responde GABY con IA: ni la página ni el chat dicen que lo atiende una persona', () => {
+  // 5-nov-2026 (Mario): el 321 salió de la app WhatsApp Business del celular y pasó a la API de WhatsApp de Meta. Lo
+  // responde GABY, que dice que es una IA, y una persona del equipo puede leer y responder a través de GABY.
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const raiz = path.join(__dirname, '..', 'landing');
+  const paginas = [];
+  const recorrer = (d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) recorrer(p);
+      else if (e.name.endsWith('.html')) paginas.push([path.relative(raiz, p), fs.readFileSync(p, 'utf8')]);
+    }
+  };
+  recorrer(raiz);
+  const chat = ['FACTS', 'SYSTEM', 'FACTS_EN', 'SYSTEM_EN', 'FACTS_US_ES', 'SYSTEM_US_ES', 'FACTS_MX', 'SYSTEM_MX']
+    .map((k) => [`salesChat.${k}`, salesChat[k]]);
+  const unaPersona = [
+    /WhatsApp[^.]{0,120}(atiende|responde) (directamente )?una persona/i,
+    /WhatsApp[^.]{0,120}(a person|someone) from the team answers/i,
+    /WhatsApp[^.]{0,120}answered by a person/i,
+    /no pasan por la inteligencia artificial|don't go through the artificial intelligence/i,
+  ];
+  for (const [nombre, t] of [...paginas, ...chat]) {
+    for (const rx of unaPersona) assert.doesNotMatch(t, rx, nombre);
+  }
+  // fuera del blog (que puede hablar de la app de WhatsApp Business de los negocios), NOVA ya no la usa
+  for (const [nombre, t] of [...paginas.filter(([n]) => !n.split(path.sep).includes('blog')), ...chat]) {
+    assert.doesNotMatch(t, /(desde|en) la app de WhatsApp Business|from the WhatsApp Business app/i, nombre);
+  }
+
+  const leer = (f) => fs.readFileSync(path.join(raiz, f), 'utf8');
+  const seccion = (html) => html.slice(html.indexOf('id="whatsapp"'), html.indexOf('<h2', html.indexOf('id="whatsapp"')));
+  for (const f of ['privacidad.html', 'es-mx/privacidad.html', 'es-us/privacidad.html']) {
+    const s = seccion(leer(f));
+    assert.match(s, /te responde GABY, la asistente virtual con inteligencia artificial de NOVAWORKORDER, de forma automática/, f);
+    assert.match(s, /Te dice que es una IA en su primer mensaje, junto con el aviso de privacidad/, f);
+    assert.match(s, /nunca le escribe primero a nadie/, f);
+    assert.match(s, /plataforma de WhatsApp Business de Meta/, f);
+    assert.match(s, /proveedores de modelos de inteligencia artificial,? \(?a través de OpenRouter/, f);
+    assert.match(s, /queda guardada en GABY, en el servidor de NOVA \(Vultr\)/, f);
+    assert.match(s, /«no me escriban»/, f);
+  }
+  const en = seccion(leer('en/privacy.html'));
+  assert.match(en, /you're answered automatically by GABY, NOVAWORKORDER's virtual assistant with artificial intelligence/);
+  assert.match(en, /She tells you she's an AI in her first message/);
+  assert.match(en, /she never writes to anyone first/);
+  assert.match(en, /Meta's WhatsApp Business Platform/);
+  assert.match(en, /artificial intelligence model providers, through OpenRouter/);
+  // la excepción aprobada por Mario: el número viejo queda solo en esta línea de la política de Colombia
+  assert.match(leer('privacidad.html'), /<li><b>Conversaciones anteriores:<\/b> hasta el 28 de octubre de 2026, el WhatsApp de NOVA era el \+57 310 376 7561 y lo atendía GABY por la API de WhatsApp Business de Meta, con proveedores de IA a través de OpenRouter\./);
+
+  for (const f of ['index.html', 'es-mx/index.html', 'es-us/index.html']) {
+    assert.match(leer(f), /<p class="wa-alt" data-wa-alt hidden>O por WhatsApp, donde te responde GABY, nuestra asistente con IA:/, f);
+  }
+  assert.match(leer('en/index.html'), /<p class="wa-alt" data-wa-alt hidden>Or on WhatsApp, where GABY, our AI assistant, answers:/);
+  for (const k of ['FACTS', 'FACTS_US_ES', 'FACTS_MX']) assert.match(salesChat[k], /ahí también responde GABY, con IA/, k);
+  for (const k of ['SYSTEM', 'SYSTEM_US_ES', 'SYSTEM_MX']) assert.match(salesChat[k], /donde también responde GABY, con IA/, k);
+  assert.match(salesChat.FACTS_EN, /GABY, an AI, answers there too/);
+  assert.match(salesChat.SYSTEM_EN, /where GABY, an AI, also answers/);
 });
 
 test('la marca no se ata a Colombia como origen y el chat habla sencillo', () => {
