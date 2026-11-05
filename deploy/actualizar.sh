@@ -4,8 +4,16 @@
 set -euo pipefail
 TAR="${1:?uso: actualizar.sh /tmp/nova.tar}"
 DEST=/opt/nova-workorder
+# los datos de quien vende se ponen en una copia revisada antes de tocar nada (R11: sin [FALTA DATO] ni marcadores)
+REVISA="$(mktemp -d)"
+trap 'rm -rf "$REVISA"' EXIT
+tar -xf "$TAR" -C "$REVISA" landing 2>/dev/null || true
+node "$(dirname "$0")/llenar-vendedor.js" "$REVISA/landing" || { echo ">> No actualizo nada"; exit 1; }
+bash "$(dirname "$0")/sin-falta-dato.sh" "$REVISA/landing" || { echo ">> No actualizo nada"; exit 1; }
 runuser -u nova -- bash -c "umask 077; bash $DEST/deploy/respaldo.sh" || echo ">> No se pudo respaldar antes de actualizar (¿primera vez?)"
 tar -xf "$TAR" -C "$DEST" --exclude=.env --exclude=respaldos
+# se publica la copia revisada arriba, ya con los datos de quien vende
+if [ -d "$REVISA/landing" ]; then rm -rf "$DEST/landing" && cp -r "$REVISA/landing" "$DEST/landing"; fi
 (cd "$DEST" && npm ci --omit=dev --silent)
 chown -R nova:nova "$DEST"
 chown -R root:root "$DEST/deploy" && chmod -R go-w "$DEST/deploy"   # lo que root ejecuta no lo puede cambiar la app
