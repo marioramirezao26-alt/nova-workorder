@@ -261,6 +261,9 @@ test('el WhatsApp de NOVA (+57 321 392 7697) lo responde GABY con IA: ni la pág
   assert.match(en, /artificial intelligence model providers, through OpenRouter/);
   // la excepción aprobada por Mario: el número viejo queda solo en esta línea de la política de Colombia
   assert.match(leer('privacidad.html'), /<li><b>Conversaciones anteriores:<\/b> hasta el 28 de octubre de 2026, el WhatsApp de NOVA era el \+57 310 376 7561 y lo atendía GABY por la API de WhatsApp Business de Meta, con proveedores de IA a través de OpenRouter\./);
+  // y el tramo en que el 321 lo atendía una persona desde el celular (28-oct al 5-nov-2026): esos chats se borraron con
+  // su copia de seguridad al pasar el número a la API (registro del 5-nov-2026, 4:48 p. m.)
+  assert.match(leer('privacidad.html'), /<li><b>Del 28 de octubre al 5 de noviembre de 2026:<\/b> el \+57 321 392 7697 lo atendía una persona del equipo desde el celular, sin inteligencia artificial\. Esas conversaciones se borraron, junto con su copia de seguridad, cuando el número pasó a la plataforma de WhatsApp Business de Meta, así que no las conservamos\.<\/li>/);
 
   for (const f of ['index.html', 'es-mx/index.html', 'es-us/index.html']) {
     assert.match(leer(f), /<p class="wa-alt" data-wa-alt hidden>O por WhatsApp, donde te responde GABY, nuestra asistente con IA:/, f);
