@@ -11,6 +11,10 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 tar -xf "$TAR" -C "$TMP" landing docs/blog
 [ -f "$TMP/landing/index.html" ] || { echo ">> El paquete no trae landing/index.html: no publico nada"; exit 1; }
+# los datos de quien vende se ponen desde el archivo del servidor; si falta o está mal, no se publica nada
+node "$(dirname "$0")/llenar-vendedor.js" "$TMP/landing" || { echo ">> No publico nada"; exit 1; }
+# R11: con un [FALTA DATO] o un dato de quien vende sin poner, no se publica nada
+bash "$(dirname "$0")/sin-falta-dato.sh" "$TMP/landing" || { echo ">> No publico nada"; exit 1; }
 # la copia del servidor también se pone al día, para que el próximo actualizar.sh no la eche para atrás
 rm -rf "$DEST/landing.nuevo" && cp -r "$TMP/landing" "$DEST/landing.nuevo" && rm -rf "$DEST/landing" && mv "$DEST/landing.nuevo" "$DEST/landing"
 mkdir -p "$DEST/docs" && rm -rf "$DEST/docs/blog" && cp -r "$TMP/docs/blog" "$DEST/docs/blog"
