@@ -52,9 +52,9 @@
   '</filter>' +
   // Luz de los ojos: centro casi blanco con halo azul, como en el render aprobado
   '<filter id="ojo' + id + '" x="-60%" y="-90%" width="220%" height="280%" color-interpolation-filters="sRGB">' +
-    '<feGaussianBlur in="SourceAlpha" stdDeviation="16" result="a"/><feFlood flood-color="#0B5BFF"/><feComposite in2="a" operator="in" result="lejos"/>' +
-    '<feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b"/><feFlood flood-color="#2EA8FF"/><feComposite in2="b" operator="in" result="cerca"/>' +
-    '<feMerge><feMergeNode in="lejos"/><feMergeNode in="lejos"/><feMergeNode in="cerca"/><feMergeNode in="cerca"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="14" result="a"/><feFlood flood-color="#0B6BFF" flood-opacity=".9"/><feComposite in2="a" operator="in" result="lejos"/>' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b"/><feFlood flood-color="#2FA8FF"/><feComposite in2="b" operator="in" result="cerca"/>' +
+    '<feMerge><feMergeNode in="lejos"/><feMergeNode in="cerca"/><feMergeNode in="cerca"/><feMergeNode in="SourceGraphic"/></feMerge>' +
   '</filter>' +
   '<filter id="difuso' + id + '" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9"/></filter>' +
   '<radialGradient id="disco' + id + '" cx="50%" cy="50%" r="50%">' +
@@ -107,8 +107,8 @@
 
   // Piel 3D: el cuerpo del render aprobado, con el rostro en blanco
   '<g class="piel3d">' +
-    '<ellipse cx="205" cy="340" rx="96" ry="16" fill="#22D3EE" opacity=".3" filter="' + u('difuso') + '"/>' +
-    '<image class="piel" x="0" y="40" width="400" height="308.7" preserveAspectRatio="xMidYMid meet"/>' +
+    '<ellipse cx="205" cy="326" rx="104" ry="15" fill="#39C8FF" opacity=".42" filter="' + u('difuso') + '"/>' +
+    '<image class="piel" x="0" y="40" width="400" height="284.9" preserveAspectRatio="xMidYMid meet"/>' +
     '<circle class="nucleo" cx="243" cy="232" r="22" fill="' + u('halo') + '"/>' +
     '<ellipse class="luz" cx="63" cy="210" rx="27" ry="42" fill="#D77BFF" filter="' + u('difuso') + '"/>' +
     '<ellipse class="luz" cx="368" cy="188" rx="9" ry="48" fill="#D77BFF" filter="' + u('difuso') + '"/>' +
@@ -117,19 +117,19 @@
   // Caras: una por estado; solo se ve la del estado activo.
   // Medidas tomadas de la imagen aprobada (lienzo de 635 × 440): ojo izquierdo centrado en (320,222), derecho en (498,210), boca en (418,297).
   '<g class="caras" transform="translate(-38 52) scale(.6)" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
-    '<g class="ojos" stroke="#CFEFFF" filter="' + u('ojo') + '">' +
+    '<g class="ojos" stroke="#ECF7FF" filter="' + u('ojo') + '">' +
       '<g class="cara feliz">' +
-        '<path d="M263 245 C275 200 345 185 381 236" stroke-width="27"/><path d="M447 229 C462 180 520 172 550 231" stroke-width="27"/>' +
+        '<path d="M260.6 244.4 L261.0 238.5 L262.6 233.1 L265.0 227.9 L267.9 223.0 L271.3 218.4 L275.3 214.2 L279.6 210.4 L284.3 207.1 L289.4 204.1 L294.7 201.6 L300.3 199.6 L306.1 198.1 L312.1 197.1 L318.1 196.6 L324.3 196.6 L330.4 197.1 L336.6 198.3 L342.7 199.9 L348.7 202.2 L354.5 205.0 L360.2 208.4 L365.6 212.4 L370.7 217.0 L375.4 222.1 L379.7 227.9 L383.0 234.6 L379.0 237.4 L373.7 232.9 L368.8 228.6 L364.0 224.9 L359.0 221.6 L354.0 218.9 L349.0 216.6 L343.9 214.7 L338.9 213.3 L333.8 212.3 L328.8 211.7 L323.8 211.4 L318.8 211.5 L313.9 211.9 L309.2 212.7 L304.5 213.8 L300.0 215.3 L295.6 217.0 L291.4 219.0 L287.4 221.3 L283.6 223.9 L280.1 226.8 L276.8 230.0 L273.7 233.5 L270.9 237.3 L268.3 241.3 L265.4 245.6 Z" fill="#ECF7FF" stroke="#ECF7FF" stroke-width="11"/><path d="M444.6 228.3 L445.4 222.1 L447.2 216.5 L449.6 211.2 L452.4 206.2 L455.7 201.7 L459.3 197.5 L463.3 193.8 L467.6 190.6 L472.2 187.9 L477.0 185.7 L482.1 184.1 L487.3 183.0 L492.6 182.5 L498.0 182.6 L503.4 183.3 L508.8 184.6 L514.1 186.5 L519.3 189.0 L524.4 192.1 L529.2 195.7 L533.9 200.0 L538.3 204.8 L542.4 210.1 L546.2 216.0 L549.7 222.6 L552.2 229.9 L547.8 232.1 L543.2 226.4 L539.0 221.1 L534.8 216.3 L530.5 212.1 L526.3 208.5 L522.0 205.3 L517.8 202.7 L513.5 200.6 L509.3 199.0 L505.2 197.8 L501.1 196.9 L497.1 196.5 L493.1 196.5 L489.2 196.8 L485.4 197.5 L481.7 198.6 L478.0 200.0 L474.4 201.7 L470.9 203.9 L467.5 206.4 L464.2 209.3 L461.0 212.6 L458.0 216.3 L455.1 220.4 L452.4 224.9 L449.4 229.7 Z" fill="#ECF7FF" stroke="#ECF7FF" stroke-width="11"/>' +
       '</g>' +
       '<g class="cara escuchando">' +
-        '<rect class="ojo" x="307" y="186" width="27" height="70" rx="13.5" fill="#CFEFFF" stroke="none"/>' +
-        '<rect class="ojo" x="486" y="176" width="25" height="66" rx="12.5" fill="#CFEFFF" stroke="none"/>' +
+        '<rect class="ojo" x="307" y="186" width="27" height="70" rx="13.5" fill="#ECF7FF" stroke="none"/>' +
+        '<rect class="ojo" x="486" y="176" width="25" height="66" rx="12.5" fill="#ECF7FF" stroke="none"/>' +
       '</g>' +
       '<g class="cara pensando">' +
-        '<path d="M270 228 L372 222" stroke-width="23"/><path d="M450 218 C470 200 522 196 548 216" stroke-width="23"/>' +
+        '<path d="M269.9 226.0 L273.8 225.1 L277.7 224.5 L281.6 224.0 L285.5 223.5 L289.4 223.1 L293.3 222.7 L297.2 222.3 L301.1 221.9 L305.1 221.6 L309.0 221.3 L312.9 221.0 L316.8 220.7 L320.7 220.5 L324.7 220.3 L328.6 220.1 L332.5 219.9 L336.4 219.8 L340.4 219.6 L344.3 219.5 L348.2 219.4 L352.2 219.4 L356.1 219.4 L360.0 219.4 L364.0 219.4 L367.9 219.5 L371.9 220.0 L372.1 224.0 L368.2 224.9 L364.3 225.5 L360.4 226.0 L356.5 226.5 L352.6 226.9 L348.7 227.3 L344.8 227.7 L340.9 228.1 L336.9 228.4 L333.0 228.7 L329.1 229.0 L325.2 229.3 L321.3 229.5 L317.3 229.7 L313.4 229.9 L309.5 230.1 L305.6 230.2 L301.6 230.4 L297.7 230.5 L293.8 230.6 L289.8 230.6 L285.9 230.6 L282.0 230.6 L278.0 230.6 L274.1 230.5 L270.1 230.0 Z" fill="#ECF7FF" stroke="#ECF7FF" stroke-width="11"/><path d="M448.7 216.5 L450.8 213.8 L453.5 211.5 L456.5 209.4 L459.8 207.5 L463.3 205.7 L466.9 204.2 L470.8 202.8 L474.8 201.6 L479.0 200.5 L483.3 199.7 L487.6 199.0 L492.1 198.5 L496.6 198.3 L501.1 198.2 L505.6 198.3 L510.1 198.6 L514.6 199.2 L519.0 199.9 L523.4 200.9 L527.6 202.0 L531.7 203.5 L535.7 205.1 L539.5 207.0 L543.0 209.1 L546.4 211.5 L549.2 214.4 L546.8 217.6 L543.4 216.1 L540.1 214.5 L536.6 213.0 L533.1 211.8 L529.3 210.6 L525.5 209.7 L521.6 208.9 L517.6 208.2 L513.5 207.7 L509.4 207.4 L505.3 207.2 L501.1 207.2 L496.9 207.2 L492.8 207.5 L488.7 207.9 L484.7 208.4 L480.7 209.0 L476.9 209.8 L473.1 210.6 L469.5 211.6 L466.1 212.7 L462.8 214.0 L459.7 215.3 L456.8 216.7 L454.1 218.1 L451.3 219.5 Z" fill="#ECF7FF" stroke="#ECF7FF" stroke-width="11"/>' +
       '</g>' +
       '<g class="cara hablando">' +
-        '<path d="M263 241 C275 196 345 181 381 232" stroke-width="27"/><path d="M447 225 C462 176 520 168 550 227" stroke-width="27"/>' +
+        '<path d="M260.6 240.4 L261.0 234.5 L262.6 229.1 L265.0 223.9 L267.9 219.0 L271.3 214.4 L275.3 210.2 L279.6 206.4 L284.3 203.1 L289.4 200.1 L294.7 197.6 L300.3 195.6 L306.1 194.1 L312.1 193.1 L318.1 192.6 L324.3 192.6 L330.4 193.1 L336.6 194.3 L342.7 195.9 L348.7 198.2 L354.5 201.0 L360.2 204.4 L365.6 208.4 L370.7 213.0 L375.4 218.1 L379.7 223.9 L383.0 230.6 L379.0 233.4 L373.7 228.9 L368.8 224.6 L364.0 220.9 L359.0 217.6 L354.0 214.9 L349.0 212.6 L343.9 210.7 L338.9 209.3 L333.8 208.3 L328.8 207.7 L323.8 207.4 L318.8 207.5 L313.9 207.9 L309.2 208.7 L304.5 209.8 L300.0 211.3 L295.6 213.0 L291.4 215.0 L287.4 217.3 L283.6 219.9 L280.1 222.8 L276.8 226.0 L273.7 229.5 L270.9 233.3 L268.3 237.3 L265.4 241.6 Z" fill="#ECF7FF" stroke="#ECF7FF" stroke-width="11"/><path d="M444.6 224.3 L445.4 218.1 L447.2 212.5 L449.6 207.2 L452.4 202.2 L455.7 197.7 L459.3 193.5 L463.3 189.8 L467.6 186.6 L472.2 183.9 L477.0 181.7 L482.1 180.1 L487.3 179.0 L492.6 178.5 L498.0 178.6 L503.4 179.3 L508.8 180.6 L514.1 182.5 L519.3 185.0 L524.4 188.1 L529.2 191.7 L533.9 196.0 L538.3 200.8 L542.4 206.1 L546.2 212.0 L549.7 218.6 L552.2 225.9 L547.8 228.1 L543.2 222.4 L539.0 217.1 L534.8 212.3 L530.5 208.1 L526.3 204.5 L522.0 201.3 L517.8 198.7 L513.5 196.6 L509.3 195.0 L505.2 193.8 L501.1 192.9 L497.1 192.5 L493.1 192.5 L489.2 192.8 L485.4 193.5 L481.7 194.6 L478.0 196.0 L474.4 197.7 L470.9 199.9 L467.5 202.4 L464.2 205.3 L461.0 208.6 L458.0 212.3 L455.1 216.4 L452.4 220.9 L449.4 225.7 Z" fill="#ECF7FF" stroke="#ECF7FF" stroke-width="11"/>' +
       '</g>' +
       '<g class="cara sorprendida">' +
         '<circle cx="320" cy="220" r="30" stroke-width="13"/><circle cx="498" cy="208" r="27" stroke-width="12"/>' +
