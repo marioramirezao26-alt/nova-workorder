@@ -91,14 +91,20 @@
       burbuja('persona', texto);
       var r = responder(texto);
       // pequeña pausa para que se sienta como una respuesta; sin pausa si la persona pidió menos movimiento
+      // mientras «piensa», el halo de la figura de Gaby late (solo visual; con menos movimiento no se anima)
       var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setTimeout(function () { burbuja('gaby', r.texto, r.enlace); }, quieto ? 0 : 450);
+      var figura = document.getElementById('gaby-figura');
+      if (figura) figura.classList.add('respondiendo');
+      setTimeout(function () {
+        burbuja('gaby', r.texto, r.enlace);
+        if (figura) figura.classList.remove('respondiendo');
+      }, quieto ? 0 : 650);
     }
 
     SUGERENCIAS.forEach(function (s) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.className = 'boton boton-secundario boton-chico';
+      b.className = 'chip-sugerencia';
       b.textContent = s;
       b.addEventListener('click', function () { preguntar(s); });
       sugerencias.appendChild(b);

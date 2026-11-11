@@ -1,4 +1,5 @@
-// Capturas del prototipo en escritorio (1440 × 900) y celular (390 × 844), y revisión de que no sale nada a la red.
+// Capturas del prototipo en escritorio (1440 × 900), celular (390 × 844) y el Inicio a 1628 × 966 (el tamaño del mockup),
+// revisión de que no sale nada a la red y de que a 360 px ninguna página se mueve de lado.
 // Necesita Playwright con Chromium (no viene en el proyecto a propósito: el prototipo no tiene dependencias).
 //   1) python3 -m http.server 8765 --bind 127.0.0.1 --directory prototipo-nova
 //   2) node prototipo-nova/scripts/capturas.js http://127.0.0.1:8765
@@ -56,6 +57,23 @@ const TAMANOS = [['escritorio', { width: 1440, height: 900 }], ['movil', { width
       }
       await contexto.close();
     }
+    // Inicio al tamaño del mockup aprobado (1628 × 966), para ponerlo al lado.
+    const grande = await navegador.newContext({ viewport: { width: 1628, height: 966 }, deviceScaleFactor: 1, reducedMotion: 'reduce', locale: 'es-CO' });
+    const hojaGrande = await grande.newPage();
+    hojaGrande.on('pageerror', (e) => problemas.push(`js: ${e.message}`));
+    await hojaGrande.goto(`${BASE}/index.html`, { waitUntil: 'load' });
+    await hojaGrande.screenshot({ path: path.join(SALIDA, 'inicio-1628.png') });
+    console.log('ok inicio-1628.png');
+    await grande.close();
+    // A 360 px ninguna página se puede mover de lado (el documento no puede ser más ancho que la pantalla).
+    const angosto = await navegador.newContext({ viewport: { width: 360, height: 740 }, deviceScaleFactor: 1, reducedMotion: 'reduce', locale: 'es-CO' });
+    const hojaAngosta = await angosto.newPage();
+    for (const [nombre, ruta] of PAGINAS) {
+      await hojaAngosta.goto(`${BASE}/${ruta}`, { waitUntil: 'load' });
+      const ancho = await hojaAngosta.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
+      if (ancho[0] > ancho[1]) problemas.push(`desborde a 360 px en ${nombre}: ${ancho[0]} > ${ancho[1]}`);
+    }
+    await angosto.close();
   } finally {
     await navegador.close();
   }

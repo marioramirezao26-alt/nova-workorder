@@ -132,7 +132,7 @@ test('el prototipo tiene todas sus páginas, cada una con la franja de demostrac
     }
     assert.match(html, /class="saltar" href="#contenido"/, p);
   }
-  assert.match(fs.readFileSync(path.join(PROTO, 'index.html'), 'utf8'), /Descubre una <span>nueva forma de comprar<\/span>/);
+  assert.match(fs.readFileSync(path.join(PROTO, 'index.html'), 'utf8'), /Descubre una nueva forma de <span>comprar<\/span>/);
 });
 
 test('el prototipo no hace llamadas de red, no tiene formularios ni scripts o estilos de afuera', () => {
