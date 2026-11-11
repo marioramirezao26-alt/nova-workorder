@@ -35,7 +35,7 @@ const app = require('../src/app');
 
 const RUTAS_PROTO = ['/prototipo-nova/', '/prototipo-nova/index.html', '/prototipo-nova/assets/app.js', '/prototipo-nova/assets/datos.js',
   '/prototipo-nova/docs/AUDITORIA.md', '/index.html', '/tienda.html', '/assets/datos.js', '/assets/gaby.js'];
-const noEsPrototipo = (texto) => !texto.includes('Prototipo de demostración') && !texto.includes('NOVA_DEMO') && !texto.includes('Gaby IA (demo)');
+const noEsPrototipo = (texto) => !texto.includes('Prototipo de demostración') && !texto.includes('NOVA_DEMO') && !texto.includes('Gaby Spark (demo)');
 
 test('el backend no sirve prototipo-nova/ (con la interfaz compilada, como en producción)', async (t) => {
   const server = app.listen(0);
@@ -127,7 +127,7 @@ test('el prototipo tiene todas sus páginas, cada una con la franja de demostrac
     assert.match(html, /<html lang="es-CO">/, p);
     assert.match(html, /<meta name="robots" content="noindex, nofollow">/, p);
     for (const [href, nombre] of [['index.html', 'Inicio'], ['tienda.html', 'Tienda'], ['categorias.html', 'Categorías'], ['ofertas.html', 'Ofertas'],
-      ['gaby.html', 'Gaby IA'], ['pedidos.html', 'Mis pedidos'], ['workorder.html', 'WORKORDER']]) {
+      ['gaby.html', 'Gaby Spark'], ['pedidos.html', 'Mis pedidos'], ['workorder.html', 'WORKORDER']]) {
       assert.match(html, new RegExp(`<a href="${href}"[^>]*>${nombre}</a>`), `${p}: falta ${nombre} en el menú`);
     }
     assert.match(html, /class="saltar" href="#contenido"/, p);
@@ -295,4 +295,37 @@ test('Gaby demo contesta con frases fijas, admite que es IA y no promete envíos
   assert.doesNotMatch(preguntar('Busco una botella'), /inteligencia artificial/);       // «botella» no es «bot»
   assert.match(preguntar('Algo de deportes'), /Deportes/);
   assert.equal(g.$('gaby-sugerencias').hijos.length, 5);
+});
+
+// Gaby Spark (mascota aprobada por Mario el 11-nov-2026; nova-cerebro PR #15): reemplaza a la figura humana del prototipo.
+test('Gaby Spark: componente propio, cinco estados, sin fotos y sin estilos en línea', () => {
+  const js = fs.readFileSync(path.join(PROTO, 'assets', 'gaby-spark.js'), 'utf8');
+  for (const e of ['feliz', 'escuchando', 'pensando', 'hablando', 'sorprendida']) {
+    assert.match(js, new RegExp(`class="cara ${e}"`), `falta la cara «${e}»`);
+    assert.match(js, new RegExp(`\\[estado=${e}\\]`), `falta el estado «${e}» en los estilos`);
+  }
+  assert.match(js, /customElements\.define\('gaby-spark'/);
+  assert.match(js, /prefers-reduced-motion:no-preference/, 'las animaciones solo corren si no se pidió reducir el movimiento');
+  assert.match(js, /adoptedStyleSheets/, 'los estilos entran por hoja construida: la política de la página prohíbe los estilos en línea');
+  assert.match(js, /asistente de inteligencia artificial/, 'se anuncia como inteligencia artificial');
+  for (const p of ['index.html', 'gaby.html']) {
+    const html = fs.readFileSync(path.join(PROTO, p), 'utf8');
+    assert.match(html, /<gaby-spark [^>]*id="gaby-figura"[^>]*estado="feliz"/, `${p}: la figura es Gaby Spark`);
+    assert.match(html, /<script src="assets\/gaby-spark\.js"><\/script>/, `${p}: carga el componente`);
+    assert.doesNotMatch(html, /data-ilus="gaby"/, `${p}: ya no se pinta la figura humana`);
+    assert.doesNotMatch(html, /<gaby-spark[^>]*\bpiel=/, `${p}: el prototipo no usa la piel 3D (es una foto) hasta que Mario lo autorice`);
+  }
+});
+
+test('Gaby Spark cambia de estado con la conversación de muestra y vuelve a «feliz»', () => {
+  const g = navegador('gaby');
+  const figura = g.$('gaby-figura');
+  const vistos = [];
+  const poner = figura.setAttribute.bind(figura);
+  figura.setAttribute = (k, v) => { if (k === 'estado') vistos.push(v); poner(k, v); };
+  g.$('gaby-entrada').value = 'hola';
+  g.$('gaby-entrada').oyentes.input[0]();
+  g.$('gaby-enviar').oyentes.click[0]();
+  assert.deepEqual(vistos, ['escuchando', 'pensando', 'hablando', 'feliz']);
+  assert.equal(g.$('gaby-avatar').getAttribute('estado'), 'feliz');
 });

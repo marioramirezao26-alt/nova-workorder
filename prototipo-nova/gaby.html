@@ -6,8 +6,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none'">
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
-  <title>Gaby IA · NOVA (prototipo)</title>
-  <meta name="description" content="Demostración de Gaby IA con respuestas fijas escritas a mano.">
+  <title>Gaby Spark · NOVA (prototipo)</title>
+  <meta name="description" content="Demostración de Gaby Spark con respuestas fijas escritas a mano.">
   <link rel="icon" href="assets/icono.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/estilos.css">
 </head>
@@ -26,7 +26,7 @@
         <a href="tienda.html" class="i-tienda">Tienda</a>
         <a href="categorias.html" class="i-categorias">Categorías</a>
         <a href="ofertas.html" class="i-ofertas">Ofertas</a>
-        <a href="gaby.html" class="i-gaby" aria-current="page">Gaby IA</a>
+        <a href="gaby.html" class="i-gaby" aria-current="page">Gaby Spark</a>
         <a href="pedidos.html" class="i-pedidos">Mis pedidos</a>
         <a href="workorder.html" class="workorder" aria-label="NOVA WORKORDER, accesos de clientes">WORKORDER</a>
       </nav>
@@ -41,13 +41,13 @@
   <main id="contenido" tabindex="-1">
     <div class="envoltura">
       <div class="gaby-cabecera">
-        <div class="gaby-figura-media" id="gaby-figura" role="img" aria-label="Ilustración de Gaby IA, asistente de demostración" data-ilus="gaby"></div>
-        <div class="titulo-pagina"><span class="antetitulo">Asistente de demostración</span><h1>Gaby IA</h1><p>Gaby es una asistente de inteligencia artificial. Esta es una <strong>demostración</strong>: no se conecta a la Gaby real ni a ningún servidor, no guarda lo que escribes y contesta con respuestas fijas escritas a mano.</p></div>
+        <gaby-spark class="gaby-figura-media" id="gaby-figura" estado="feliz"></gaby-spark>
+        <div class="titulo-pagina"><span class="antetitulo">Asistente de demostración</span><h1>Gaby Spark</h1><p>Gaby es una asistente de inteligencia artificial. Esta es una <strong>demostración</strong>: no se conecta a la Gaby real ni a ningún servidor, no guarda lo que escribes y contesta con respuestas fijas escritas a mano.</p></div>
       </div>
       <section class="chat-caja" aria-labelledby="chat-titulo">
         <div class="chat-cabeza">
-          <div class="orbe orbe-chico" aria-hidden="true"></div>
-          <div><strong id="chat-titulo">Gaby IA</strong><span>Demostración · respuestas fijas</span></div>
+          <gaby-spark class="gaby-avatar" id="gaby-avatar" estado="feliz" sin-plataforma aria-hidden="true"></gaby-spark>
+          <div><strong id="chat-titulo">Gaby Spark</strong><span>Demostración · respuestas fijas</span></div>
         </div>
         <div class="chat-registro" id="gaby-registro" role="log" aria-live="polite" aria-label="Conversación de demostración" tabindex="0"></div>
         <div class="chat-sugerencias">
@@ -77,6 +77,7 @@
   </footer>
   <div class="aviso-flotante" id="aviso" role="status" aria-live="polite"></div>
 
+  <script src="assets/gaby-spark.js"></script>
   <script src="assets/datos.js"></script>
   <script src="assets/ilustraciones.js"></script>
   <script src="assets/app.js"></script>
