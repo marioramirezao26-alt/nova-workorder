@@ -287,7 +287,7 @@
             '<input class="campo" id="ficha-cantidad" type="number" min="1" max="10" value="1" inputmode="numeric"></div>' +
           '<div class="acciones">' +
             '<button type="button" class="boton boton-principal" id="ficha-agregar">' + icono('carrito') + 'Agregar al carrito simulado</button>' +
-            '<a class="boton boton-secundario" href="gaby.html?producto=' + p.id + '">Preguntarle a Gaby IA (demo)</a>' +
+            '<a class="boton boton-secundario" href="gaby.html?producto=' + p.id + '">Preguntarle a Gaby Spark (demo)</a>' +
           '</div>' +
         '</div>';
       $('#migas-actual').textContent = p.nombre;

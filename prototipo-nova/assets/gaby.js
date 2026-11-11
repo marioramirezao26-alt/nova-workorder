@@ -1,4 +1,4 @@
-/* Gaby IA — DEMOSTRACIÓN. No es la Gaby real: no se conecta a ningún modelo ni servidor, no guarda lo que escribes y
+/* Gaby Spark — DEMOSTRACIÓN. No es la Gaby real: no se conecta a ningún modelo ni servidor, no guarda lo que escribes y
    no promete nada. Responde con frases fijas, escritas a mano, según palabras clave de lo que escribes.
    La integración futura con NOVA Commerce AI está descrita en docs/integracion-commerce-ai.md. */
 (function () {
@@ -28,7 +28,7 @@
     { claves: ['regalo', 'recomienda', 'recomiendas', 'que compro', 'qué compro', 'busco', 'necesito'],
       texto: 'Te puedo mostrar ideas del catálogo de demostración. Por ejemplo, para alguien que entrena: la botella Ritmo, el tapete Calma o las mancuernas Forja. ¿Qué categoría te interesa?' },
     { claves: ['hola', 'buenas', 'buenos dias', 'buenos días', 'buenas tardes', 'hey'],
-      texto: '¡Hola! Soy Gaby IA, en versión de demostración. Pregúntame por productos, ofertas o cómo funcionaría la tienda.' }
+      texto: '¡Hola! Soy Gaby Spark, en versión de demostración. Pregúntame por productos, ofertas o cómo funcionaría la tienda.' }
   ];
 
   var SUGERENCIAS = [
@@ -71,7 +71,7 @@
       b.className = 'burbuja ' + (quien === 'persona' ? 'burbuja-persona' : 'burbuja-gaby');
       var q = document.createElement('span');
       q.className = 'quien';
-      q.textContent = quien === 'persona' ? 'Tú' : 'Gaby IA (demo)';
+      q.textContent = quien === 'persona' ? 'Tú' : 'Gaby Spark (demo)';
       b.appendChild(q);
       b.appendChild(document.createTextNode(texto));
       if (enlace) {
@@ -85,6 +85,15 @@
       registro.scrollTop = registro.scrollHeight;
     }
 
+    // La mascota (figura grande y avatar del chat) cambia de estado con la conversación; solo es visual
+    var vuelve = null;
+    function estado(e) {
+      ['gaby-figura', 'gaby-avatar'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.setAttribute('estado', e);
+      });
+    }
+
     function preguntar(texto) {
       texto = texto.trim().slice(0, 200);
       if (!texto) return;
@@ -93,11 +102,13 @@
       // pequeña pausa para que se sienta como una respuesta; sin pausa si la persona pidió menos movimiento
       // mientras «piensa», el halo de la figura de Gaby late (solo visual; con menos movimiento no se anima)
       var quieto = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var figura = document.getElementById('gaby-figura');
-      if (figura) figura.classList.add('respondiendo');
+      // Gaby Spark piensa mientras «llega» la respuesta, habla al mostrarla y vuelve a estar feliz
+      estado('pensando');
       setTimeout(function () {
         burbuja('gaby', r.texto, r.enlace);
-        if (figura) figura.classList.remove('respondiendo');
+        estado('hablando');
+        clearTimeout(vuelve);
+        vuelve = setTimeout(function () { estado('feliz'); }, quieto ? 0 : 1800);
       }, quieto ? 0 : 650);
     }
 
@@ -110,6 +121,7 @@
       sugerencias.appendChild(b);
     });
 
+    entrada.addEventListener('input', function () { clearTimeout(vuelve); estado(entrada.value ? 'escuchando' : 'feliz'); });
     enviar.addEventListener('click', function () { preguntar(entrada.value); entrada.value = ''; entrada.focus(); });
     entrada.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') { e.preventDefault(); preguntar(entrada.value); entrada.value = ''; }
@@ -120,7 +132,7 @@
       burbuja('gaby', 'Veo que te interesa «' + p.nombre + '» (' + APP.plata(p.precio) + ', precio ilustrativo). ' +
         'En la tienda real te contaría detalles del proveedor; aquí solo es una demostración.', { href: 'producto.html?id=' + p.id, texto: 'Volver a la ficha' });
     } else {
-      burbuja('gaby', '¡Hola! Soy Gaby IA, en versión de demostración. Escribe una pregunta o toca una sugerencia.');
+      burbuja('gaby', '¡Hola! Soy Gaby Spark, en versión de demostración. Escribe una pregunta o toca una sugerencia.');
     }
   });
 })();

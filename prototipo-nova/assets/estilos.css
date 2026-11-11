@@ -521,3 +521,17 @@ main > .envoltura > .nota { margin-top: 12px; }
 .pie-detalle summary::-webkit-details-marker { display: none; }
 .pie-detalle summary::before { content: '+'; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--borde-fuerte); font-weight: 800; }
 .pie-detalle[open] summary::before { content: '−'; }
+
+/* ---------- Gaby Spark (componente assets/gaby-spark.js) ---------- */
+gaby-spark { display: block; }
+gaby-spark.hero-gaby { width: min(100%, 400px); margin: 0 auto; justify-self: center; align-self: center; }
+gaby-spark.gaby-figura-media { width: 100%; max-width: 230px; margin: 0 auto; align-self: center; }
+gaby-spark.gaby-avatar { width: 46px; flex: none; }
+@media (min-width: 1101px) {
+  /* en computador la burbuja «Soy Gaby Spark» va a la derecha: la figura se corre para que no la tape */
+  gaby-spark.hero-gaby { margin: 0 0 0 -70px; justify-self: start; }
+}
+@media (max-width: 760px) {
+  gaby-spark.hero-gaby { width: min(100%, 250px); }
+  gaby-spark.gaby-figura-media { max-width: 170px; }
+}
