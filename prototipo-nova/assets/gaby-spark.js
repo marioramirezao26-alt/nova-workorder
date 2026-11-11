@@ -50,16 +50,29 @@
   '<filter id="brillo' + id + '" x="-40%" y="-40%" width="180%" height="180%">' +
     '<feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
   '</filter>' +
+  // Luz de los ojos: centro casi blanco con halo azul, como en el render aprobado
+  '<filter id="ojo' + id + '" x="-60%" y="-90%" width="220%" height="280%" color-interpolation-filters="sRGB">' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="16" result="a"/><feFlood flood-color="#0B5BFF"/><feComposite in2="a" operator="in" result="lejos"/>' +
+    '<feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b"/><feFlood flood-color="#2EA8FF"/><feComposite in2="b" operator="in" result="cerca"/>' +
+    '<feMerge><feMergeNode in="lejos"/><feMergeNode in="lejos"/><feMergeNode in="cerca"/><feMergeNode in="cerca"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+  '</filter>' +
+  '<filter id="difuso' + id + '" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9"/></filter>' +
+  '<radialGradient id="disco' + id + '" cx="50%" cy="50%" r="50%">' +
+    '<stop offset="0" stop-color="#BFF4FF" stop-opacity=".95"/><stop offset=".35" stop-color="#22D3EE" stop-opacity=".55"/><stop offset="1" stop-color="#1B3BFF" stop-opacity="0"/>' +
+  '</radialGradient>' +
+  '<clipPath id="visor' + id + '"><ellipse cx="386" cy="233" rx="176" ry="126"/></clipPath>' +
   '<clipPath id="recorte' + id + '"><ellipse cx="210" cy="194" rx="113" ry="100"/></clipPath>' +
 '</defs>' +
 
 // Plataforma holográfica
 '<g class="plataforma">' +
-  '<ellipse cx="200" cy="372" rx="150" ry="26" fill="' + u('halo') + '"/>' +
-  '<ellipse class="aro a1" cx="200" cy="372" rx="146" ry="24" fill="none" stroke="#D36BFF" stroke-width="3" filter="url(#brillo' + id + ')"/>' +
-  '<ellipse class="aro a2" cx="200" cy="372" rx="104" ry="17" fill="none" stroke="#22D3EE" stroke-width="3.5" filter="url(#brillo' + id + ')"/>' +
-  '<ellipse class="aro a3" cx="200" cy="372" rx="58" ry="9" fill="#22D3EE" fill-opacity=".25" stroke="#7DE8FF" stroke-width="2"/>' +
-  '<path class="haz" d="M176 372 L200 318 L224 372 Z" fill="#22D3EE" opacity=".18"/>' +
+  '<ellipse cx="200" cy="372" rx="170" ry="32" fill="' + u('halo') + '"/>' +
+  '<ellipse cx="200" cy="372" rx="120" ry="20" fill="' + u('disco') + '" opacity=".55"/>' +
+  '<ellipse class="aro a1" cx="200" cy="372" rx="148" ry="25" fill="none" stroke="#E07BFF" stroke-width="4" filter="' + u('brillo') + '"/>' +
+  '<ellipse cx="200" cy="372" rx="126" ry="21" fill="none" stroke="#6C7BFF" stroke-width="1.2" opacity=".7"/>' +
+  '<ellipse class="aro a2" cx="200" cy="372" rx="100" ry="16.5" fill="none" stroke="#3FE0FF" stroke-width="3.5" filter="' + u('brillo') + '"/>' +
+  '<ellipse class="aro a3" cx="200" cy="372" rx="56" ry="9" fill="#BFF4FF" fill-opacity=".35" stroke="#BFF4FF" stroke-width="2"/>' +
+  '<path class="haz" d="M168 372 L200 300 L232 372 Z" fill="' + u('disco') + '" opacity=".35"/>' +
 '</g>' +
 
 '<g class="flota">' +
@@ -94,37 +107,48 @@
 
   // Piel 3D: el cuerpo del render aprobado, con el rostro en blanco
   '<g class="piel3d">' +
-    '<image class="piel" x="0" y="40" width="400" height="277.2" preserveAspectRatio="xMidYMid meet"/>' +
-    '<circle class="nucleo" cx="256" cy="216" r="24" fill="' + u('halo') + '"/>' +
-    '<circle class="luz" cx="44" cy="174" r="31" fill="none" stroke="#E9A6FF" stroke-width="5" filter="' + u('brillo') + '"/>' +
-    '<ellipse class="luz" cx="363" cy="158" rx="9" ry="38" fill="none" stroke="#E9A6FF" stroke-width="4" filter="' + u('brillo') + '"/>' +
+    '<ellipse cx="205" cy="340" rx="96" ry="16" fill="#22D3EE" opacity=".3" filter="' + u('difuso') + '"/>' +
+    '<image class="piel" x="0" y="40" width="400" height="308.7" preserveAspectRatio="xMidYMid meet"/>' +
+    '<circle class="nucleo" cx="243" cy="232" r="22" fill="' + u('halo') + '"/>' +
+    '<ellipse class="luz" cx="63" cy="210" rx="27" ry="42" fill="#D77BFF" filter="' + u('difuso') + '"/>' +
+    '<ellipse class="luz" cx="368" cy="188" rx="9" ry="48" fill="#D77BFF" filter="' + u('difuso') + '"/>' +
   '</g>' +
 
-  // Caras: una por estado; solo se ve la del estado activo
-  '<g class="caras" stroke="#5CE6FF" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="' + u('brillo') + '">' +
-    '<g class="cara feliz">' +
-      '<path d="M138 208 Q167 150 196 208" stroke-width="17"/><path d="M226 208 Q255 150 284 208" stroke-width="17"/>' +
-      '<g class="b"><path d="M194 240 Q211 254 228 240" stroke-width="7" stroke="#3FB8FF"/></g>' +
-    '</g>' +
-    '<g class="cara escuchando">' +
-      '<rect class="ojo" x="156" y="160" width="24" height="58" rx="12" fill="#5CE6FF" stroke="none"/>' +
-      '<rect class="ojo" x="242" y="160" width="24" height="58" rx="12" fill="#5CE6FF" stroke="none"/>' +
-      '<g class="b"><path d="M196 238 Q207 245 218 238" stroke-width="5" stroke="#3FB8FF"/></g>' +
-    '</g>' +
-    '<g class="cara pensando">' +
-      '<path d="M142 192 L194 192" stroke-width="16"/><path d="M228 188 Q256 176 284 190" stroke-width="16"/>' +
-      '<g class="b"><path d="M198 240 L216 236" stroke-width="5" stroke="#3FB8FF"/></g>' +
-      '<g class="particulas" fill="#8FEAFF" stroke="none">' +
-        '<circle class="p p1" cx="282" cy="128" r="4"/><circle class="p p2" cx="298" cy="108" r="5"/><circle class="p p3" cx="318" cy="84" r="7"/>' +
+  // Caras: una por estado; solo se ve la del estado activo.
+  // Medidas tomadas de la imagen aprobada (lienzo de 635 × 440): ojo izquierdo centrado en (320,222), derecho en (498,210), boca en (418,297).
+  '<g class="caras" transform="translate(-38 52) scale(.6)" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+    '<g class="ojos" stroke="#CFEFFF" filter="' + u('ojo') + '">' +
+      '<g class="cara feliz">' +
+        '<path d="M263 245 C275 200 345 185 381 236" stroke-width="27"/><path d="M447 229 C462 180 520 172 550 231" stroke-width="27"/>' +
+      '</g>' +
+      '<g class="cara escuchando">' +
+        '<rect class="ojo" x="307" y="186" width="27" height="70" rx="13.5" fill="#CFEFFF" stroke="none"/>' +
+        '<rect class="ojo" x="486" y="176" width="25" height="66" rx="12.5" fill="#CFEFFF" stroke="none"/>' +
+      '</g>' +
+      '<g class="cara pensando">' +
+        '<path d="M270 228 L372 222" stroke-width="23"/><path d="M450 218 C470 200 522 196 548 216" stroke-width="23"/>' +
+      '</g>' +
+      '<g class="cara hablando">' +
+        '<path d="M263 241 C275 196 345 181 381 232" stroke-width="27"/><path d="M447 225 C462 176 520 168 550 227" stroke-width="27"/>' +
+      '</g>' +
+      '<g class="cara sorprendida">' +
+        '<circle cx="320" cy="220" r="30" stroke-width="13"/><circle cx="498" cy="208" r="27" stroke-width="12"/>' +
       '</g>' +
     '</g>' +
-    '<g class="cara hablando">' +
-      '<path d="M138 204 Q167 148 196 204" stroke-width="17"/><path d="M226 204 Q255 148 284 204" stroke-width="17"/>' +
-      '<g class="b"><path class="boca" d="M186 230 Q211 268 236 230 Z" fill="#3FC8FF" stroke="#3FC8FF" stroke-width="5"/></g>' +
+    '<g class="bocas" stroke="#39A9FF" filter="' + u('brillo') + '">' +
+      '<g class="cara feliz"><path d="M388 290 Q417 314 445 289" stroke-width="9"/></g>' +
+      '<g class="cara escuchando"><path d="M400 293 Q417 305 434 292" stroke-width="7"/></g>' +
+      '<g class="cara pensando"><path d="M402 300 L434 294" stroke-width="7"/></g>' +
+      '<g class="cara hablando"><path class="boca" d="M386 284 Q417 338 448 282 Z" fill="#3FB4FF" stroke="#3FB4FF" stroke-width="6"/></g>' +
+      '<g class="cara sorprendida"><ellipse cx="418" cy="300" rx="11" ry="14" stroke-width="7"/></g>' +
     '</g>' +
-    '<g class="cara sorprendida">' +
-      '<circle cx="166" cy="188" r="25" stroke-width="11"/><circle cx="254" cy="188" r="25" stroke-width="11"/>' +
-      '<g class="b"><ellipse cx="210" cy="250" rx="9" ry="11" stroke-width="6" stroke="#3FB8FF"/></g>' +
+    '<g class="cara pensando particulas" fill="#8FEAFF" stroke="none" filter="' + u('brillo') + '">' +
+      '<circle class="p p1" cx="560" cy="96" r="6"/><circle class="p p2" cx="586" cy="64" r="8"/><circle class="p p3" cx="618" cy="28" r="11"/>' +
+    '</g>' +
+    // Reflejo del vidrio por encima de los ojos: los ojos quedan «detrás» del visor
+    '<g class="vidrio" clip-path="' + u('visor') + '" stroke="none">' +
+      '<path d="M214 250 C214 150 300 108 400 106 C330 126 262 168 238 262 Z" fill="#FFFFFF" opacity=".055"/>' +
+      '<ellipse cx="386" cy="233" rx="176" ry="126" fill="none" stroke="#04061A" stroke-opacity=".5" stroke-width="10"/>' +
     '</g>' +
   '</g>' +
 
@@ -155,21 +179,20 @@
 ':host{display:inline-block;width:240px;aspect-ratio:400/420;--nivel:0;contain:content}' +
 'svg{display:block;width:100%;height:100%;overflow:visible}' +
 ':host([sin-plataforma]) .plataforma{display:none}' +
-':host(:not([piel])) .piel3d,:host([piel]) .vector,:host([piel]) .audifono.izq{display:none}' +
-':host([piel]) .caras{transform:translate(255.7px,166px) scale(1.2) translate(-211px,-179px)}' +
-':host([piel]) .cara>path{stroke-width:12.5px;stroke:#A8F4FF}:host([piel]) .cara>circle{stroke-width:8.5px;stroke:#A8F4FF}' +
-':host([piel]) .b{transform:translate(5px,-15px)}' +
-':host([piel]) .piel3d .luz{opacity:0}' +
-':host([piel][estado=escuchando]) .piel3d .luz,:host([piel][estado=hablando]) .piel3d .luz{opacity:.9}' +
+':host(:not([piel])) .vidrio,:host(:not([piel])) .piel3d,:host([piel]) .vector,:host([piel]) .audifono.izq{display:none}' +
+':host([piel]) .caras{transform:translate(0px,40px) scale(.63)}' +
+':host([piel]:not([estado=pensando])) .piel3d .nucleo{display:none}' +
+':host([piel]) .piel3d .luz{opacity:0;mix-blend-mode:screen}' +
+':host([piel][estado=escuchando]) .piel3d .luz,:host([piel][estado=hablando]) .piel3d .luz{opacity:.75}' +
 '.cara{opacity:0;transition:opacity .18s ease}' +
-'.ondas,.destello,.particulas{opacity:0;transition:opacity .2s ease}' +
+'.ondas,.destello{opacity:0;transition:opacity .2s ease}' +
 '.flota,.rayo,.luz,.nucleo,.boca,.ojo,.aro,.onda-icono{transform-box:fill-box;transform-origin:center}' +
+'.boca{transform-origin:center top}' +
 
 ':host([estado=feliz]) .feliz,:host(:not([estado])) .feliz,' +
 ':host([estado=escuchando]) .escuchando,:host([estado=pensando]) .pensando,' +
 ':host([estado=hablando]) .hablando,:host([estado=sorprendida]) .sorprendida{opacity:1}' +
 ':host([estado=escuchando]) .ondas,:host([estado=hablando]) .ondas{opacity:calc(.35 + var(--nivel)*.65)}' +
-':host([estado=pensando]) .particulas{opacity:1}' +
 ':host([estado=sorprendida]) .destello{opacity:1}' +
 
 // Movimiento (solo si el sistema no pide reducirlo y no está «quieta»)
