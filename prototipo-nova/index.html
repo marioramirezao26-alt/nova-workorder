@@ -6,32 +6,31 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none'">
   <meta name="robots" content="noindex, nofollow">
   <meta name="referrer" content="no-referrer">
-  <title>NOVA · Prototipo Premium Futurista</title>
-  <meta name="description" content="Prototipo de demostración de la tienda NOVA: productos, precios y fotos ilustrativos.">
+  <title>NOVA · Comercio Inteligente (prototipo)</title>
+  <meta name="description" content="Prototipo del rediseño de la página de NOVA: tienda, ficha y carrito simulado con datos de ejemplo. No es una oferta.">
   <link rel="icon" href="assets/icono.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body data-pagina="inicio">
   <a class="saltar" href="#contenido">Saltar al contenido</a>
-  <div class="franja-demo" role="note"><span class="franja-larga">Prototipo de demostración · productos, precios y fotos ilustrativos · no es una tienda real</span><span class="franja-corta">Demostración · precios ilustrativos · no es una tienda real</span></div>
+  <div class="franja-aviso" role="note"><strong>Datos de ejemplo. No es una oferta</strong><span class="franja-resto"> · Prototipo: carrito y pedidos simulados, nada se cobra</span></div>
   <header class="encabezado">
     <div class="envoltura">
       <a class="marca" href="index.html" aria-label="NOVA, Comercio Inteligente: inicio del prototipo">
         <svg class="marca-n" viewBox="0 0 44 36" aria-hidden="true" focusable="false"><defs><linearGradient id="marca-degradado" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#6d9bff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><path d="M8 30V7l28 22V6" fill="none" stroke="url(#marca-degradado)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="marca-texto"><span class="marca-nombre">NOVA</span><span class="marca-lema">Comercio Inteligente</span></span>
-        <small>DEMO</small>
+        <small>PROTOTIPO</small>
       </a>
       <nav class="menu" id="menu" aria-label="Principal">
         <a href="index.html" class="i-inicio" aria-current="page">Inicio</a>
         <a href="tienda.html" class="i-tienda">Tienda</a>
         <a href="categorias.html" class="i-categorias">Categorías</a>
-        <a href="ofertas.html" class="i-ofertas">Ofertas</a>
         <a href="gaby.html" class="i-gaby">Gaby Spark</a>
         <a href="pedidos.html" class="i-pedidos">Mis pedidos</a>
         <a href="workorder.html" class="workorder" aria-label="NOVA WORKORDER, accesos de clientes">WORKORDER</a>
       </nav>
       <div class="cabeza-acciones">
-        <button type="button" class="redondo" id="cuenta-boton" aria-label="Cuenta (no disponible en la demostración)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6"/></svg></button>
+        <button type="button" class="redondo" id="cuenta-boton" aria-label="Cuenta (no disponible en el prototipo)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6"/></svg></button>
         <a class="redondo carrito-boton" id="carrito-enlace" href="carrito.html" aria-label="Carrito simulado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span class="cuenta" id="carrito-cuenta" aria-hidden="true">0</span></a>
         <button type="button" class="redondo menu-boton" id="menu-boton" aria-expanded="false" aria-controls="menu" aria-label="Abrir el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
       </div>
@@ -45,24 +44,24 @@
           <div class="hero-texto">
             <span class="antetitulo">Bienvenido a NOVA</span>
             <h1 id="hero-titulo">Descubre una nueva forma de <span>comprar</span></h1>
-            <p class="bajada">Productos de muchas marcas, Gaby Spark para ayudarte a elegir y una compra sencilla.</p>
+            <p class="bajada">Un catálogo claro, Gaby Spark para ayudarte a elegir y una compra sencilla.</p>
             <div class="acciones">
               <a class="boton boton-principal" href="tienda.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg>Explorar productos<svg class="flecha-fin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-              <a class="boton boton-contorno" href="gaby.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>Hablar con Gaby Spark <span class="pastilla-demo">demo</span></a>
+              <a class="boton boton-contorno" href="gaby.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg>Hablar con Gaby Spark <span class="pastilla-ejemplo">ejemplo</span></a>
             </div>
             <ul class="sellos" aria-label="Lo que la tienda todavía tiene que definir">
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6h11v10H2z"/><path d="M13 9h4.5L21 12.5V16h-8z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><span><strong>Envíos</strong> por definir</span><span class="etiqueta sin-validar">Sin validar</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><span><strong>Compra protegida</strong> sin política aún</span><span class="etiqueta sin-validar">Sin validar</span></li>
-              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg><span><strong>Gaby Spark</strong> horario por definir</span><span class="etiqueta sin-validar">Sin validar</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 6h11v10H2z"/><path d="M13 9h4.5L21 12.5V16h-8z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg><span><strong>Envíos</strong> sin condiciones aún</span><span class="etiqueta sin-validar">Por definir</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><span><strong>Compra protegida</strong> sin política aún</span><span class="etiqueta sin-validar">Por definir</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg><span><strong>Gaby Spark</strong> horario sin fijar</span><span class="etiqueta sin-validar">Por definir</span></li>
             </ul>
             <a class="enlace-chico" href="#por-definir">Qué falta definir</a>
           </div>
           <gaby-spark class="hero-gaby" id="gaby-figura" estado="feliz"></gaby-spark>
           <aside class="burbuja-hero" aria-labelledby="burbuja-titulo">
             <p class="burbuja-titulo" id="burbuja-titulo">Soy <span>Gaby Spark</span></p>
-            <p>Tu asesora en NOVA (demostración). Te ayudo a encontrar y comparar productos del catálogo de ejemplo.</p>
+            <p>Tu asesora en NOVA. Soy una asistente de inteligencia artificial y aquí contesto con respuestas de ejemplo sobre el catálogo de ejemplo.</p>
             <svg class="onda" viewBox="0 0 120 24" aria-hidden="true" focusable="false"><rect class="onda-barra" x="2" y="10.0" width="3" height="4" rx="1.5"/><rect class="onda-barra" x="8" y="9.0" width="3" height="6" rx="1.5"/><rect class="onda-barra" x="14" y="7.0" width="3" height="10" rx="1.5"/><rect class="onda-barra" x="20" y="8.5" width="3" height="7" rx="1.5"/><rect class="onda-barra" x="26" y="5.0" width="3" height="14" rx="1.5"/><rect class="onda-barra" x="32" y="3.0" width="3" height="18" rx="1.5"/><rect class="onda-barra" x="38" y="6.0" width="3" height="12" rx="1.5"/><rect class="onda-barra" x="44" y="2.0" width="3" height="20" rx="1.5"/><rect class="onda-barra" x="50" y="4.0" width="3" height="16" rx="1.5"/><rect class="onda-barra" x="56" y="1.0" width="3" height="22" rx="1.5"/><rect class="onda-barra" x="62" y="5.0" width="3" height="14" rx="1.5"/><rect class="onda-barra" x="68" y="3.0" width="3" height="18" rx="1.5"/><rect class="onda-barra" x="74" y="7.0" width="3" height="10" rx="1.5"/><rect class="onda-barra" x="80" y="5.0" width="3" height="14" rx="1.5"/><rect class="onda-barra" x="86" y="8.0" width="3" height="8" rx="1.5"/><rect class="onda-barra" x="92" y="7.0" width="3" height="10" rx="1.5"/><rect class="onda-barra" x="98" y="9.0" width="3" height="6" rx="1.5"/><rect class="onda-barra" x="104" y="8.5" width="3" height="7" rx="1.5"/><rect class="onda-barra" x="110" y="10.0" width="3" height="4" rx="1.5"/><rect class="onda-barra" x="116" y="10.0" width="3" height="4" rx="1.5"/></svg>
-            <a class="enlace-chico" href="gaby.html">Probar la demostración</a>
+            <a class="enlace-chico" href="gaby.html">Probar las respuestas de ejemplo</a>
           </aside>
         </div>
       </section>
@@ -77,11 +76,11 @@
 
     <section class="seccion aparece" aria-labelledby="dest-titulo">
       <div class="envoltura">
-        <div class="seccion-cabeza"><div><h2 id="dest-titulo" class="titulo-rayo">Productos destacados</h2><p>Marcas ficticias · precios ilustrativos</p></div><a class="enlace-flecha" href="tienda.html">Ver toda la tienda</a></div>
+        <div class="seccion-cabeza"><div><h2 id="dest-titulo" class="titulo-rayo">Del catálogo</h2><p>Datos de ejemplo. No es una oferta.</p></div><a class="enlace-flecha" href="tienda.html">Ver toda la tienda</a></div>
         <div class="carrusel">
-          <button type="button" class="flecha flecha-anterior" id="carrusel-anterior" aria-label="Anteriores" aria-controls="inicio-destacados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
-          <div class="carrusel-pista" id="inicio-destacados" tabindex="0" role="region" aria-label="Productos destacados. Usa las flechas del teclado para moverte."></div>
-          <button type="button" class="flecha flecha-siguiente" id="carrusel-siguiente" aria-label="Siguientes" aria-controls="inicio-destacados"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
+          <button type="button" class="flecha flecha-anterior" id="carrusel-anterior" aria-label="Anteriores" aria-controls="inicio-productos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <div class="carrusel-pista" id="inicio-productos" tabindex="0" role="region" aria-label="Productos del catálogo de ejemplo. Usa las flechas del teclado para moverte."></div>
+          <button type="button" class="flecha flecha-siguiente" id="carrusel-siguiente" aria-label="Siguientes" aria-controls="inicio-productos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
       </div>
     </section>
@@ -102,10 +101,11 @@
         <div class="por-definir">
           <h2 id="pd-titulo">Lo que la tienda todavía tiene que definir</h2>
           <ul>
-            <li><span class="etiqueta sin-validar">Sin validar</span> <strong>Envíos:</strong> cobertura, tiempos y costos por definir con el operador logístico.</li>
-            <li><span class="etiqueta sin-validar">Sin validar</span> <strong>Compra protegida:</strong> aún no hay una política aprobada de garantía ni de devoluciones.</li>
-            <li><span class="etiqueta sin-validar">Sin validar</span> <strong>Atención con Gaby Spark:</strong> horario y alcance por definir; no se promete atención 24/7.</li>
-            <li><span class="etiqueta sin-validar">Sin validar</span> <strong>Pagos:</strong> medios de pago sin definir; en el prototipo no se cobra nada.</li>
+            <li><span class="etiqueta sin-validar">Por definir</span> <strong>Envíos:</strong> cobertura, tiempos y costos por definir con el operador logístico.</li>
+            <li><span class="etiqueta sin-validar">Por definir</span> <strong>Compra protegida:</strong> aún no hay una política aprobada de garantía ni de devoluciones.</li>
+            <li><span class="etiqueta sin-validar">Por definir</span> <strong>Atención con Gaby Spark:</strong> horario y alcance por definir; no se promete ningún horario.</li>
+            <li><span class="etiqueta sin-validar">Apagado</span> <strong>Pagos:</strong> el pago está en pruebas y apagado; en el prototipo no se cobra nada.</li>
+            <li><span class="etiqueta sin-validar">Por conectar</span> <strong>Catálogo:</strong> hoy la página muestra datos de ejemplo; los productos y precios de verdad llegarán del catálogo de NOVA cuando su lectura esté lista.</li>
           </ul>
         </div>
       </div>
@@ -113,12 +113,13 @@
   </main>
   <footer class="pie">
     <div class="envoltura">
-      <p><strong>NOVA · prototipo de demostración (11-nov-2026).</strong> No es una tienda real: no vende, no cobra, no envía y no guarda datos en ningún servidor.</p>
+      <p><strong>NOVA · prototipo del rediseño (12-nov-2026).</strong> Datos de ejemplo. No es una oferta: aquí no se vende, no se cobra, no se envía y no se guarda nada en ningún servidor.</p>
       <details class="pie-detalle">
-        <summary>Sobre esta demostración</summary>
+        <summary>Sobre este prototipo</summary>
         <p>El carrito y los pedidos simulados se quedan solo en este navegador.</p>
-        <p>Las marcas, los productos, los precios y las imágenes son ilustrativos (dibujos hechos para la demostración). Gaby es una asistente de inteligencia artificial; aquí solo se muestra una demostración con respuestas escritas a mano.</p>
-        <p>WhatsApp de NOVA: 321 392 7697 <span class="etiqueta sin-validar">Solo demostración</span> Este prototipo no abre chats ni envía mensajes.</p>
+        <p>Los productos, los precios y la disponibilidad son datos de ejemplo, ficticios, y las imágenes son dibujos genéricos: no son fotos de un producto. Gaby es una asistente de inteligencia artificial; aquí solo contesta con respuestas de ejemplo escritas a mano.</p>
+        <p>Esta página no mide visitas ni carga píxeles. Cuando se publique, la medición seguirá pidiendo permiso primero, como en la página actual.</p>
+        <p>WhatsApp de NOVA: 321 392 7697. Este prototipo no abre chats ni envía mensajes.</p>
       </details>
       <p><a href="workorder.html">¿Ya usas NOVA WORKORDER? Tus accesos siguen igual.</a></p>
     </div>
@@ -126,7 +127,8 @@
   <div class="aviso-flotante" id="aviso" role="status" aria-live="polite"></div>
 
   <script src="assets/gaby-spark.js"></script>
-  <script src="assets/datos.js"></script>
+  <script src="assets/datos/catalogo-ejemplo.js"></script>
+  <script src="assets/fuente-catalogo.js"></script>
   <script src="assets/ilustraciones.js"></script>
   <script src="assets/app.js"></script>
 </body>

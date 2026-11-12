@@ -1,5 +1,5 @@
 /* Ilustraciones SVG propias del prototipo (no son fotos ni logos de nadie, y no copian ninguna imagen del mockup).
-   - ilustracion(producto): el dibujo de cada producto de demostración, con volumen (degradados, brillo y sombra).
+   - ilustracion(producto): un dibujo genérico por tipo de producto (no es una foto del producto), con volumen (degradados, brillo y sombra).
    - gaby(prefijo): la figura holográfica de Gaby IA (personaje estilizado, no una persona real).
    - portatil(): un portátil con un tablero genérico para la franja de WORKORDER (no es una captura del sistema real).
    Se arman como texto y se insertan en la página; no se descarga nada. Solo atributos de presentación (sin style=),
@@ -184,6 +184,58 @@
         '<rect x="18" y="56" width="164" height="68" rx="12" fill="none" stroke="' + c(t, 60, 62) + '" stroke-width="2" opacity=".7"/>' +
         teclas +
         '<path d="M26 60 h148" stroke="' + u('b') + '" stroke-width="3" stroke-linecap="round"/>';
+    },
+    // Dibujos genéricos para el catálogo de ejemplo (ropa, hogar y otros). No representan un producto real.
+    camiseta: function (t, u) {
+      return '<path d="M72 22 L48 30 L18 56 L36 80 L56 66 V140 a6 6 0 0 0 6 6 h76 a6 6 0 0 0 6 -6 V66 L164 80 L182 56 L152 30 L128 22 a28 20 0 0 1 -56 0 Z" fill="' + u('c') + '"/>' +
+        '<path d="M72 22 a28 20 0 0 0 56 0" fill="none" stroke="' + u('o') + '" stroke-width="6" stroke-linecap="round"/>' +
+        '<path d="M66 74 L66 134" stroke="' + u('b') + '" stroke-width="7" stroke-linecap="round"/>';
+    },
+    chaqueta: function (t, u) {
+      return '<path d="M70 20 L44 30 L16 62 L34 132 L54 126 V140 a6 6 0 0 0 6 6 h80 a6 6 0 0 0 6 -6 V126 L166 132 L184 62 L156 30 L130 20 L100 44 Z" fill="' + u('c') + '"/>' +
+        '<path d="M70 20 L100 44 L130 20 L118 14 L100 30 L82 14 Z" fill="' + u('o') + '"/>' +
+        '<path d="M100 44 V146" stroke="' + u('m') + '" stroke-width="4"/>' +
+        '<rect x="66" y="98" width="24" height="6" rx="3" fill="' + u('o') + '"/><rect x="110" y="98" width="24" height="6" rx="3" fill="' + u('o') + '"/>' +
+        '<path d="M62 60 L62 120" stroke="' + u('b') + '" stroke-width="6" stroke-linecap="round"/>';
+    },
+    pantalon: function (t, u) {
+      return '<path d="M58 14 h84 l14 126 a6 6 0 0 1 -6 6 h-30 a6 6 0 0 1 -6 -5 L100 62 L86 141 a6 6 0 0 1 -6 5 h-30 a6 6 0 0 1 -6 -6 Z" fill="' + u('c') + '"/>' +
+        '<rect x="58" y="14" width="84" height="14" rx="3" fill="' + u('o') + '"/>' +
+        '<path d="M100 28 V58" stroke="' + u('o') + '" stroke-width="3"/>' +
+        '<path d="M66 40 L58 132" stroke="' + u('b') + '" stroke-width="6" stroke-linecap="round"/>';
+    },
+    medias: function (t, u) {
+      return '<path d="M52 16 h36 v70 l34 22 a16 16 0 0 1 -9 30 h-30 a31 31 0 0 1 -31 -31 Z" fill="' + u('c') + '" opacity=".75"/>' +
+        '<path d="M92 22 h36 v66 l34 22 a16 16 0 0 1 -9 30 h-30 a31 31 0 0 1 -31 -31 Z" fill="' + u('c') + '"/>' +
+        '<rect x="92" y="22" width="36" height="16" rx="4" fill="' + u('o') + '"/>' +
+        '<path d="M100 46 L100 104" stroke="' + u('b') + '" stroke-width="6" stroke-linecap="round"/>';
+    },
+    tarjeta: function (t, u) {
+      return '<rect x="26" y="34" width="148" height="96" rx="14" fill="' + u('c') + '"/>' +
+        '<rect x="26" y="74" width="148" height="12" fill="' + u('m') + '"/>' +
+        '<rect x="88" y="34" width="12" height="96" fill="' + u('m') + '"/>' +
+        '<path d="M94 74 c-22 -26 -40 -6 -22 0 Z M94 74 c22 -26 40 -6 22 0 Z" fill="' + u('o') + '"/>' +
+        '<path d="M38 46 L38 118" stroke="' + u('b') + '" stroke-width="6" stroke-linecap="round"/>';
+    },
+    vaso: function (t, u) {
+      return '<path d="M58 22 h84 l-10 116 a8 8 0 0 1 -8 8 h-48 a8 8 0 0 1 -8 -8 Z" fill="' + u('c') + '" opacity=".55"/>' +
+        '<path d="M63 74 h74 l-5 64 a8 8 0 0 1 -8 8 h-48 a8 8 0 0 1 -8 -8 Z" fill="' + u('c') + '"/>' +
+        '<path d="M58 22 h84" stroke="' + u('m') + '" stroke-width="5" stroke-linecap="round"/>' +
+        '<path d="M72 34 L78 130" stroke="' + u('b') + '" stroke-width="7" stroke-linecap="round"/>';
+    },
+    hilo: function (t, u) {
+      return '<rect x="52" y="18" width="96" height="16" rx="8" fill="' + u('o') + '"/><rect x="52" y="130" width="96" height="16" rx="8" fill="' + u('o') + '"/>' +
+        '<rect x="62" y="34" width="76" height="96" rx="10" fill="' + u('c') + '"/>' +
+        '<path d="M62 50 l76 12 M62 66 l76 12 M62 82 l76 12 M62 98 l76 12 M62 114 l76 12" stroke="' + u('o') + '" stroke-width="2.5" opacity=".55"/>' +
+        '<path d="M138 120 q30 6 34 -28" fill="none" stroke="' + u('c') + '" stroke-width="3" stroke-linecap="round"/>' +
+        '<path d="M72 42 L72 122" stroke="' + u('b') + '" stroke-width="6" stroke-linecap="round"/>';
+    },
+    caja: function (t, u) {
+      return '<path d="M100 20 L170 50 V118 L100 148 L30 118 V50 Z" fill="' + u('c') + '"/>' +
+        '<path d="M100 80 L170 50 V118 L100 148 Z" fill="' + u('o') + '" opacity=".55"/>' +
+        '<path d="M30 50 L100 80 L170 50" fill="none" stroke="' + u('m') + '" stroke-width="4" stroke-linejoin="round"/>' +
+        '<path d="M100 80 V148" stroke="' + u('m') + '" stroke-width="4"/>' +
+        '<path d="M42 64 L42 112" stroke="' + u('b') + '" stroke-width="6" stroke-linecap="round"/>';
     }
   };
 
@@ -194,7 +246,7 @@
     var id = 'g' + cuenta;
     var t = producto.tono;
     var u = function (n) { return 'url(#' + id + n + ')'; };
-    var dibujo = DIBUJOS[producto.dibujo] || DIBUJOS.frasco;
+    var dibujo = DIBUJOS[producto.dibujo] || DIBUJOS.caja;
     return '<svg class="ilus" viewBox="0 0 200 160" aria-hidden="true" focusable="false">' +
       '<defs>' +
         '<radialGradient id="' + id + 'f" gradientUnits="userSpaceOnUse" cx="100" cy="66" r="170"><stop offset="0" stop-color="' + c(t, 65, 24) + '"/><stop offset="1" stop-color="' + c(t, 55, 6) + '"/></radialGradient>' +

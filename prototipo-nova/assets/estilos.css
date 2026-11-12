@@ -1,4 +1,4 @@
-/* NOVA Premium Futurista — prototipo de demostración (estático, sin fuentes ni scripts de afuera).
+/* NOVA Premium Futurista — prototipo del rediseño (estático, sin fuentes ni scripts de afuera).
    Sigue el mockup aprobado por Mario (11-nov-2026): fondo de montañas azules, vidrio oscuro, bordes de luz cian y violeta,
    Gaby IA holográfica en el centro del hero. Todas las imágenes son SVG propios (assets/).
    Contraste AA: --texto 17:1, --tenue 10:1 y --suave 7:1 sobre --fondo; texto oscuro sobre cian 11:1. */
@@ -43,16 +43,16 @@ svg { flex: none; }
 .saltar:focus { top: 12px; }
 [hidden] { display: none !important; }
 
-/* Franja fija que avisa en cada página que esto es una demostración (en celular, el texto corto). */
-.franja-demo {
+/* Franja fija que avisa en cada página que los datos son de ejemplo (en celular, solo la frase principal). */
+.franja-aviso {
   background: repeating-linear-gradient(135deg, #3b2a05 0 14px, #2c2004 14px 28px); color: #fde68a; text-align: center;
   font-size: 0.86rem; font-weight: 700; padding: 7px 16px; border-bottom: 1px solid rgba(251, 191, 36, 0.4); letter-spacing: 0.01em;
 }
-.franja-corta { display: none; }
-@media (max-width: 520px) {
-  .franja-larga { display: none; }
-  .franja-corta { display: inline; }
-  .franja-demo { font-size: 0.8rem; padding: 6px 12px; }
+.franja-aviso strong { font-weight: 800; }
+.franja-resto { font-weight: 600; }
+@media (max-width: 620px) {
+  .franja-resto { display: none; }
+  .franja-aviso { font-size: 0.8rem; padding: 6px 12px; }
 }
 
 /* ---------- Encabezado ---------- */
@@ -125,7 +125,7 @@ svg { flex: none; }
 .boton-ancho { width: 100%; }
 .flecha-fin { transition: transform 0.2s var(--curva); }
 .boton:hover .flecha-fin { transform: translateX(3px); }
-.pastilla-demo { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--borde-cian); color: var(--cian-claro); }
+.pastilla-ejemplo { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--borde-cian); color: var(--cian-claro); }
 /* deshabilitados: estilo propio (no solo opacidad) para que no parezcan rotos */
 .boton[disabled], .boton-icono[disabled] { background: transparent; color: var(--suave); border: 1px dashed var(--borde-fuerte); box-shadow: none; cursor: not-allowed; transform: none; }
 .boton-icono { position: relative; z-index: 2; width: 44px; height: 44px; flex: none; display: inline-grid; place-items: center; padding: 0; border-radius: 12px; border: 0; cursor: pointer;
@@ -535,3 +535,19 @@ gaby-spark.gaby-avatar { width: 46px; flex: none; }
   gaby-spark.hero-gaby { width: min(100%, 250px); }
   gaby-spark.gaby-figura-media { max-width: 170px; }
 }
+
+/* ---------- Catálogo por la fuente (Misión 07): disponibilidad en palabras, precio por confirmar y pago apagado ---------- */
+.estado-fila { margin: 6px 0 0; }
+.estado { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700; padding: 2px 10px 2px 8px; border-radius: 999px; border: 1px solid var(--borde-fuerte); color: var(--tenue); }
+.estado::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+.estado-si { color: #86efac; border-color: rgba(134, 239, 172, 0.5); background: rgba(34, 197, 94, 0.12); }
+.estado-no { color: #fda4af; border-color: rgba(253, 164, 175, 0.5); background: rgba(244, 63, 94, 0.12); }
+.estado-duda { color: #fde68a; border-color: rgba(251, 191, 36, 0.5); background: rgba(251, 191, 36, 0.12); }
+.estado-no::before { border-radius: 2px; }
+.estado-duda::before { border-radius: 0; transform: rotate(45deg); width: 7px; height: 7px; }
+.precio .precio-pendiente { font-size: 0.98rem; color: #fde68a; letter-spacing: 0; }
+.ficha .precio .precio-pendiente { font-size: 1.35rem; }
+.no-se-agrega { margin: 18px 0 0; padding: 12px 14px; border: 1px solid rgba(251, 191, 36, 0.4); border-radius: 12px; background: rgba(251, 191, 36, 0.08); color: #fde68a; }
+.resumen .boton + .nota { margin-top: 8px; }
+.resumen .nota + .boton { margin-top: 14px; }
+.vacio h1 { font-size: 1.5rem; margin: 0 0 8px; }
