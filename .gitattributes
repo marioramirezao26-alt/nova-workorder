@@ -1,0 +1,4 @@
+# El prototipo NOVA Premium Futurista es solo para revisión: no entra al paquete que se despliega (git archive en
+# deploy/publicar.ps1). Ver prototipo-nova/docs/AUDITORIA.md.
+prototipo-nova export-ignore
+prototipo-nova/** export-ignore

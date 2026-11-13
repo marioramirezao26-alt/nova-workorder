@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; media-src 'none'; manifest-src 'none'; worker-src 'none'">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Categorías · NOVA (prototipo)</title>
+  <meta name="description" content="Categorías del catálogo de demostración.">
+  <link rel="icon" href="assets/icono.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body data-pagina="categorias">
+  <a class="saltar" href="#contenido">Saltar al contenido</a>
+  <div class="franja-demo" role="note"><span class="franja-larga">Prototipo de demostración · productos, precios y fotos ilustrativos · no es una tienda real</span><span class="franja-corta">Demostración · precios ilustrativos · no es una tienda real</span></div>
+  <header class="encabezado">
+    <div class="envoltura">
+      <a class="marca" href="index.html" aria-label="NOVA, Comercio Inteligente: inicio del prototipo">
+        <svg class="marca-n" viewBox="0 0 44 36" aria-hidden="true" focusable="false"><defs><linearGradient id="marca-degradado" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".55" stop-color="#6d9bff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><path d="M8 30V7l28 22V6" fill="none" stroke="url(#marca-degradado)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="marca-texto"><span class="marca-nombre">NOVA</span><span class="marca-lema">Comercio Inteligente</span></span>
+        <small>DEMO</small>
+      </a>
+      <nav class="menu" id="menu" aria-label="Principal">
+        <a href="index.html" class="i-inicio">Inicio</a>
+        <a href="tienda.html" class="i-tienda">Tienda</a>
+        <a href="categorias.html" class="i-categorias" aria-current="page">Categorías</a>
+        <a href="ofertas.html" class="i-ofertas">Ofertas</a>
+        <a href="gaby.html" class="i-gaby">Gaby IA</a>
+        <a href="pedidos.html" class="i-pedidos">Mis pedidos</a>
+        <a href="workorder.html" class="workorder" aria-label="NOVA WORKORDER, accesos de clientes">WORKORDER</a>
+      </nav>
+      <div class="cabeza-acciones">
+        <button type="button" class="redondo" id="cuenta-boton" aria-label="Cuenta (no disponible en la demostración)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6"/></svg></button>
+        <a class="redondo carrito-boton" id="carrito-enlace" href="carrito.html" aria-label="Carrito simulado"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span class="cuenta" id="carrito-cuenta" aria-hidden="true">0</span></a>
+        <button type="button" class="redondo menu-boton" id="menu-boton" aria-expanded="false" aria-controls="menu" aria-label="Abrir el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenido" tabindex="-1">
+    <div class="envoltura">
+      <div class="titulo-pagina"><span class="antetitulo">Catálogo de demostración</span><h1>Categorías</h1><p>Una tienda multicategoría. Cada categoría lleva a la tienda ya filtrada.</p></div>
+      <div class="cuadricula-categorias grande" id="categorias-lista"></div>
+    </div>
+  </main>
+  <footer class="pie">
+    <div class="envoltura">
+      <p><strong>NOVA · prototipo de demostración (11-nov-2026).</strong> No es una tienda real: no vende, no cobra, no envía y no guarda datos en ningún servidor.</p>
+      <details class="pie-detalle">
+        <summary>Sobre esta demostración</summary>
+        <p>El carrito y los pedidos simulados se quedan solo en este navegador.</p>
+        <p>Las marcas, los productos, los precios y las imágenes son ilustrativos (dibujos hechos para la demostración). Gaby es una asistente de inteligencia artificial; aquí solo se muestra una demostración con respuestas escritas a mano.</p>
+        <p>WhatsApp de NOVA: 321 392 7697 <span class="etiqueta sin-validar">Solo demostración</span> Este prototipo no abre chats ni envía mensajes.</p>
+      </details>
+      <p><a href="workorder.html">¿Ya usas NOVA WORKORDER? Tus accesos siguen igual.</a></p>
+    </div>
+  </footer>
+  <div class="aviso-flotante" id="aviso" role="status" aria-live="polite"></div>
+
+  <script src="assets/datos.js"></script>
+  <script src="assets/ilustraciones.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
