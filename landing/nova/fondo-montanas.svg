@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 760" preserveAspectRatio="xMidYMax slice">
+  <!-- Fondo propio del prototipo NOVA: cordilleras dibujadas a mano en SVG (no es una foto ni un recorte del mockup). -->
+  <defs>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03050d"/><stop offset=".55" stop-color="#0a1433"/><stop offset="1" stop-color="#0d1a45"/>
+    </linearGradient>
+    <radialGradient id="luz" cx="62%" cy="42%" r="45%">
+      <stop offset="0" stop-color="#3b6cff" stop-opacity=".5"/><stop offset=".5" stop-color="#4f46e5" stop-opacity=".16"/><stop offset="1" stop-color="#03050d" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="luz2" cx="12%" cy="30%" r="35%">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity=".16"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lejos" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3f7e"/><stop offset="1" stop-color="#111c45"/></linearGradient>
+    <linearGradient id="medio" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2a5e"/><stop offset="1" stop-color="#0a1230"/></linearGradient>
+    <linearGradient id="cerca" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f1a40"/><stop offset="1" stop-color="#05070f"/></linearGradient>
+    <linearGradient id="niebla" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d9bff" stop-opacity="0"/><stop offset=".5" stop-color="#6d9bff" stop-opacity=".14"/><stop offset="1" stop-color="#6d9bff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="nieve" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fb8ff" stop-opacity=".55"/><stop offset="1" stop-color="#9fb8ff" stop-opacity="0"/></linearGradient>
+  </defs>
+  <rect width="1600" height="760" fill="url(#cielo)"/>
+  <rect width="1600" height="760" fill="url(#luz)"/>
+  <rect width="1600" height="760" fill="url(#luz2)"/>
+  <g fill="#cfe0ff">
+    <circle cx="120" cy="60" r="1.2" opacity=".6"/><circle cx="340" cy="120" r="1" opacity=".5"/><circle cx="560" cy="40" r="1.4" opacity=".55"/>
+    <circle cx="820" cy="90" r="1" opacity=".4"/><circle cx="1040" cy="50" r="1.3" opacity=".6"/><circle cx="1260" cy="110" r="1" opacity=".5"/>
+    <circle cx="1480" cy="70" r="1.4" opacity=".6"/><circle cx="1380" cy="200" r="1" opacity=".35"/><circle cx="240" cy="230" r="1" opacity=".35"/>
+    <circle cx="700" cy="180" r="1.1" opacity=".4"/><circle cx="1560" cy="260" r="1" opacity=".4"/><circle cx="60" cy="300" r="1" opacity=".35"/>
+  </g>
+  <!-- cordillera lejana -->
+  <path d="M0 470 L90 400 L170 430 L260 330 L330 380 L420 300 L520 390 L600 350 L700 420 L820 360 L900 400 L1000 320 L1090 370 L1180 290 L1280 360 L1360 320 L1460 390 L1540 340 L1600 370 L1600 760 L0 760 Z" fill="url(#lejos)" opacity=".75"/>
+  <path d="M260 330 L238 360 L262 352 L282 366 Z M420 300 L398 334 L424 322 L446 340 Z M1180 290 L1156 326 L1182 314 L1206 334 Z M1000 320 L982 346 L1004 338 L1022 350 Z" fill="url(#nieve)"/>
+  <rect y="380" width="1600" height="140" fill="url(#niebla)"/>
+  <!-- cordillera del medio -->
+  <path d="M0 560 L110 470 L200 520 L300 440 L380 500 L480 450 L560 520 L660 470 L760 540 L860 480 L960 530 L1060 460 L1150 520 L1250 450 L1340 510 L1440 460 L1520 520 L1600 490 L1600 760 L0 760 Z" fill="url(#medio)"/>
+  <path d="M300 440 L282 468 L304 460 L322 474 Z M1250 450 L1230 480 L1254 470 L1272 486 Z M1060 460 L1044 484 L1064 476 L1080 488 Z" fill="url(#nieve)" opacity=".6"/>
+  <rect y="500" width="1600" height="120" fill="url(#niebla)"/>
+  <!-- cordillera cercana -->
+  <path d="M0 640 L140 560 L240 610 L360 540 L470 610 L600 570 L720 640 L840 590 L960 650 L1090 580 L1210 640 L1330 570 L1450 630 L1600 580 L1600 760 L0 760 Z" fill="url(#cerca)"/>
+  <path d="M0 640 L140 560 L240 610 L360 540 L470 610 L600 570 L720 640 L840 590 L960 650 L1090 580 L1210 640 L1330 570 L1450 630 L1600 580" fill="none" stroke="#6d9bff" stroke-opacity=".18" stroke-width="1.5"/>
+</svg>
