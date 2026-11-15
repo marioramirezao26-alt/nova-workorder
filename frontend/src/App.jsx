@@ -93,7 +93,7 @@ function Login({ onLogin, onLang }) {
   return (
     <div className="auth-layout">
       <div className="auth-hero">
-        <img className="hero-logo" src="/logo.svg" alt="" />
+        <img className="hero-logo" src="/marca/nova-orbital-simbolo-transparente-128.png" alt="" />
         <div className="hero-badge">NOVAWORKORDER</div>
         <h1>{t('Servicios')}</h1>
         <p>{t('Las órdenes de trabajo de tu empresa, en el celular de cada técnico.')}</p>
@@ -132,7 +132,7 @@ function ChangePassword({ api, user, onDone, onLogout }) {
   return (
     <div className="auth-layout">
       <div className="auth-hero">
-        <img className="hero-logo" src="/logo.svg" alt="" />
+        <img className="hero-logo" src="/marca/nova-orbital-simbolo-transparente-128.png" alt="" />
         <div className="hero-badge">NOVAWORKORDER</div>
         <h1>{t('Bienvenido, {name}', { name: user.name })}</h1>
         <p>{t('Antes de empezar, cambia la contraseña temporal que te entregaron.')}</p>

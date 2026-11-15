@@ -49,6 +49,9 @@ img { max-width: 100%; height: auto; display: block; }
 .brand img { width: 32px; height: 32px; }
 .brand span { line-height: 1.1; }
 .brand small { display: block; font-weight: 500; letter-spacing: 0.2em; font-size: 0.6rem; color: var(--muted); margin-top: 2px; }
+/* Orden 37: logo oficial NOVA Orbital (opción 3) en el encabezado; el nombre público sigue siendo NOVAWORKORDER */
+.brand img.brand-logo { width: auto; height: 40px; }
+.brand > small { margin-top: 6px; }
 .top nav { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .top nav > a:not(.btn) { color: var(--dim); text-decoration: none; font-size: 0.93rem; font-weight: 500; padding: 8px 12px; border-radius: 10px;
   transition: color 0.18s, background-color 0.18s; }

@@ -1,0 +1,210 @@
+[
+ {
+  "archivo": "nova-orbital-horizontal-2172.webp",
+  "ancho": 2172,
+  "alto": 724,
+  "bytes": 72730,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-1200.webp",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 31086,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-600.webp",
+  "ancho": 600,
+  "alto": 200,
+  "bytes": 12414,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-320.webp",
+  "ancho": 320,
+  "alto": 107,
+  "bytes": 5668,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-1200.png",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 396761,
+  "tipo": "exacta",
+  "nota": "Logo horizontal PNG"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-2172.png",
+  "ancho": 2172,
+  "alto": 724,
+  "bytes": 1770868,
+  "tipo": "derivada-aproximada",
+  "nota": "Fondo separado; sobre #00000C reproduce el original (error máx 2.0/255). Solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-1200.webp",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 238740,
+  "tipo": "derivada-aproximada",
+  "nota": "Igual que la transparente de 2172, reescalada; solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-600.webp",
+  "ancho": 600,
+  "alto": 200,
+  "bytes": 64288,
+  "tipo": "derivada-aproximada",
+  "nota": "Igual que la transparente de 2172, reescalada; solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-320.webp",
+  "ancho": 320,
+  "alto": 107,
+  "bytes": 21550,
+  "tipo": "derivada-aproximada",
+  "nota": "Igual que la transparente de 2172, reescalada; solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-encabezado-48.webp",
+  "ancho": 140,
+  "alto": 48,
+  "bytes": 7434,
+  "tipo": "derivada-aproximada",
+  "nota": "Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255"
+ },
+ {
+  "archivo": "nova-orbital-encabezado-96.webp",
+  "ancho": 280,
+  "alto": 96,
+  "bytes": 21374,
+  "tipo": "derivada-aproximada",
+  "nota": "Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255"
+ },
+ {
+  "archivo": "nova-orbital-encabezado-144.webp",
+  "ancho": 420,
+  "alto": 144,
+  "bytes": 40690,
+  "tipo": "derivada-aproximada",
+  "nota": "Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-cuadrado-724.png",
+  "ancho": 724,
+  "alto": 724,
+  "bytes": 477002,
+  "tipo": "exacta",
+  "nota": "Recorte 724x724 del logo horizontal (x 191–915): símbolo completo con su fondo"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-cuadrado-512.webp",
+  "ancho": 512,
+  "alto": 512,
+  "bytes": 26996,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-cuadrado-256.webp",
+  "ancho": 256,
+  "alto": 256,
+  "bytes": 10536,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-transparente-724.png",
+  "ancho": 724,
+  "alto": 724,
+  "bytes": 740750,
+  "tipo": "derivada-aproximada",
+  "nota": "Símbolo con el fondo separado (error máx 2.0/255 sobre #00000C). Solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-transparente-128.png",
+  "ancho": 128,
+  "alto": 128,
+  "bytes": 29246,
+  "tipo": "derivada-aproximada",
+  "nota": "Símbolo transparente pequeño (encabezados)"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-referencia-720x565.webp",
+  "ancho": 720,
+  "alto": 565,
+  "bytes": 41096,
+  "tipo": "exacta",
+  "nota": "Recorte suministrado, re-codificado. La órbita toca el borde derecho: referencia, no para iconos"
+ },
+ {
+  "archivo": "favicon-16.png",
+  "ancho": 16,
+  "alto": 16,
+  "bytes": 750,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "favicon-32.png",
+  "ancho": 32,
+  "alto": 32,
+  "bytes": 2196,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "favicon-48.png",
+  "ancho": 48,
+  "alto": 48,
+  "bytes": 4183,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "apple-touch-icon-180.png",
+  "ancho": 180,
+  "alto": 180,
+  "bytes": 39193,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "icono-app-192.png",
+  "ancho": 192,
+  "alto": 192,
+  "bytes": 44306,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "icono-app-512.png",
+  "ancho": 512,
+  "alto": 512,
+  "bytes": 265005,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "favicon.ico",
+  "ancho": 48,
+  "alto": 48,
+  "bytes": 7251,
+  "tipo": "exacta",
+  "nota": "ICO con 16, 32 y 48 px"
+ },
+ {
+  "archivo": "icono-app-maskable-512.png",
+  "ancho": 512,
+  "alto": 512,
+  "bytes": 179030,
+  "tipo": "derivada-aproximada",
+  "nota": "Símbolo al 80 % sobre fondo liso #00000C (relleno nuevo alrededor del recorte); revisar el borde"
+ }
+]

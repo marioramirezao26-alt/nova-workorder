@@ -81,8 +81,9 @@ ${alternos}
   <meta property="og:description" content="${esc(p.desc)}" />
   <meta property="og:image" content="${SITIO}/img/og-novaworkorder.jpg?v=2" />
   <meta property="og:url" content="${SITIO}${p.ruta}" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/img/icono-180.png" />
+  <link rel="icon" href="/marca/favicon.ico" sizes="any" />
+  <link rel="icon" href="/marca/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/marca/apple-touch-icon-180.png" />
   <link rel="stylesheet" href="/estilos.css" />
   <link rel="stylesheet" href="/inicio.css" />
   <script type="application/ld+json">
@@ -114,14 +115,15 @@ const pagina404 = () => `<!doctype html>
   <meta name="robots" content="noindex" />
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#07111d" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/marca/favicon.ico" sizes="any" />
+  <link rel="icon" href="/marca/favicon-32.png" type="image/png" sizes="32x32" />
   <link rel="stylesheet" href="/estilos.css" />
 </head>
 <body>
   <!-- P-034 A6: Caddy la muestra con código 404 (deploy/Caddyfile, handle_errors). La escribe src/scripts/paginas.js. -->
   <header class="top">
     <div class="wrap">
-      <a class="brand" href="/"><img src="/favicon.svg" alt="" /><span>NOVA<small>WORKORDER</small></span></a>
+      <a class="brand" href="/"><img class="brand-logo" src="/marca/nova-orbital-encabezado-48.webp" srcset="/marca/nova-orbital-encabezado-96.webp 2x, /marca/nova-orbital-encabezado-144.webp 3x" width="140" height="48" alt="NOVA" /><small>WORKORDER</small></a>
     </div>
   </header>
   <main id="contenido" tabindex="-1">
