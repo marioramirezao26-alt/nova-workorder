@@ -1,7 +1,7 @@
 const crypto = require('node:crypto');
 
-// Guarda cifradas en la base las llaves que cada empresa trae de otros servicios (por ejemplo, los secretos de su cuenta
-// de Wompi). AES-256-GCM con una llave del servidor: COMPANY_SECRETS_KEY si está, si no derivada de JWT_SECRET. Quien
+// Guarda cifradas en la base las llaves que cada empresa trae de otros servicios (por ejemplo, las de su cuenta de
+// Factus; también las de Wompi, que se retiró y se conservan sin uso). AES-256-GCM con una llave del servidor: COMPANY_SECRETS_KEY si está, si no derivada de JWT_SECRET. Quien
 // copie la base de datos sin el .env no puede leerlas. Cambiar esa llave obliga a cada empresa a conectar de nuevo.
 const key = () => {
   const base = process.env.COMPANY_SECRETS_KEY || process.env.JWT_SECRET || '';

@@ -86,8 +86,8 @@ test('una empresa hispana de EE. UU. usa la app en español y cotiza en dólares
   assert.equal(q.data.total, 179);
   const wompi = await call('PUT', '/company/wompi', { as: b.token, body: { publicKey: 'pub_test_AbCdEf123456',
     integritySecret: 'test_integrity_Integ123456', eventsSecret: 'test_events_Event123456' } });
-  assert.equal(wompi.status, 400);
-  assert.match(wompi.data.message, /pesos colombianos/);
+  assert.equal(wompi.status, 410);                                                             // Wompi se retiró (Orden 41)
+  assert.match(wompi.data.message, /Wompi ya no está disponible en NOVA/);
   // la orden que sale de la cotización queda en el idioma de la empresa (español), aunque sea de EE. UU.
   await call('POST', `/quotes/${q.data._id}/send`, { as: b.token });
   await call('POST', `/quotes/${q.data._id}/approve`, { as: b.token });

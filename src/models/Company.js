@@ -41,7 +41,7 @@ const companySchema = new mongoose.Schema(
       enum: ['es', 'en'],
       default: 'es',
     },
-    // Mercado, aparte del idioma: co (Colombia: pesos, IVA, Wompi y Factus), us (Estados Unidos: dólares, hora del Este)
+    // Mercado, aparte del idioma: co (Colombia: pesos, IVA y Factus), us (Estados Unidos: dólares, hora del Este)
     // o mx (México: pesos mexicanos, IVA del 16 %, hora de Ciudad de México, celulares +52). Una empresa de /es-us/ es us
     // y una de /es-mx/ es mx, las dos con la app en español. Las empresas en inglés de antes (lang en) cuentan como us.
     market: {
@@ -66,8 +66,8 @@ const companySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Cobro en línea con Wompi (la cuenta de la empresa): llave pública, secretos cifrados y qué porcentaje de una
-    // cotización aprobada se cobra en línea (100 = todo; 50 = anticipo del 50 %).
+    // Cobro en línea con Wompi (la cuenta de la empresa): RETIRADO (Orden 41). Se conserva tal cual, sin migración, por la
+    // historia: la llave pública, los secretos cifrados y el porcentaje que se cobraba en línea. Ninguna ruta lo usa.
     wompi: {
       publicKey: { type: String, default: '' },
       integritySealed: { type: String, default: '', select: false },

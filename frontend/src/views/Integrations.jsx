@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { getLang, t } from '../i18n';
-import WompiCard from './WompiCard';
 import FactusCard from './FactusCard';
 import { colombiaCompany } from '../ui';
 
@@ -100,8 +99,7 @@ export default function Integrations({ api, user }) {
 
       {error && <p className="error">{error}</p>}
 
-      {/* Wompi cobra en pesos colombianos y Factus factura ante la DIAN: solo para empresas de Colombia */}
-      {colombiaCompany(user?.company) && <WompiCard api={api} />}
+      {/* Factus factura ante la DIAN: solo para empresas de Colombia (los cobros con Wompi se retiraron, Orden 41) */}
       {colombiaCompany(user?.company) && <FactusCard api={api} />}
 
       {shown && (

@@ -379,9 +379,8 @@ test('sin Factus conectado no se factura; tampoco una cotización en dólares; e
   assert.equal(bills.length, 0);
 });
 
-test('conectar Factus tiene su propio cupo de intentos: no gasta el de Wompi', async () => {
+test('conectar Factus tiene su propio cupo de intentos: lo de Wompi (retirado) no lo gasta', async () => {
   const a = await company('Cupos SAS');
-  for (let n = 0; n < 10; n += 1) await call('PUT', '/company/wompi', { as: a.token, body: { publicKey: 'mala' } });
-  assert.equal((await call('PUT', '/company/wompi', { as: a.token, body: { publicKey: 'mala' } })).status, 429);
+  for (let n = 0; n < 11; n += 1) assert.equal((await call('PUT', '/company/wompi', { as: a.token, body: { publicKey: 'mala' } })).status, 410);
   assert.equal((await call('PUT', '/company/factus', { as: a.token, body: CREDS })).status, 200);
 });

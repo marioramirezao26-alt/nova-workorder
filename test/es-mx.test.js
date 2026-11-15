@@ -103,8 +103,8 @@ test('una empresa de México cotiza en pesos mexicanos con IVA del 16 %, hora de
 
   const wompi = await call('PUT', '/company/wompi', { as: b.token, body: { publicKey: 'pub_test_AbCdEf123456',
     integritySecret: 'test_integrity_Integ123456', eventsSecret: 'test_events_Event123456' } });
-  assert.equal(wompi.status, 400);
-  assert.match(wompi.data.message, /pesos colombianos/);
+  assert.equal(wompi.status, 410);                                                             // Wompi se retiró (Orden 41)
+  assert.match(wompi.data.message, /Wompi ya no está disponible en NOVA/);
   const factus = await call('PUT', '/company/factus', { as: b.token, body: { env: 'sandbox', clientId: 'x', clientSecret: 'y', username: 'u@x.co',
     password: 'p', numberingRangeId: 1 } });
   assert.equal(factus.status, 400);
@@ -143,7 +143,7 @@ test('la interfaz de Servicios: MXN con IVA de México, celulares +52, sin Wompi
   const quoteTotals = new Function(`${round}\nreturn ${fn}`)();
   assert.deepEqual(quoteTotals([{ qty: 4, unitPrice: 850, taxRate: 16 }, { qty: 1, unitPrice: 99.99, taxRate: 8 }], 'MXN'),
     { subtotal: 3499.99, tax: 552, total: 4051.99 });
-  assert.match(fe('views/Integrations.jsx'), /\{colombiaCompany\(user\?\.company\) && <WompiCard api=\{api\} \/>\}/);
+  assert.doesNotMatch(fe('views/Integrations.jsx'), /WompiCard/);                            // Wompi se retiró (Orden 41)
   assert.match(fe('views/Integrations.jsx'), /\{colombiaCompany\(user\?\.company\) && <FactusCard api=\{api\} \/>\}/);
   // el enlace de WhatsApp, con la misma regla de ui.jsx: 10 dígitos en México van con 52
   const mx = (d) => (d.length === 10 ? `52${d}` : (/^52\d{10}$/.test(d) || /^521\d{10}$/.test(d) ? d : ''));
