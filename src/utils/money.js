@@ -2,7 +2,7 @@
 // - us: Estados Unidos (dólares, hora del Este, celulares +1). Las empresas en inglés de antes cuentan como us (antes el
 //   idioma decía el país).
 // - mx: México (pesos mexicanos, IVA del 16 %, hora de Ciudad de México, celulares +52).
-// - co: Colombia (pesos colombianos, IVA del 19 %, Wompi y factura DIAN con Factus).
+// - co: Colombia (pesos colombianos, IVA del 19 % y factura DIAN con Factus).
 const MARKETS = ['co', 'us', 'mx'];
 const marketOf = (company) => {
   if (!company) return 'co';
@@ -12,7 +12,7 @@ const marketOf = (company) => {
 };
 const isUS = (company) => marketOf(company) === 'us';
 const isMX = (company) => marketOf(company) === 'mx';
-// Wompi (cobra en pesos colombianos) y la factura DIAN (Factus) solo existen en Colombia.
+// La factura DIAN (Factus) solo existe en Colombia.
 const isColombia = (company) => marketOf(company) === 'co';
 
 // Plata de las cotizaciones: pesos colombianos enteros (COP), dólares (USD) o pesos mexicanos (MXN) con centavos.

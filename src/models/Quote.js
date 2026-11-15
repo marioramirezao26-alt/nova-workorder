@@ -44,7 +44,8 @@ const quoteSchema = new mongoose.Schema(
     workOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrder', default: null },
     // El cobro de una cotización aprobada: cuánto se cobra en línea (todo o el anticipo, fijado al primer intento), su
     // estado (pendiente, anticipo: falta el saldo, o pagado), lo pagado y el saldo, cuánto de eso registró la oficina a
-    // mano, cómo se pagó (wompi, o «oficina» si solo lo marcó la empresa) y la última transacción de Wompi.
+    // mano, cómo se pagó (wompi, o «oficina» si solo lo marcó la empresa) y la última transacción de Wompi. Wompi se
+    // retiró (Orden 41): 'wompi' se queda en el enum para que los pagos de antes se sigan leyendo y guardando.
     payment: {
       due: { type: Number, default: null },
       status: { type: String, enum: ['pendiente', 'anticipo', 'pagado'], default: 'pendiente' },

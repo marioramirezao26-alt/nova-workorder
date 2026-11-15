@@ -13,7 +13,8 @@ const DEFAULT_TAX = { COP: 19, MXN: 16, USD: 0 };
 const newItem = (currency) => ({ description: '', qty: 1, unitPrice: '', taxRate: DEFAULT_TAX[currency] ?? 0 });
 // «IVA» en Colombia y en México; «Impuesto» en dólares (el sales tax de cada estado).
 export const taxLabel = (currency) => (currency === 'USD' ? 'Impuesto' : 'IVA');
-// El estado del último intento en Wompi, en palabras (Wompi lo manda en inglés).
+// El estado del último intento en Wompi, en palabras (Wompi lo mandaba en inglés). Wompi se retiró (Orden 41): solo
+// queda en la historia de las cotizaciones que se cobraron con él.
 const TX_LABEL = { PENDING: 'en proceso', APPROVED: 'aprobado', DECLINED: 'rechazado', VOIDED: 'anulado', ERROR: 'con error' };
 const PAY_TAG = { pagado: 'Pagada', anticipo: 'Anticipo' };
 const testMark = (p) => (p?.test ? ` ${t('(prueba)')}` : '');
@@ -235,9 +236,7 @@ export default function Quotes({ api, user, go }) {
   const approve = (q) => window.confirm(t('¿El cliente aprobó la cotización #{n} por fuera del enlace (teléfono, en persona)? Se creará la orden de trabajo.', { n: q.number }))
     && act(async () => replace((await api.post(`/quotes/${q._id}/approve`, { note: t('Aprobada por la oficina') })).data), 'No se pudo aprobar la cotización');
   const convert = (q) => act(async () => replace((await api.post(`/quotes/${q._id}/convert`)).data), 'No se pudo crear la orden');
-  // Con un intento de Wompi en curso se advierte: si también se aprueba, queda como cobro de más para devolver.
   const setPaid = (q, paid) => (!paid || window.confirm([
-    q.payment?.txStatus === 'PENDING' ? t('Wompi tiene un pago en proceso de esta cotización: si también se aprueba, quedará como un cobro de más para devolver.') : '',
     q.payment?.status === 'anticipo'
       ? t('¿Registrar como pagado el saldo de {balance} de la cotización #{n} (efectivo, transferencia)?', { n: q.number, balance: money(q.payment.balance, q.currency) })
       : t('¿Marcar la cotización #{n} como pagada (efectivo, transferencia)?', { n: q.number }),
@@ -311,10 +310,10 @@ export default function Quotes({ api, user, go }) {
                   )}
                   {q.status === 'aprobada' && (
                     <p className="muted">{q.payment?.status === 'pagado'
-                      ? t(q.payment.method === 'wompi' && !q.payment.officeAmount ? 'Pagada con Wompi el {d}' : 'Marcada como pagada el {d}', { d: formatDateTime(q.payment.paidAt) })
+                      ? t(q.payment.method === 'wompi' && !q.payment.officeAmount ? 'Pagada con Wompi (retirado) el {d}' : 'Marcada como pagada el {d}', { d: formatDateTime(q.payment.paidAt) })
                       : q.payment?.status === 'anticipo'
                         ? t('Anticipo de {paid} recibido · saldo {balance}', { paid: money(q.payment.amountPaid, q.currency), balance: money(q.payment.balance, q.currency) })
-                        : q.payment?.txStatus ? t('Por cobrar · último intento en Wompi: {s}', { s: t(TX_LABEL[q.payment.txStatus] || q.payment.txStatus) }) : t('Por cobrar')}{testMark(q.payment)}</p>
+                        : q.payment?.txStatus ? t('Por cobrar · último intento en Wompi (retirado): {s}', { s: t(TX_LABEL[q.payment.txStatus] || q.payment.txStatus) }) : t('Por cobrar')}{testMark(q.payment)}</p>
                   )}
                   {user.role === 'admin' && (q.payment?.extra || []).filter((e) => e.status === 'APPROVED').map((e) => (
                     <p key={e.txId} className="error">{t('Wompi aprobó otro pago de {amount} ({id}) con la cotización ya cobrada: posible doble cobro. Devuélvelo desde tu panel de Wompi.', { amount: money(e.amount, q.currency), id: e.txId })}{e.test ? ` ${t('(prueba)')}` : ''}</p>
@@ -336,9 +335,6 @@ export default function Quotes({ api, user, go }) {
 
                   {user.role === 'cliente' && q.publicToken && ['enviada'].includes(q.status) && (
                     <a className="primary-button" href={`/cotizacion/${q.publicToken}`}>{t('Revisar y aprobar')}</a>
-                  )}
-                  {user.role === 'cliente' && q.publicToken && q.payment?.online && (
-                    <a className="primary-button" href={`/cotizacion/${q.publicToken}`}>{t('Pagar en línea')}</a>
                   )}
 
                   {editable(q) && (

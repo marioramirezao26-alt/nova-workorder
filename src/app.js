@@ -21,7 +21,7 @@ const checklistRoutes = require('./routes/checklistRoutes');
 const reportPublicRoutes = require('./routes/reportPublicRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const quotePublicRoutes = require('./routes/quotePublicRoutes');
-const wompiRoutes = require('./routes/wompiRoutes');
+const { wompiGone } = require('./utils/wompiRetirado');
 const webhooks = require('./utils/webhooks');
 const Client = require('./models/Client');
 const PageStat = require('./models/PageStat');
@@ -73,7 +73,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/checklists', checklistRoutes);
 app.use('/api/quotes', quoteRoutes);
-app.use('/api/wompi', wompiRoutes);                    // eventos firmados de Wompi (pagos de cotizaciones)
+app.use('/api/wompi', wompiGone);                      // Wompi se retiró (Orden 41): su aviso responde 410 sin tocar nada
 app.use('/api/cotizaciones', quotePublicRoutes);      // cotización pública: el cliente la aprueba o rechaza con el enlace
 app.use('/api/informes', reportPublicRoutes);          // informe de servicio público, con la llave del enlace
 app.use('/api/v1', v1Routes);                      // API pública con llave de empresa (docs/API.md)

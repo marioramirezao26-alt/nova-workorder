@@ -25,25 +25,10 @@ export default function PublicQuote({ token }) {
     document.title = `${t('Cotización')} #${d.quote.number} · ${d.company.name}`;
     setData(d);
   };
-  // Al volver del checkout, Wompi agrega ?id=<transacción>: se muestra lo que dice Wompi de ella (d.tx). El pago lo
-  // confirma su evento firmado, que llega aparte: mientras tanto se vuelve a consultar unas veces.
-  const txId = new URLSearchParams(window.location.search).get('id');
-  const statusUrl = txId ? `${base}/pago/estado?id=${encodeURIComponent(txId)}` : base;
-  const [tries, setTries] = useState(0);
+  // El pago en línea con Wompi se retiró (Orden 41): la página ya no lleva al checkout ni consulta transacciones.
   const load = (url) => axios.get(url).then(({ data: d }) => show(d))
     .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
-  useEffect(() => { load(statusUrl); }, [token]);
-  useEffect(() => {
-    if (!txId || tries >= 6 || data?.quote.payment?.status !== 'pendiente' || !['APPROVED', 'PENDING'].includes(data?.tx?.status)) return undefined;
-    const timer = setTimeout(() => { setTries((n) => n + 1); load(statusUrl); }, 5000);
-    return () => clearTimeout(timer);
-  }, [data]);
-  // Si vuelve con «Atrás» desde el checkout, el navegador restaura la página tal cual: el botón no puede quedar ocupado.
-  useEffect(() => {
-    const restored = (e) => { if (e.persisted) setBusy(false); };
-    window.addEventListener('pageshow', restored);
-    return () => window.removeEventListener('pageshow', restored);
-  }, []);
+  useEffect(() => { load(base); }, [token]);
 
   const answer = async (approve) => {
     try {
@@ -56,17 +41,6 @@ export default function PublicQuote({ token }) {
       const status = err.response?.status;
       if (status === 404 || status === 409 || status >= 500) load(base);
     } finally {
-      setBusy(false);
-    }
-  };
-
-  const pay = async () => {
-    try {
-      setBusy(true);
-      const { data: d } = await axios.get(`${base}/pago`);
-      window.location.href = d.checkoutUrl;
-    } catch (err) {
-      alert(t(err.response?.data?.message || 'No se pudo preparar el pago'));
       setBusy(false);
     }
   };
@@ -91,21 +65,8 @@ export default function PublicQuote({ token }) {
       {quote.status === 'aprobada' && <p className="quote-banner ok">{t('✔ Aprobada por {name} el {d}. La empresa ya tiene tu orden de trabajo.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
       {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
       {quote.payment?.status === 'anticipo' && <p className="quote-banner ok">{t('✔ Anticipo de {paid} recibido. El saldo de {balance} se acuerda con la empresa.', { paid: money(quote.payment.amountPaid, cur), balance: money(quote.payment.balance, cur) })}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
-      {quote.payment?.status === 'pendiente' && data.tx?.status === 'APPROVED' && <p className="quote-banner ok">{t('Confirmando tu pago con Wompi… Si no se actualiza en un momento, recarga esta página.')}</p>}
-      {quote.payment?.status === 'pendiente' && ['DECLINED', 'ERROR', 'VOIDED'].includes(data.tx?.status) && !quote.payment.pending && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
-      {/* un APPROVED sin confirmar también cuenta como intento en curso (no se ofrece pagar), con su propio aviso */}
-      {quote.payment?.status === 'pendiente' && data.tx?.status !== 'APPROVED' && (data.tx?.status === 'PENDING' || quote.payment.pending) && <p className="quote-banner no">{t('Wompi está procesando tu pago. Te avisaremos cuando se confirme; puedes recargar esta página en unos minutos.')}</p>}
       {quote.invoice?.publicUrl && (
         <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })}{quote.invoice.validated === false ? ` (${t('pendiente de validación en la DIAN')})` : ''} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
-      )}
-      {quote.payment?.online && (
-        <section className="report-section quote-decision no-print">
-          <h3>{quote.payment.due < quote.total ? t('Anticipo para empezar el trabajo') : t('Pago en línea')}</h3>
-          <p>{quote.payment.due < quote.total
-            ? t('Paga {due} de anticipo ({p} % de {total}); el resto se acuerda con la empresa.', { due: money(quote.payment.due, cur), total: money(quote.total, cur), p: Math.round((quote.payment.due / quote.total) * 100) })
-            : t('Paga {due} con tarjeta, PSE, Nequi o Bancolombia.', { due: money(quote.payment.due, cur) })}</p>
-          <button type="button" className="primary-button" disabled={busy} onClick={pay}>{t('Pagar {due} con Wompi', { due: money(quote.payment.due, cur) })}</button>
-        </section>
       )}
       {quote.status === 'rechazada' && <p className="quote-banner no">{t('Rechazada por {name} el {d}.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
       {quote.status === 'vencida' && <p className="quote-banner no">{t('Esta cotización venció el {d}. Pide a {company} una nueva.', { d: day(quote.validUntil), company: company.name })}</p>}

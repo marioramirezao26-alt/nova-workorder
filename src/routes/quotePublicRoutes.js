@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 const { validateRequest } = require('../middleware/validateRequest');
 const { quoteLimiter } = require('../middleware/quoteLimiter');
 const quotes = require('../controllers/quoteController');
+const { wompiGone } = require('../utils/wompiRetirado');
 
 // Cotización pública (sin sesión): la abre el cliente con el enlace que le comparte la empresa y la aprueba o rechaza.
 const router = express.Router();
@@ -21,8 +22,7 @@ router.post('/:token/rechazar', quoteLimiter, [
   validateRequest,
 ], quotes.publicReject);
 
-// Pago en línea con Wompi de una cotización aprobada, y la consulta al volver del checkout.
-router.get('/:token/pago', quoteLimiter, quotes.publicCheckout);
-router.get('/:token/pago/estado', quotes.publicPaymentStatus);
+// El pago en línea con Wompi (y su consulta al volver del checkout) se retiró: responde 410 sin leer la cotización.
+router.use('/:token/pago', wompiGone);
 
 module.exports = router;

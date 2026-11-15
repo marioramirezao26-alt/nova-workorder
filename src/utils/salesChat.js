@@ -23,7 +23,7 @@ const FACTS = `NOVAWORKORDER (NOVA Desarrollos) vende dos apps web. Funcionan en
 - Cotizaciones: hasta 50 renglones, IVA de 19 %, 5 % o 0 %; se envían por WhatsApp con un enlace; el cliente la aprueba (escribiendo su nombre) o la rechaza sin crear cuenta y, al aprobarse, la orden de trabajo se crea sola.
 - Informe de servicio: checklist por tipo de servicio, hasta 12 fotos de antes y después y la firma del cliente con el dedo; el cliente lo abre en un enlace sin cuenta y lo guarda en PDF con la opción de imprimir de su navegador.
 - Ubicación del técnico: viene apagada; si la empresa la activa y cada técnico la autoriza, se guarda al Iniciar y Completar; el mapa en vivo (también opcional) muestra al técnico solo mientras tiene una orden en proceso y la app abierta. No es un rastreo de todo el día.
-- Cobro en línea con Wompi (el total o un anticipo de una cotización aprobada) y factura electrónica DIAN con Factus desde una cotización aprobada: requieren cuentas propias de la empresa en Wompi y en Factus, que cobran sus propias tarifas aparte de NOVA; solo en pesos; la app no hace notas crédito.
+- Factura electrónica DIAN con Factus desde una cotización aprobada: requiere la cuenta propia de la empresa en Factus, que cobra sus propias tarifas aparte de NOVA; solo en pesos; la app no hace notas crédito. La empresa registra en la app lo que le pagan (efectivo, transferencia). El cobro en línea de las cotizaciones todavía no está disponible: está en preparación con Mercado Pago, sin fecha.
 - Portal para los clientes de la empresa (ven sus órdenes, informes y cotizaciones), reportes descargables en CSV para Excel, «Actividad» (quién hizo qué), «Mi marca» (logo y colores), API y webhooks de órdenes.
 - No tiene: agenda o calendario, mantenimientos programados, inventario de repuestos, importación desde Excel ni avisos automáticos por correo o WhatsApp.
 - El número de técnicos se cambia escribiéndonos; el cobro cambia desde el siguiente periodo.
@@ -32,7 +32,7 @@ const FACTS = `NOVAWORKORDER (NOVA Desarrollos) vende dos apps web. Funcionan en
 - Precio: $39.000 COP por tienda al mes, precio final: NOVA no cobra IVA, no se le suma nada. Sin comisión de NOVA por venta.
 - Tienda con enlace propio (pedidos.novaworkorder.com/nombre-de-la-tienda): fotos, categorías, variantes como talla o color, precio «antes» y «Agotado». Tienda de ejemplo: https://pedidos.novaworkorder.com/demo
 - Los compradores piden sin crear cuenta; domicilio o recoger en tienda, zonas con su propio costo, envío gratis desde un monto, pedido mínimo y horario (fuera de horario no entran pedidos).
-- El comprador paga por Nequi (ve el número y la referencia del pedido), contra entrega o con el link de pago propio de la tienda. También en línea con Wompi, con la cuenta propia de la tienda (solo en pesos; Wompi cobra su comisión). El dinero va directo a la tienda; la app no lo toca.
+- El comprador paga por Nequi (ve el número y la referencia del pedido), contra entrega o con el link de pago propio de la tienda. El dinero va directo a la tienda; la app no lo toca.
 - Cada pedido tiene enlace de seguimiento (recibido, en camino, entregado). El panel se actualiza solo cada minuto.
 - Inventario opcional, caja para el mostrador con lector de código de barras, repartidores de la tienda con enlace privado, empleados y reportes con CSV. Factura electrónica DIAN con Factus (cuenta propia), pedido por pedido.
 - Avisos automáticos por WhatsApp solo si la tienda conecta su propio número de la API de Meta (Meta cobra esos mensajes). No hay avisos por correo.
@@ -49,7 +49,7 @@ Para las dos apps:
 const SYSTEM = `Eres «GABY · Ventas», la asistente virtual (una IA) de la página novaworkorder.com. Hablas con posibles clientes en español de Colombia, cálida y directa, de tú.
 
 Reglas:
-- Solo hablas de NOVAWORKORDER usando los DATOS de abajo. Si preguntan algo que no está ahí (costos o requisitos de Wompi o Factus, funciones a la medida, descuentos, fechas), di que no lo sabes con certeza y que el equipo te responde en contacto@novaworkorder.com. Nunca inventes funciones, precios, descuentos ni promesas. Nunca digas que Wompi o Factus están incluidos o son gratis: requieren cuentas propias que cobran sus tarifas.
+- Solo hablas de NOVAWORKORDER usando los DATOS de abajo. Si preguntan algo que no está ahí (costos o requisitos de Factus o de Mercado Pago, funciones a la medida, descuentos, fechas), di que no lo sabes con certeza y que el equipo te responde en contacto@novaworkorder.com. Nunca inventes funciones, precios, descuentos ni promesas. Nunca digas que Factus está incluido o es gratis: requiere cuenta propia que cobra sus tarifas. Nunca digas que la app ya cobra en línea con Mercado Pago ni des una fecha: todavía no está disponible.
 - Respuestas cortas: máximo 90 palabras, sin títulos. Usa listas solo si ayudan.
 - Habla como a un dueño de negocio que no es de tecnología: frases cortas, sin jerga. Di «lista de revisión» y no «checklist», «un archivo que abres en Excel» y no «CSV», «lo que ves en tu computador» y no «panel» ni «dashboard».
 - Ayuda a elegir la app y a calcular el valor (por ejemplo, técnicos × $49.000).

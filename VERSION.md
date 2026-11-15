@@ -2,6 +2,24 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Wompi retirado (Orden 41, 15-nov-2026)
+- Mario: Mercado Pago es el proveedor exclusivo de pagos de NOVA y Wompi queda descartado. Medido en la base de
+  producción (solo lectura): 0 empresas con Wompi conectado y 0 cotizaciones pagadas con Wompi, así que nadie se queda
+  sin cobro (plan: misión 07, 40-B §2).
+- El servidor: `/api/company/wompi*` (ver, conectar, anticipo y desconectar), el aviso `/api/wompi/:slug/eventos` y el
+  pago público `/api/cotizaciones/:token/pago` (y `/pago/estado`) responden **410** «Wompi ya no está disponible en
+  NOVA» sin leer ni cambiar nada (`src/utils/wompiRetirado.js`). Ya no existe el DELETE que borraba las llaves. Se
+  borran `services/wompi.js` y `routes/wompiRoutes.js`; `quotePayments.js` queda con `statusFor` y `UNPAID`.
+- Sin migración: `Company.wompi`, `Quote.payment.method = 'wompi'` y `payment.extra` siguen igual, `setPayment` no
+  cambia (un pago real que confirmó Wompi no se cambia a mano) y `factus.js` conserva el medio de pago de Wompi para
+  facturar un pago de antes.
+- La interfaz: se borran `WompiCard` y el botón de pago en línea; lo histórico dice «Pagada con Wompi (retirado)» y el
+  aviso de posible doble cobro se conserva.
+- Textos de venta (`salesChat.js` y el FAQ de la portada, también su JSON-LD): sin la promesa de cobrar con Wompi; el
+  cobro en línea «llega próximamente con Mercado Pago», sin fecha. Las páginas legales no se tocan (revisión legal).
+- Pruebas: `wompi.test.js` pasa a `wompi-retirado.test.js` (410, las llaves no se borran, lo histórico se lee y
+  `setPayment` igual); se ajustan `factura.test.js`, `es-us.test.js` y `es-mx.test.js`.
+
 ### Sin QR de pago: Bold o la llave (P-065, 3-nov-2026)
 - Mario, 3-nov-2026: «quitemos el pago por QR, solo dejemos la llave». En Colombia se paga con Bold o a la llave Bre-B:
   los artículos del blog de precio de Servicios (`7-cuanto-cuesta-servicios`, también su pregunta frecuente) y de pedidos
