@@ -255,8 +255,8 @@ test('la firma del aviso: buena sí; mala, vieja, adelantada o malformada no (y 
   const v1 = good.split('v1=')[1];
   for (const [label, opts] of [
     ['otra clave', { secret: 'otraClaveSecretaQueNoEsLaDeA0123' }],
-    ['vieja', { ts: now - 11 * 60 }],
-    ['adelantada', { ts: now + 11 * 60 }],
+    ['vieja (16 días)', { ts: now - 16 * 86400 }],
+    ['adelantada (6 minutos)', { ts: now + 6 * 60 }],
     ['sin firma', { header: null }],
     ['ts con letras', { header: `ts=12a4,v1=${v1}`, requestId: 'r-1' }],
     ['v1 corto', { header: `ts=${now},v1=${v1.slice(0, 63)}`, requestId: 'r-1' }],

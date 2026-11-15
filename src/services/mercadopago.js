@@ -173,7 +173,17 @@ const fetchPayment = async (company, id) => {
 
 // ---- La firma del aviso -------------------------------------------------------------------------------------------
 
-const TOLERANCE_MS = 10 * 60 * 1000;     // un aviso firmado hace más de 10 minutos (o con la hora adelantada) no vale
+// La vigencia del ts de la firma, como en GABY-OS (Orden 37): hasta 15 días atrás, porque Mercado Pago reintenta un aviso
+// durante días y su documentación no dice si conserva el ts original; y hasta 5 minutos adelante (relojes). La antigüedad
+// la ajusta MERCADOPAGO_FIRMA_ANTIGUEDAD_MAX_S (en segundos, de 60 a 30 días; otro valor deja los 15 días). Un aviso
+// repetido dentro de la ventana no hace nada: el pago se consulta en la API y se aplica una sola vez.
+const SIGNATURE_MAX_AGE_DEFAULT_S = 15 * 86400;
+const SIGNATURE_MAX_AHEAD_MS = 5 * 60 * 1000;
+const signatureMaxAgeMs = () => {
+  const n = Number(process.env.MERCADOPAGO_FIRMA_ANTIGUEDAD_MAX_S);
+  return (Number.isInteger(n) && n >= 60 && n <= 30 * 86400 ? n : SIGNATURE_MAX_AGE_DEFAULT_S) * 1000;
+};
+const tsInWindow = (tsMs, now) => Number.isFinite(tsMs) && now - tsMs <= signatureMaxAgeMs() && tsMs - now <= SIGNATURE_MAX_AHEAD_MS;
 // (ts, v1) de `x-signature`, o null si no tiene exactamente la forma: ts en dígitos y v1 de 64 hexadecimales.
 const parseSignature = (header) => {
   let ts = '';
@@ -196,7 +206,7 @@ const tsMillis = (ts) => (ts.length >= 13 ? Number(ts) : Number(ts) * 1000);
 const validSignature = ({ header, requestId, dataId, secret, now = Date.now() }) => {
   const sig = parseSignature(header);
   if (!sig || !secret) return false;
-  if (Math.abs(now - tsMillis(sig.ts)) > TOLERANCE_MS) return false;
+  if (!tsInWindow(tsMillis(sig.ts), now)) return false;
   // el id va en minúsculas (así lo firma Mercado Pago si es alfanumérico; uno de pago son solo dígitos)
   const text = manifest({ dataId: String(dataId || '').trim().toLowerCase(), requestId: String(requestId || '').trim(), ts: sig.ts });
   const expected = crypto.createHmac('sha256', secret).update(text).digest();
@@ -204,7 +214,7 @@ const validSignature = ({ header, requestId, dataId, secret, now = Date.now() })
 };
 
 module.exports = {
-  API, OFF, TEST_ONLY, ACCESS_TOKEN, PUBLIC_KEY, WEBHOOK_SECRET, TOLERANCE_MS, MercadoPagoError,
+  API, OFF, TEST_ONLY, ACCESS_TOKEN, PUBLIC_KEY, WEBHOOK_SECRET, SIGNATURE_MAX_AHEAD_MS, signatureMaxAgeMs, MercadoPagoError,
   enabled, productionAllowed, isTestToken, tokenAllowed, available, currencyFor, connected, usable, chargeable,
   reference, parseReference, cents, statusOf, refunded, methodType,
   setFetch, verifyAccount, sealCredentials, openSecret, createPreference, fetchPayment,
