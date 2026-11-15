@@ -102,8 +102,24 @@ ts = sin_fondo(cuadro)
 err_s = error_contra_fondo(ts, cuadro)
 guardar(ts, "nova-orbital-simbolo-transparente-724.png", "derivada-aproximada",
         f"Símbolo con el fondo separado (error máx {err_s:.1f}/255 sobre #00000C). Solo para fondos oscuros", optimize=True)
-guardar(ts.resize((128, 128), Image.LANCZOS), "nova-orbital-simbolo-transparente-128.png", "derivada-aproximada",
-        "Símbolo transparente pequeño (encabezados)", optimize=True)
+# Orden 44: en la entrada de la app (celular) se veía un recuadro tenue detrás del símbolo. Causa medida: el brillo de las
+# órbitas llega al borde del cuadro de 724 con alfa de hasta 37/255 (el original mide 724 de alto: no hay más brillo que
+# recortar), así que se corta en seco en el cuadrado. Arreglo con la técnica ya aprobada del ícono «maskable» (Orden 40):
+# solo el ALFA de los últimos 70 de los 724 px se funde a 0 (suave, smoothstep). Color, órbita y estrella no cambian; el
+# cambio máximo de alfa se mide abajo. La de 724 se queda como estaba (referencia).
+_n = ts.size[0]
+_yy, _xx = np.mgrid[0:_n, 0:_n].astype(np.float64)
+_peso = np.clip(np.minimum.reduce([_xx, _yy, _n - 1 - _xx, _n - 1 - _yy]) / 70.0, 0, 1)
+_peso = _peso * _peso * (3 - 2 * _peso)
+_rgba = np.asarray(ts).astype(np.float64)
+_alfa = np.round(_rgba[..., 3] * _peso)
+cambio_alfa_simbolo = int(np.abs(_alfa - _rgba[..., 3]).max())
+_ts_fundido = np.asarray(ts).copy()
+_ts_fundido[..., 3] = np.clip(_alfa, 0, 255).astype(np.uint8)
+ts_fundido = Image.fromarray(_ts_fundido, "RGBA")
+guardar(ts_fundido.resize((128, 128), Image.LANCZOS), "nova-orbital-simbolo-transparente-128.png", "derivada-aproximada",
+        f"Símbolo transparente pequeño (entrada de la app). Orden 44: el alfa de los últimos 70 de 724 px se funde a 0 "
+        f"para que el brillo no se corte en un recuadro (cambio máx. de alfa {cambio_alfa_simbolo}/255)", optimize=True)
 # El recorte suministrado por Mario corta la órbita en el borde derecho: se guarda tal cual, solo como referencia
 guardar(SIMB, "nova-orbital-simbolo-referencia-720x565.webp", "exacta",
         "Recorte suministrado, re-codificado. La órbita toca el borde derecho: referencia, no para iconos", quality=92, method=6)

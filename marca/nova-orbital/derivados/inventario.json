@@ -131,9 +131,9 @@
   "archivo": "nova-orbital-simbolo-transparente-128.png",
   "ancho": 128,
   "alto": 128,
-  "bytes": 29246,
+  "bytes": 27202,
   "tipo": "derivada-aproximada",
-  "nota": "Símbolo transparente pequeño (encabezados)"
+  "nota": "Símbolo transparente pequeño (entrada de la app). Orden 44: el alfa de los últimos 70 de 724 px se funde a 0 para que el brillo no se corte en un recuadro (cambio máx. de alfa 68/255)"
  },
  {
   "archivo": "nova-orbital-simbolo-referencia-720x565.webp",

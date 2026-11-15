@@ -66,7 +66,7 @@ No dibuja nada, ni cambia formas, colores o letras. El inventario de cada corrid
 | `nova-orbital-simbolo-cuadrado-512.webp` | 512×512 | 26 KB | Exacta | Símbolo cuadrado reescalado |
 | `nova-orbital-simbolo-cuadrado-256.webp` | 256×256 | 10 KB | Exacta | Símbolo cuadrado reescalado |
 | `nova-orbital-simbolo-transparente-724.png` | 724×724 | 723 KB | **Aproximada (revisar)** | Símbolo con el fondo separado (error máx 2.0/255 sobre #00000C). Solo para fondos oscuros |
-| `nova-orbital-simbolo-transparente-128.png` | 128×128 | 29 KB | **Aproximada (revisar)** | Símbolo transparente pequeño (encabezados) |
+| `nova-orbital-simbolo-transparente-128.png` | 128×128 | 27 KB | **Aproximada (revisar)** | Símbolo transparente pequeño (entrada de la app). Orden 44: el brillo llegaba al borde (alfa hasta 37/255) y en el celular se veía un recuadro tenue; el alfa de la orilla (70 de 724 px) se funde a 0 como en el ícono «maskable». Borde: alfa 0; centro: sin cambio visible |
 | `nova-orbital-simbolo-referencia-720x565.webp` | 720×565 | 40 KB | Exacta | Recorte suministrado, re-codificado. La órbita toca el borde derecho: referencia, no para iconos |
 | `favicon-16.png` | 16×16 | 1 KB | Exacta | Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado |
 | `favicon-32.png` | 32×32 | 2 KB | Exacta | Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado |
