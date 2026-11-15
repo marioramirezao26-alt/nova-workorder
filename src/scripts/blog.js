@@ -139,7 +139,7 @@ ${ld({ '@context': 'https://schema.org', '@graph': [ORG, ...extraLd] })}
   <a class="sr" href="#contenido">${t.saltar}</a>
   <header class="top">
     <div class="wrap">
-      <a class="brand" href="${t.inicio}"><img class="brand-logo" src="/marca/nova-orbital-encabezado-48.webp" srcset="/marca/nova-orbital-encabezado-96.webp 2x, /marca/nova-orbital-encabezado-144.webp 3x" width="140" height="48" alt="NOVA" /><small>WORKORDER</small></a>
+      <a class="brand" href="${t.inicio}"><img class="brand-logo" src="/marca/nova-orbital-encabezado-48.webp" srcset="/marca/nova-orbital-encabezado-96.webp 2x, /marca/nova-orbital-encabezado-144.webp 3x" width="136" height="48" alt="NOVA" /><small>WORKORDER</small></a>
       <nav aria-label="${t.menu}">
         <a href="${t.base}">${t.blog}</a>
 ${t.nav.map(([h, x]) => `        <a href="${h}">${x}</a>`).join('\n')}

@@ -73,27 +73,27 @@
  },
  {
   "archivo": "nova-orbital-encabezado-48.webp",
-  "ancho": 140,
+  "ancho": 136,
   "alto": 48,
-  "bytes": 7434,
+  "bytes": 6500,
   "tipo": "derivada-aproximada",
-  "nota": "Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255"
+  "nota": "Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255"
  },
  {
   "archivo": "nova-orbital-encabezado-96.webp",
-  "ancho": 280,
+  "ancho": 272,
   "alto": 96,
-  "bytes": 21374,
+  "bytes": 18228,
   "tipo": "derivada-aproximada",
-  "nota": "Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255"
+  "nota": "Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255"
  },
  {
   "archivo": "nova-orbital-encabezado-144.webp",
-  "ancho": 420,
+  "ancho": 408,
   "alto": 144,
-  "bytes": 40690,
+  "bytes": 35442,
   "tipo": "derivada-aproximada",
-  "nota": "Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255"
+  "nota": "Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255"
  },
  {
   "archivo": "nova-orbital-simbolo-cuadrado-724.png",

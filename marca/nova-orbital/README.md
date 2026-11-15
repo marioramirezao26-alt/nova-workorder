@@ -59,9 +59,9 @@ No dibuja nada, ni cambia formas, colores o letras. El inventario de cada corrid
 | `nova-orbital-horizontal-transparente-1200.webp` | 1200×400 | 233 KB | **Aproximada (revisar)** | Igual que la transparente de 2172, reescalada; solo para fondos oscuros |
 | `nova-orbital-horizontal-transparente-600.webp` | 600×200 | 63 KB | **Aproximada (revisar)** | Igual que la transparente de 2172, reescalada; solo para fondos oscuros |
 | `nova-orbital-horizontal-transparente-320.webp` | 320×107 | 21 KB | **Aproximada (revisar)** | Igual que la transparente de 2172, reescalada; solo para fondos oscuros |
-| `nova-orbital-encabezado-48.webp` | 140×48 | 7 KB | **Aproximada (revisar)** | Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255 |
-| `nova-orbital-encabezado-96.webp` | 280×96 | 21 KB | **Aproximada (revisar)** | Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255 |
-| `nova-orbital-encabezado-144.webp` | 420×144 | 40 KB | **Aproximada (revisar)** | Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde 36/255 |
+| `nova-orbital-encabezado-48.webp` | 136×48 | 6 KB | **Aproximada (revisar)** | Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255 |
+| `nova-orbital-encabezado-96.webp` | 272×96 | 18 KB | **Aproximada (revisar)** | Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255 |
+| `nova-orbital-encabezado-144.webp` | 408×144 | 35 KB | **Aproximada (revisar)** | Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255 |
 | `nova-orbital-simbolo-cuadrado-724.png` | 724×724 | 466 KB | Exacta | Recorte 724x724 del logo horizontal (x 191–915): símbolo completo con su fondo |
 | `nova-orbital-simbolo-cuadrado-512.webp` | 512×512 | 26 KB | Exacta | Símbolo cuadrado reescalado |
 | `nova-orbital-simbolo-cuadrado-256.webp` | 256×256 | 10 KB | Exacta | Símbolo cuadrado reescalado |
@@ -75,7 +75,7 @@ No dibuja nada, ni cambia formas, colores o letras. El inventario de cada corrid
 | `icono-app-192.png` | 192×192 | 43 KB | Exacta | Símbolo cuadrado reescalado (icono) |
 | `icono-app-512.png` | 512×512 | 259 KB | Exacta | Símbolo cuadrado reescalado (icono) |
 | `favicon.ico` | 48×48 | 7 KB | Exacta | ICO con 16, 32 y 48 px |
-| `icono-app-maskable-512.png` | 512×512 | 175 KB | **Aproximada (revisar)** | Símbolo al 80 % sobre fondo liso #00000C (relleno nuevo alrededor del recorte); revisar el borde |
+| `icono-app-maskable-512.png` | 512×512 | 175 KB | **Aproximada (revisar)** | Símbolo al 80 % sobre fondo liso #00000C (relleno nuevo alrededor del recorte). **Defecto (Orden 38): costura cuadrada tenue donde termina el recorte**; ver abajo. Hoy no lo usa ninguna página |
 
 ## Dónde se usa (PR de la Orden 37, en borrador)
 
@@ -104,3 +104,14 @@ Los archivos web van en `landing/marca/`.
 - **La imagen para redes (`img/og-novaworkorder.jpg`)** sigue igual.
 - **Los logos de las empresas clientes en la app («Mi marca»).** Cuando una empresa no tiene logo propio, sigue saliendo `logo.svg`.
 - **`favicon.svg`, `logo.svg`, `img/icono-180.png` y `apple-touch-icon.png`** siguen en el repositorio, para volver atrás sin perder nada.
+
+## Revisión de la Orden 38 (15-nov-2026)
+
+- **Encabezado corregido.** El recorte anterior (x 200–1960, y 60–664) cortaba el brillo de las órbitas con un alfa de hasta 36/255, y en el encabezado se veía el borde del rectángulo junto al símbolo. Ahora el recorte es x 0–2052 con la altura completa del original: el borde queda en 8/255, el brillo que el original ya trae en su propio borde. Sigue siendo **solo un recorte**: no hay desvanecidos ni retoques. Como el cuadro es más alto, el logo se muestra a 48 px (antes 40) para que la palabra NOVA conserve su tamaño; en celular se muestra a 40 px.
+- **Símbolo (cuadrado, transparente y «maskable»): defecto de origen, sin corregir.** Entre el símbolo y la N del original siempre hay brillo (mínimo 35/255, en x = 929), y a la izquierda del cuadro también (31/255). Ningún recorte del símbolo puede evitar cortar ese brillo; el recorte que Mario envió tiene lo mismo.
+  - En los íconos (favicon, iPhone, app) no se nota: el corte coincide con el borde del ícono.
+  - En la entrada de la app, a 72 px, tampoco se nota.
+  - En el «maskable» sí aparece una costura cuadrada tenue, porque el recorte va sobre un relleno liso. Ninguna página lo usa hoy.
+  - Corregirlo exigiría desvanecer el brillo del borde, y eso altera píxeles del original. **Queda para decisión de Mario.**
+- **Transparentes: solo para fondos oscuros, sin cambios.** Sobre blanco, la estrella y la palabra NOVA, que son blancas, se pierden. Es lo esperado: el original no tiene una versión para fondo claro.
+

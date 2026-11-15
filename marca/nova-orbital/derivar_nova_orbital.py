@@ -77,16 +77,18 @@ for ancho in (1200, 600, 320):
     guardar(reescalar(t, ancho), f"nova-orbital-horizontal-transparente-{ancho}.webp", "derivada-aproximada",
             "Igual que la transparente de 2172, reescalada; solo para fondos oscuros", quality=92, method=6)
 
-# 2b. Para encabezados web: la transparente recortada a su contenido con margen (x 200–1960, y 60–664), para que a 40 px
-# de alto la palabra se lea. Solo recorte: en el borde queda brillo tenue (alfa máx. medido abajo)
-CUADRO_ENCABEZADO = (200, 60, 1960, 664)
+# 2b. Para encabezados web: la transparente recortada (x 0–2052, alto completo). Solo recorte. Orden 38: el recorte
+# anterior (x 200–1960, y 60–664) cortaba el brillo de las órbitas con alfa de hasta 34/255 y en el encabezado se veía
+# el borde del rectángulo; este llega hasta donde el brillo del original ya es casi nulo (alfa máx. medido abajo).
+# A la derecha de x 2052 el original solo tiene fondo (exceso ≤ 2/255).
+CUADRO_ENCABEZADO = (0, 0, 2052, 724)
 enc = t.crop(CUADRO_ENCABEZADO)
 a_borde = np.asarray(enc)[..., 3]
 borde_max = int(max(a_borde[0].max(), a_borde[-1].max(), a_borde[:, 0].max(), a_borde[:, -1].max()))
 for alto in (48, 96, 144):
     ancho = round(enc.size[0] * alto / enc.size[1])
     guardar(enc.resize((ancho, alto), Image.LANCZOS), f"nova-orbital-encabezado-{alto}.webp", "derivada-aproximada",
-            f"Transparente recortada (x 200–1960, y 60–664) para encabezados oscuros; alfa máx. en el borde {borde_max}/255",
+            f"Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde {borde_max}/255",
             quality=92, method=6)
 
 # 3. Símbolo cuadrado (exacta: recorte del logo horizontal)
