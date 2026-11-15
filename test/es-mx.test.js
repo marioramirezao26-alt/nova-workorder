@@ -144,6 +144,8 @@ test('la interfaz de Servicios: MXN con IVA de México, celulares +52, sin Wompi
   assert.deepEqual(quoteTotals([{ qty: 4, unitPrice: 850, taxRate: 16 }, { qty: 1, unitPrice: 99.99, taxRate: 8 }], 'MXN'),
     { subtotal: 3499.99, tax: 552, total: 4051.99 });
   assert.doesNotMatch(fe('views/Integrations.jsx'), /WompiCard/);                            // Wompi se retiró (Orden 41)
+  assert.match(fe('views/Integrations.jsx'), /\{mercadoPagoCompany\(user\?\.company\) && <MercadoPagoCard api=\{api\} \/>\}/);
+  assert.match(fe('ui.jsx'), /export const mercadoPagoCompany = \(company\) => \['co', 'mx'\]\.includes\(companyMarket\(company\)\);/);
   assert.match(fe('views/Integrations.jsx'), /\{colombiaCompany\(user\?\.company\) && <FactusCard api=\{api\} \/>\}/);
   // el enlace de WhatsApp, con la misma regla de ui.jsx: 10 dígitos en México van con 52
   const mx = (d) => (d.length === 10 ? `52${d}` : (/^52\d{10}$/.test(d) || /^521\d{10}$/.test(d) ? d : ''));

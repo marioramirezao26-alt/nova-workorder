@@ -384,3 +384,17 @@ test('conectar Factus tiene su propio cupo de intentos: lo de Wompi (retirado) n
   for (let n = 0; n < 11; n += 1) assert.equal((await call('PUT', '/company/wompi', { as: a.token, body: { publicKey: 'mala' } })).status, 410);
   assert.equal((await call('PUT', '/company/factus', { as: a.token, body: CREDS })).status, 200);
 });
+
+test('Mercado Pago: medio de pago por tipo (crédito 48, débito 49, PSE 47, otro ZZZ); prueba o devolución no van de contado', () => {
+  const codes = (payment) => bill(payment).payment_details.map((p) => [p.payment_form, p.payment_method_code, p.amount]);
+  const paid = { status: 'pagado', amountPaid: TOTAL, method: 'mercadopago', txId: '9000000001', txStatus: 'APPROVED' };
+  assert.deepEqual(codes({ ...paid, methodType: 'CREDIT_CARD' }), [['1', '48', '725325.00']]);
+  assert.deepEqual(codes({ ...paid, methodType: 'DEBIT_CARD' }), [['1', '49', '725325.00']]);
+  assert.deepEqual(codes({ ...paid, methodType: 'BANK_TRANSFER', officeAmount: 362662 }), [['1', '47', '362663.00'], ['1', '10', '362662.00']]);
+  assert.deepEqual(codes({ ...paid, methodType: 'ACCOUNT_MONEY' }), [['1', 'ZZZ', '725325.00']]);
+  assert.deepEqual(codes({ ...paid, methodType: 'CREDIT_CARD', test: true }).map((c) => c[0]), ['2']);              // de prueba: a crédito
+  assert.deepEqual(codes({ ...paid, methodType: 'CREDIT_CARD', txStatus: 'REFUNDED' }).map((c) => c[0]), ['2']);  // devuelto: a crédito
+  const dep = bill({ status: 'anticipo', amountPaid: 362663, balance: 362662, method: 'mercadopago', methodType: 'CREDIT_CARD', txId: '9000000002', txStatus: 'APPROVED', paidAt: new Date('2026-03-01T03:00:00Z') });
+  assert.deepEqual(dep.prepayment_details, [{ reference_code: 'mercadopago-9000000002', received_date: '2026-02-28', amount: '362663.00', note: 'Anticipo de la cotización #7 pagado con Mercado Pago' }]);
+  assert.equal(bill({ status: 'anticipo', amountPaid: 362663, method: 'mercadopago', txId: '9', txStatus: 'CHARGED_BACK' }).prepayment_details, undefined);
+});

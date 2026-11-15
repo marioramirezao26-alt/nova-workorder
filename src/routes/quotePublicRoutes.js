@@ -25,4 +25,7 @@ router.post('/:token/rechazar', quoteLimiter, [
 // El pago en línea con Wompi (y su consulta al volver del checkout) se retiró: responde 410 sin leer la cotización.
 router.use('/:token/pago', wompiGone);
 
+// Pago en línea con Mercado Pago de una cotización aprobada (la cuenta de la empresa). Sin MERCADOPAGO_ENABLED=1, 404.
+router.post('/:token/mercadopago', quoteLimiter, quotes.publicCheckout);
+
 module.exports = router;
