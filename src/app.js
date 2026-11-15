@@ -21,6 +21,7 @@ const checklistRoutes = require('./routes/checklistRoutes');
 const reportPublicRoutes = require('./routes/reportPublicRoutes');
 const quoteRoutes = require('./routes/quoteRoutes');
 const quotePublicRoutes = require('./routes/quotePublicRoutes');
+const mercadopagoRoutes = require('./routes/mercadopagoRoutes');
 const { wompiGone } = require('./utils/wompiRetirado');
 const webhooks = require('./utils/webhooks');
 const Client = require('./models/Client');
@@ -74,6 +75,7 @@ app.use('/api/integrations', integrationRoutes);
 app.use('/api/checklists', checklistRoutes);
 app.use('/api/quotes', quoteRoutes);
 app.use('/api/wompi', wompiGone);                      // Wompi se retiró (Orden 41): su aviso responde 410 sin tocar nada
+app.use('/api/mercadopago', mercadopagoRoutes);         // avisos firmados de Mercado Pago, por empresa (apagado sin MERCADOPAGO_ENABLED=1)
 app.use('/api/cotizaciones', quotePublicRoutes);      // cotización pública: el cliente la aprueba o rechaza con el enlace
 app.use('/api/informes', reportPublicRoutes);          // informe de servicio público, con la llave del enlace
 app.use('/api/v1', v1Routes);                      // API pública con llave de empresa (docs/API.md)

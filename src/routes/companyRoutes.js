@@ -6,6 +6,7 @@ const { publicUser } = require('../controllers/authController');
 const { validateRequest } = require('../middleware/validateRequest');
 const Company = require('../models/Company');
 const factus = require('../services/factus');
+const mp = require('../services/mercadopago');
 const { audit } = require('../utils/audit');
 const { wompiGone } = require('../utils/wompiRetirado');
 const { isColombia } = require('../utils/money');
@@ -62,6 +63,114 @@ router.put('/require-signature', protect, authorize('admin'), [
 // borraba las llaves, así que las que haya cifradas en la base se quedan como están, junto con la historia de los pagos.
 router.use('/wompi', wompiGone);
 
+// «Cobros con Mercado Pago» (Integraciones): la empresa conecta SU cuenta para que sus clientes paguen en línea las
+// cotizaciones aprobadas. Solo el administrador la conecta; nada se activa solo. Apagado en el servidor (sin
+// MERCADOPAGO_ENABLED=1) todo responde 404 y no se llama a Mercado Pago. Lo que se devuelve nunca incluye el Access Token
+// ni la clave secreta del webhook.
+const mpView = (company) => {
+  const m = (company && company.mercadopago) || {};
+  return {
+    available: mp.available(company),                 // Colombia y México; en Estados Unidos no opera
+    connected: mp.connected(company),
+    usable: mp.usable(company),
+    test: m.test !== false,
+    production: mp.productionAllowed(),
+    currency: mp.currencyFor(company),
+    publicKey: m.publicKey || '',
+    nickname: m.nickname || '',
+    siteId: m.siteId || '',
+    depositPercent: m.depositPercent || 100,
+    connectedAt: m.connectedAt || null,
+    lastEventAt: m.lastEventAt || null,
+    avisosPath: `/api/mercadopago/${company.slug}/avisos`,
+  };
+};
+const mpOff = (req, res, next) => (mp.enabled() ? next() : res.status(404).json({ message: mp.OFF }));
+// Intentos de conectar Mercado Pago: su propio cupo y por empresa.
+const mpLimiter = limiter({
+  name: 'mercadopago-conectar',
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  key: (req) => String(req.company._id),
+  onLimit: (req, res) => res.status(429).json({ message: 'Demasiados intentos. Espera un rato y vuelve a intentarlo.' }),
+});
+
+router.get('/mercadopago', mpOff, protect, authorize('admin'), async (req, res) => {
+  res.status(200).json(mpView(await Company.findById(req.company._id)));
+});
+
+router.put('/mercadopago', mpOff, protect, authorize('admin'), mpLimiter, [
+  body('accessToken').isString().withMessage('Pega el Access Token de Mercado Pago').trim()
+    .matches(mp.ACCESS_TOKEN).withMessage('El Access Token de Mercado Pago empieza por TEST- (credenciales de prueba)'),
+  body('webhookSecret').isString().withMessage('Pega la clave secreta del webhook').trim()
+    .matches(mp.WEBHOOK_SECRET).withMessage('La clave secreta del webhook está en tu cuenta de Mercado Pago → Tus integraciones → Webhooks'),
+  body('publicKey').optional({ checkFalsy: true }).isString().trim().matches(mp.PUBLIC_KEY).withMessage('La Public Key empieza por TEST- (o APP_USR-)'),
+  body('depositPercent').optional().isInt({ min: 10, max: 100 }).withMessage('El anticipo va de 10 % a 100 %').toInt(),
+  validateRequest,
+], async (req, res) => {
+  try {
+    const { accessToken, webhookSecret } = req.body;
+    const publicKey = req.body.publicKey || '';
+    if (!mp.available(req.company)) {
+      return res.status(400).json({ message: 'Mercado Pago no opera para tu país en NOVA: el cobro en línea es para empresas de Colombia y México' });
+    }
+    // el candado del prefijo: sin MERCADOPAGO_PRODUCCION=1 en el servidor, solo credenciales TEST-
+    if (!mp.tokenAllowed(accessToken)) return res.status(400).json({ message: mp.TEST_ONLY });
+    if (publicKey && mp.isTestToken(publicKey) !== mp.isTestToken(accessToken)) {
+      return res.status(400).json({ message: 'La Public Key y el Access Token deben ser del mismo tipo: los dos de prueba o los dos de producción' });
+    }
+    let account;
+    try {
+      account = await mp.verifyAccount(accessToken, req.company);
+    } catch (error) {
+      if (error instanceof mp.MercadoPagoError) return res.status(400).json({ message: error.message });
+      throw error;
+    }
+    const company = await Company.findById(req.company._id);
+    company.mercadopago = {
+      ...mp.sealCredentials({ accessToken, webhookSecret }), publicKey, test: mp.isTestToken(accessToken), ...account,
+      depositPercent: req.body.depositPercent || (company.mercadopago && company.mercadopago.depositPercent) || 100,
+      connectedAt: new Date(), lastEventAt: null,
+    };
+    await company.save();
+    await audit(req, 'empresa.mercadopago', `Conectó Mercado Pago${mp.isTestToken(accessToken) ? ' (pruebas)' : ''}: ${account.nickname || account.userId}`);
+    return res.status(200).json(mpView(company));
+  } catch (error) {
+    return res.status(500).json({ message: 'No se pudo conectar Mercado Pago' });
+  }
+});
+
+// Cuánto de una cotización aprobada se cobra en línea: 100 % o un anticipo.
+router.put('/mercadopago/deposit', mpOff, protect, authorize('admin'), [
+  body('depositPercent').isInt({ min: 10, max: 100 }).withMessage('El anticipo va de 10 % a 100 %').toInt(),
+  validateRequest,
+], async (req, res) => {
+  try {
+    const company = await Company.findByIdAndUpdate(req.company._id, { 'mercadopago.depositPercent': req.body.depositPercent }, { new: true });
+    await audit(req, 'empresa.mercadopago', `Cambió el cobro en línea al ${req.body.depositPercent} % de cada cotización`);
+    res.status(200).json(mpView(company));
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudo guardar el ajuste' });
+  }
+});
+
+// Desconectar: lo decide el administrador. Las cotizaciones ya cobradas conservan su historia.
+router.delete('/mercadopago', mpOff, protect, authorize('admin'), async (req, res) => {
+  try {
+    const company = await Company.findById(req.company._id);
+    const depositPercent = (company.mercadopago && company.mercadopago.depositPercent) || 100;
+    company.mercadopago = {
+      accessTokenSealed: '', webhookSecretSealed: '', publicKey: '', test: true, userId: '', nickname: '', siteId: '',
+      depositPercent, connectedAt: null, lastEventAt: null,
+    };
+    await company.save();
+    await audit(req, 'empresa.mercadopago', 'Desconectó Mercado Pago');
+    res.status(200).json(mpView(company));
+  } catch (error) {
+    res.status(500).json({ message: 'No se pudo desconectar Mercado Pago' });
+  }
+});
+
 // «Factura electrónica DIAN» (Integraciones): la empresa conecta su cuenta de Factus (proveedor tecnológico autorizado
 // por la DIAN). Las credenciales se prueban pidiendo un token antes de guardarlas; el secreto y la contraseña quedan
 // cifrados y nunca se devuelven.
@@ -82,7 +191,7 @@ router.get('/factus', protect, authorize('admin'), async (req, res) => {
   res.status(200).json(factusView(await Company.findById(req.company._id)));
 });
 
-// Intentos de conectar Factus: su propio cupo y por empresa (no gasta el de otra empresa en la misma red).
+// Intentos de conectar Factus: su propio cupo y por empresa (no gasta el de Mercado Pago ni el de otra empresa en la misma red).
 const factusLimiter = limiter({
   name: 'factus-conectar',
   windowMs: 60 * 60 * 1000,

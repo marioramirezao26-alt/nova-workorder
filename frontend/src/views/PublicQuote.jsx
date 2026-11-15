@@ -25,10 +25,27 @@ export default function PublicQuote({ token }) {
     document.title = `${t('Cotización')} #${d.quote.number} · ${d.company.name}`;
     setData(d);
   };
-  // El pago en línea con Wompi se retiró (Orden 41): la página ya no lleva al checkout ni consulta transacciones.
+  // Al volver de Mercado Pago, la dirección trae ?payment_id=… (o collection_id): el pago lo confirma el aviso firmado, que
+  // llega aparte, así que mientras siga por cobrar se vuelve a consultar unas veces. Lo que diga la dirección no cambia nada.
+  const params = new URLSearchParams(window.location.search);
+  const back = params.get('collection_status') || params.get('status') || '';
+  const returned = Boolean(params.get('payment_id') || params.get('collection_id')) && ['approved', 'pending', 'in_process'].includes(back);
+  const declined = ['rejected', 'cancelled', 'null'].includes(back);
+  const [tries, setTries] = useState(0);
   const load = (url) => axios.get(url).then(({ data: d }) => show(d))
     .catch((err) => setError(err.response?.status === 404 ? t('Esta cotización no existe o ya no está disponible.') : t('No se pudo cargar la cotización')));
   useEffect(() => { load(base); }, [token]);
+  useEffect(() => {
+    if (!returned || tries >= 6 || data?.quote.payment?.status !== 'pendiente') return undefined;
+    const timer = setTimeout(() => { setTries((n) => n + 1); load(base); }, 5000);
+    return () => clearTimeout(timer);
+  }, [data]);
+  // Si vuelve con «Atrás» desde el checkout, el navegador restaura la página tal cual: el botón no puede quedar ocupado.
+  useEffect(() => {
+    const restored = (e) => { if (e.persisted) setBusy(false); };
+    window.addEventListener('pageshow', restored);
+    return () => window.removeEventListener('pageshow', restored);
+  }, []);
 
   const answer = async (approve) => {
     try {
@@ -41,6 +58,18 @@ export default function PublicQuote({ token }) {
       const status = err.response?.status;
       if (status === 404 || status === 409 || status >= 500) load(base);
     } finally {
+      setBusy(false);
+    }
+  };
+
+  // Pagar en línea: el servidor arma el pago en la cuenta de Mercado Pago de la empresa y la página lleva allá.
+  const pay = async () => {
+    try {
+      setBusy(true);
+      const { data: d } = await axios.post(`${base}/mercadopago`);
+      window.location.href = d.checkoutUrl;
+    } catch (err) {
+      alert(t(err.response?.data?.message || 'No se pudo preparar el pago'));
       setBusy(false);
     }
   };
@@ -65,8 +94,21 @@ export default function PublicQuote({ token }) {
       {quote.status === 'aprobada' && <p className="quote-banner ok">{t('✔ Aprobada por {name} el {d}. La empresa ya tiene tu orden de trabajo.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
       {quote.payment?.status === 'pagado' && <p className="quote-banner ok">{t('✔ Pago recibido. ¡Gracias!')}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
       {quote.payment?.status === 'anticipo' && <p className="quote-banner ok">{t('✔ Anticipo de {paid} recibido. El saldo de {balance} se acuerda con la empresa.', { paid: money(quote.payment.amountPaid, cur), balance: money(quote.payment.balance, cur) })}{quote.payment.test ? ` ${t('(prueba)')}` : ''}</p>}
+      {quote.payment?.status === 'pendiente' && returned && !quote.payment.pending && tries < 6 && <p className="quote-banner ok">{t('Confirmando tu pago con Mercado Pago… Si no se actualiza en un momento, recarga esta página.')}</p>}
+      {quote.payment?.status === 'pendiente' && declined && !quote.payment.pending && <p className="quote-banner no">{t('El pago no se aprobó. Puedes intentarlo de nuevo.')}</p>}
+      {quote.payment?.status === 'pendiente' && quote.payment.pending && <p className="quote-banner no">{t('Mercado Pago está procesando tu pago. Puedes recargar esta página en unos minutos para verlo confirmado.')}</p>}
       {quote.invoice?.publicUrl && (
         <p className="quote-banner ok">{t('Factura electrónica {n}', { n: quote.invoice.number })}{quote.invoice.validated === false ? ` (${t('pendiente de validación en la DIAN')})` : ''} · <a href={quote.invoice.publicUrl} target="_blank" rel="noreferrer">{t('Descargar factura')}</a></p>
+      )}
+      {quote.payment?.online && (
+        <section className="report-section quote-decision no-print">
+          <h3>{quote.payment.due < quote.total ? t('Anticipo para empezar el trabajo') : t('Pago en línea')}</h3>
+          {quote.payment.onlineTest && <p className="quote-banner no">{t('Modo de pruebas: este pago no mueve dinero real.')}</p>}
+          <p>{quote.payment.due < quote.total
+            ? t('Paga {due} de anticipo ({p} % de {total}); el resto se acuerda con la empresa.', { due: money(quote.payment.due, cur), total: money(quote.total, cur), p: Math.round((quote.payment.due / quote.total) * 100) })
+            : t('Paga {due} con los medios que te muestre Mercado Pago.', { due: money(quote.payment.due, cur) })}</p>
+          <button type="button" className="primary-button" disabled={busy} onClick={pay}>{t('Pagar {due} con Mercado Pago', { due: money(quote.payment.due, cur) })}</button>
+        </section>
       )}
       {quote.status === 'rechazada' && <p className="quote-banner no">{t('Rechazada por {name} el {d}.', { name: quote.decidedBy, d: day(quote.decidedAt) })}</p>}
       {quote.status === 'vencida' && <p className="quote-banner no">{t('Esta cotización venció el {d}. Pide a {company} una nueva.', { d: day(quote.validUntil), company: company.name })}</p>}

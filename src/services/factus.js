@@ -70,6 +70,14 @@ const colombiaDate = (days = 0, from = null) => addDays(colombiaDay(from || new 
 // Medio de pago (tabla DIAN) según cómo pagó en Wompi: tarjeta 48; PSE o transferencia 47 (Nequi y Daviplata debitan
 // una cuenta: transferencia); otro medio, ZZZ. El efectivo que registra la oficina va con 10.
 const WOMPI_METHOD = { CARD: '48', PSE: '47', BANCOLOMBIA_TRANSFER: '47', NEQUI: '47', DAVIPLATA: '47' };
+// Según cómo pagó en Mercado Pago (payment_type_id): tarjeta de crédito 48, tarjeta débito 49, PSE (bank_transfer) 47;
+// lo demás (dinero en la cuenta de Mercado Pago, efectivo en un punto de pago…), ZZZ. PENDIENTE de verificar con Factus
+// y la tabla de medios de pago de la DIAN antes de facturar pagos reales: el 49 (tarjeta débito) no se usaba con Wompi.
+const MERCADOPAGO_METHOD = { CREDIT_CARD: '48', DEBIT_CARD: '49', BANK_TRANSFER: '47' };
+const ONLINE_METHOD = { wompi: WOMPI_METHOD, mercadopago: MERCADOPAGO_METHOD };
+const ONLINE_NAME = { wompi: 'Wompi', mercadopago: 'Mercado Pago' };
+// Un pago de Mercado Pago con devolución o contracargo reportado no cuenta como pagado hasta que el administrador decida.
+const reversed = (p) => p.method === 'mercadopago' && ['REFUNDED', 'CHARGED_BACK'].includes(p.txStatus);
 const pesos = (n) => Number(two(n)).toLocaleString('es-CO');
 const MAX_ROUNDING = 500;           // lo máximo que Factus acepta en cash_rounding_amount (±)
 
@@ -97,20 +105,21 @@ const buildBill = (company, quote, buyer) => {
   if (Math.abs(rounding) > MAX_ROUNDING) {
     throw new FactusError(`Los renglones suman $ ${pesos(computed)} y la cotización $ ${pesos(quote.total)}: Factus acepta hasta $ ${MAX_ROUNDING} de redondeo. Revisa los precios con decimales.`);
   }
-  // De contado solo si está pagada del todo con plata real: un renglón por medio (lo de Wompi con su medio y lo que
-  // registró la oficina, en efectivo). Si no (por cobrar, con anticipo o con un pago de prueba de Wompi), a crédito a 30
-  // días por lo que falta, por acuerdo (ZZZ), y el anticipo pagado en prepayment_details.
+  // De contado solo si está pagada del todo con plata real: un renglón por medio (lo pagado en línea con su medio y lo
+  // que registró la oficina, en efectivo). Si no (por cobrar, con anticipo, con un pago de prueba o con una devolución
+  // reportada), a crédito a 30 días por lo que falta, por acuerdo (ZZZ), y el anticipo pagado en prepayment_details.
   const p = quote.payment || {};
   const reference = `cotizacion-${quote.number}`;
   let payments;
   let prepaid = 0;
-  if (p.status === 'pagado' && !p.test) {
-    const office = p.method === 'wompi' ? Math.min(p.officeAmount || 0, quote.total) : quote.total;
-    const parts = p.method === 'wompi' ? [[WOMPI_METHOD[p.methodType] || 'ZZZ', quote.total - office], ['10', office]] : [['10', quote.total]];
+  const codes = ONLINE_METHOD[p.method];
+  if (p.status === 'pagado' && !p.test && !reversed(p)) {
+    const office = codes ? Math.min(p.officeAmount || 0, quote.total) : quote.total;
+    const parts = codes ? [[codes[p.methodType] || 'ZZZ', quote.total - office], ['10', office]] : [['10', quote.total]];
     payments = parts.filter(([, amount], k) => amount > 0 || k === 0)
       .map(([code, amount]) => ({ payment_form: '1', payment_method_code: code, reference_code: reference, amount: two(amount) }));
   } else {
-    if (p.status === 'anticipo' && !p.test) prepaid = Math.min(p.amountPaid || 0, quote.total);
+    if (p.status === 'anticipo' && !p.test && !reversed(p)) prepaid = Math.min(p.amountPaid || 0, quote.total);
     payments = [{ payment_form: '2', payment_method_code: 'ZZZ', reference_code: reference, amount: two(quote.total - prepaid), due_date: colombiaDate(30) }];
   }
   return {
@@ -121,8 +130,8 @@ const buildBill = (company, quote, buyer) => {
     observation: `Cotización #${quote.number}: ${quote.title}`.slice(0, 250),
     payment_details: payments,
     ...(prepaid > 0 ? { prepayment_details: [{
-      reference_code: p.txId ? `wompi-${p.txId}` : `${reference}-anticipo`, received_date: colombiaDate(0, p.paidAt), amount: two(prepaid),
-      note: `Anticipo de la cotización #${quote.number} pagado con Wompi`,
+      reference_code: p.txId ? `${p.method === 'mercadopago' ? 'mercadopago' : 'wompi'}-${p.txId}` : `${reference}-anticipo`, received_date: colombiaDate(0, p.paidAt), amount: two(prepaid),
+      note: `Anticipo de la cotización #${quote.number} pagado con ${ONLINE_NAME[p.method] || 'Wompi'}`,
     }] } : {}),
     cash_rounding_amount: two(rounding),
     customer: buyer,

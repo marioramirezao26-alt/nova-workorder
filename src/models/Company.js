@@ -77,6 +77,22 @@ const companySchema = new mongoose.Schema(
       connectedAt: { type: Date, default: null },
       lastEventAt: { type: Date, default: null },
     },
+    // Cobro en línea con Mercado Pago (la cuenta de la empresa; services/mercadopago.js): el Access Token y la clave
+    // secreta del webhook, cifrados y que nunca salen de la API; la Public Key (opcional), si la cuenta es de prueba
+    // (token TEST-), quién es en Mercado Pago, qué porcentaje de una cotización aprobada se cobra en línea (100 = todo;
+    // 50 = anticipo del 50 %) y cuándo llegó el último aviso. Lo conecta solo el administrador.
+    mercadopago: {
+      accessTokenSealed: { type: String, default: '', select: false },
+      webhookSecretSealed: { type: String, default: '', select: false },
+      publicKey: { type: String, default: '' },
+      test: { type: Boolean, default: true },
+      userId: { type: String, default: '' },
+      nickname: { type: String, default: '' },
+      siteId: { type: String, default: '' },
+      depositPercent: { type: Number, default: 100, min: 10, max: 100 },
+      connectedAt: { type: Date, default: null },
+      lastEventAt: { type: Date, default: null },
+    },
     // Factura electrónica DIAN con Factus (la cuenta de la empresa): ambiente, credenciales cifradas y rango de numeración.
     factus: {
       env: { type: String, enum: ['pruebas', 'produccion'], default: 'pruebas' },

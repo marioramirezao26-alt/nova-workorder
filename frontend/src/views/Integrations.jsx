@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { errorMessage } from '../api';
 import { getLang, t } from '../i18n';
 import FactusCard from './FactusCard';
-import { colombiaCompany } from '../ui';
+import MercadoPagoCard from './MercadoPagoCard';
+import { colombiaCompany, mercadoPagoCompany } from '../ui';
 
 // «Integraciones» (solo el administrador): llaves de API para que otros sistemas lean y creen órdenes, y webhooks
 // para avisarle a otro sistema cuando algo cambia. La llave y el secreto se muestran una sola vez.
@@ -99,7 +100,9 @@ export default function Integrations({ api, user }) {
 
       {error && <p className="error">{error}</p>}
 
-      {/* Factus factura ante la DIAN: solo para empresas de Colombia (los cobros con Wompi se retiraron, Orden 41) */}
+      {/* Mercado Pago cobra en Colombia y México (se muestra solo si el servidor lo tiene encendido); Factus factura ante la
+          DIAN: solo para empresas de Colombia. Los cobros con Wompi se retiraron (Orden 41). */}
+      {mercadoPagoCompany(user?.company) && <MercadoPagoCard api={api} />}
       {colombiaCompany(user?.company) && <FactusCard api={api} />}
 
       {shown && (

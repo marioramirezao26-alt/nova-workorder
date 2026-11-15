@@ -11,7 +11,8 @@ const { addDays, colombiaDay, endOfDay } = require('../utils/colombia');
 const { audit } = require('../utils/audit');
 const webhooks = require('../utils/webhooks');
 const factus = require('../services/factus');
-const { statusFor, UNPAID } = require('../services/quotePayments');
+const mp = require('../services/mercadopago');
+const { dueAmount, dueFor, pendingNow, statusFor, UNPAID } = require('../services/quotePayments');
 
 // Cotizaciones (Mejora 3): se arman en borrador, se envían con un enlace y el cliente las aprueba o rechaza sin cuenta.
 // Al aprobarse se crea la orden de trabajo con el cliente y lo cotizado.
@@ -30,9 +31,15 @@ const invoiceEnv = (inv) => inv.env || (inv.number && !/^SETP/i.test(inv.number)
 const testInvoice = (inv) => Boolean(inv && inv.cufe && invoiceEnv(inv) !== 'produccion');
 const shownStatus = (q) => (expired(q) ? 'vencida' : q.status);
 
-// El cobro en línea. Wompi se retiró (Orden 41) y todavía no hay otro proveedor conectado, así que ninguna cotización se
-// ofrece para pagar en línea; lo que se fijó antes como cobro en línea (payment.due) se sigue mostrando tal cual.
-const onlinePayment = (quote) => ({ due: (quote.payment && quote.payment.due) || null, online: false });
+// Lo que se cobra en línea (el fijado, o el que se fijaría hoy) y si el cliente puede pagarlo ahora mismo: aprobada, en la
+// moneda del país, con Mercado Pago encendido en el servidor y conectado por la empresa, por cobrar, con valor y sin un
+// intento en curso (para no cobrarle dos veces). Wompi se retiró (Orden 41): ya no se ofrece.
+const onlinePayment = (quote, company) => {
+  const p = quote.payment || {};
+  const chargeable = mp.chargeable(company, quote);
+  const due = p.due || (chargeable ? dueAmount(quote, company) : null);
+  return { due, online: quote.status === 'aprobada' && chargeable && (p.status || 'pendiente') === 'pendiente' && !pendingNow(p) && due > 0 };
+};
 
 // La llave del enlace (con ella se aprueba sin sesión) solo la reciben el administrador, quien armó la cotización y el
 // usuario cliente de la ficha; a otro técnico de la empresa no le llega.
@@ -331,15 +338,17 @@ const publicView = async (quote, company) => {
       // La factura electrónica de producción, cuando ya tiene CUFE (para descargarla); la de pruebas no se muestra.
       invoice: quote.invoice && quote.invoice.cufe && !testInvoice(quote.invoice)
         ? { number: quote.invoice.number, publicUrl: quote.invoice.publicUrl, validated: quote.invoice.validated !== false } : null,
-      // El cobro: lo fijado para cobrar en línea, lo pagado y el saldo y si se puede pagar ahora mismo; «test» si se
-      // pagó con llaves de pruebas (también lo histórico de Wompi, que se retiró).
+      // El cobro: lo fijado para cobrar en línea, lo pagado y el saldo, si se puede pagar ahora mismo (y si la cuenta de
+      // Mercado Pago es de prueba: no es plata real) y si hay un intento en curso; «test» si se pagó con una cuenta de
+      // prueba (también lo histórico de Wompi, que se retiró).
       payment: {
         status: (quote.payment && quote.payment.status) || 'pendiente',
         ...onlinePayment(quote, company),
         amountPaid: (quote.payment && quote.payment.amountPaid) || 0,
         balance: quote.total - ((quote.payment && quote.payment.amountPaid) || 0),
         paidAt: quote.payment ? quote.payment.paidAt : null,
-        pending: false,
+        pending: pendingNow(quote.payment),
+        onlineTest: mp.connected(company) && company.mercadopago.test !== false,
         test: Boolean(quote.payment && quote.payment.test),
         txStatus: quote.payment ? quote.payment.txStatus : '',
       },
@@ -378,42 +387,85 @@ const publicDecision = (approve) => async (req, res) => {
   }
 };
 
-// La oficina registra a mano lo que falta (efectivo, transferencia; con un anticipo de Wompi, el saldo) o quita lo que
-// registró si fue por error. Lo que confirmó Wompi no se toca desde aquí, salvo un pago de prueba (no es plata real).
-// No toca lo que se cobra en línea (payment.due): marcar y desmarcar deja el mismo anticipo.
+// A dónde vuelve el cliente después de pagar: APP_URL si está, si no la dirección por la que entró.
+const appUrl = (req) => (process.env.APP_URL || `${req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+
+// Pagar en línea una cotización aprobada: la preferencia de Checkout Pro de la cuenta de Mercado Pago de la empresa por
+// lo que se cobra (todo o anticipo). No se da otra mientras el último intento siga en curso (menos de 30 minutos). El pago
+// lo marca solo el aviso firmado, después de consultarlo en la API.
+const publicCheckout = async (req, res) => {
+  try {
+    if (!mp.enabled()) throw fail(404, mp.OFF);
+    const { quote } = await loadPublic(req.params.token);
+    const company = await Company.findById(quote.tenant).select('+mercadopago.accessTokenSealed');
+    const p = quote.payment || {};
+    if (quote.status !== 'aprobada') throw fail(409, 'Primero aprueba la cotización');
+    if (!mp.usable(company)) throw fail(409, 'Esta empresa no recibe pagos en línea');
+    if (!mp.chargeable(company, quote)) throw fail(409, 'Esta cotización no se cobra en línea');
+    if (p.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
+    if (p.status === 'anticipo') throw fail(409, 'El anticipo ya está pagado: el saldo se acuerda con la empresa');
+    if (pendingNow(p)) throw fail(409, 'Mercado Pago está procesando un pago de esta cotización. Espera unos minutos antes de intentarlo de nuevo.');
+    const due = await dueFor(quote, company);
+    if (!(due > 0)) throw fail(409, 'Esta cotización no se cobra en línea');
+    // la referencia con que se reconoce el pago (la empresa y la cotización): se guarda y cada aviso se compara con ella
+    await Quote.updateOne({ tenant: quote.tenant, _id: quote._id }, { $set: { 'payment.ref': mp.reference(company, quote) } });
+    let pref;
+    try {
+      pref = await mp.createPreference(company, quote, due, `${appUrl(req)}/cotizacion/${quote.publicToken}`);
+    } catch (error) {
+      if (error instanceof mp.MercadoPagoError) throw fail(502, error.message);
+      throw error;
+    }
+    res.status(200).json({ checkoutUrl: pref.url, due, test: company.mercadopago.test !== false });
+  } catch (error) {
+    reply(res, error, 'No se pudo preparar el pago');
+  }
+};
+
+// La oficina registra a mano lo que falta (efectivo, transferencia; con un anticipo en línea, el saldo) o quita lo que
+// registró si fue por error. Lo que confirmó Mercado Pago (o Wompi, antes de su retiro) no se toca desde aquí, salvo un
+// pago de prueba (no es plata real) o uno del que Mercado Pago reportó una devolución o un contracargo: quitarlo es
+// decisión del administrador (NOVA no mueve dinero). No toca lo que se cobra en línea (payment.due): marcar y desmarcar
+// deja el mismo anticipo.
+const ONLINE = { wompi: 'Wompi', mercadopago: 'Mercado Pago' };
+const REVERSED_BY_MP = ['REFUNDED', 'CHARGED_BACK'];
 const setPayment = async (req, res) => {
   try {
     const quote = await findQuote(req);
     if (quote.status !== 'aprobada') throw fail(409, 'Solo se cobra una cotización aprobada');
     const p = quote.payment;
     const paid = req.body.status === 'pagado';
+    const provider = ONLINE[p.method] ? p.method : '';
+    const reversed = provider === 'mercadopago' && REVERSED_BY_MP.includes(p.txStatus);
     if (paid && p.status === 'pagado') throw fail(409, 'Esta cotización ya está pagada');
     // El saldo de un anticipo de prueba no es lo que falta (el anticipo no es plata real): primero se quita el de prueba.
     if (paid && p.test) throw fail(409, 'El anticipo es un pago de prueba: quítalo con «Marcar por cobrar» antes de registrar el pago');
-    if (!paid && p.method === 'wompi' && !p.test && !p.officeAmount && p.status !== 'pendiente') throw fail(409, 'Este pago lo confirmó Wompi: no se cambia a mano');
-    const online = p.method === 'wompi' && !p.test ? Math.max(0, (p.amountPaid || 0) - (p.officeAmount || 0)) : 0;   // lo que pagó Wompi
+    if (paid && reversed) throw fail(409, 'Mercado Pago reporta una devolución o un contracargo de este pago: primero márcala por cobrar');
+    if (!paid && provider && !p.test && !reversed && !p.officeAmount && p.status !== 'pendiente') throw fail(409, `Este pago lo confirmó ${ONLINE[provider]}: no se cambia a mano`);
+    const online = provider && !p.test && !reversed ? Math.max(0, (p.amountPaid || 0) - (p.officeAmount || 0)) : 0;   // lo que se pagó en línea
     const set = paid
-      ? { 'payment.status': 'pagado', 'payment.amountPaid': quote.total, 'payment.balance': 0, 'payment.officeAmount': quote.total - online, 'payment.method': online ? 'wompi' : 'oficina', 'payment.paidAt': new Date() }
-      : { 'payment.status': statusFor(online, quote.total), 'payment.amountPaid': online, 'payment.balance': quote.total - online, 'payment.officeAmount': 0, 'payment.method': online ? 'wompi' : '', ...(online ? {} : { 'payment.paidAt': null }) };
+      ? { 'payment.status': 'pagado', 'payment.amountPaid': quote.total, 'payment.balance': 0, 'payment.officeAmount': quote.total - online, 'payment.method': online ? provider : 'oficina', 'payment.paidAt': new Date() }
+      : { 'payment.status': statusFor(online, quote.total), 'payment.amountPaid': online, 'payment.balance': quote.total - online, 'payment.officeAmount': 0, 'payment.method': online ? provider : '', ...(online ? {} : { 'payment.paidAt': null }) };
     if (!online) Object.assign(set, { 'payment.test': false, 'payment.methodType': '' });
-    // Si la oficina quita lo suyo y Wompi sí cobró aparte (un pago real que llegó con la cotización ya marcada y quedó
+    // Si la oficina quita lo suyo y se cobró en línea aparte (un pago real que llegó con la cotización ya marcada y quedó
     // como posible doble cobro), ese pasa a ser el pago: no se devuelve la plata buena ni se le cobra otra vez al cliente.
     const real = !paid && !online && (p.extra || []).find((e) => e.status === 'APPROVED' && !e.test);
+    const realBy = real && real.method === 'mercadopago' ? 'mercadopago' : 'wompi';      // sin `method`, de Wompi (los de antes)
     if (real) {
       const amount = Math.min(real.amount, quote.total);
       Object.assign(set, {
         'payment.status': statusFor(amount, quote.total), 'payment.amountPaid': amount, 'payment.balance': quote.total - amount,
-        'payment.method': 'wompi', 'payment.methodType': real.methodType || '', 'payment.txId': real.txId, 'payment.txStatus': 'APPROVED',
+        'payment.method': realBy, 'payment.methodType': real.methodType || '', 'payment.txId': real.txId, 'payment.txStatus': 'APPROVED',
         'payment.paidAt': real.at || new Date(),
       });
     }
-    const same = p.status === 'pendiente' ? UNPAID : { 'payment.status': p.status };    // si Wompi la cambió mientras tanto, no se pisa
+    const same = p.status === 'pendiente' ? UNPAID : { 'payment.status': p.status };    // si un aviso la cambió mientras tanto, no se pisa
     const done = await Quote.updateOne(
       { ...companyScope(req), _id: quote._id, ...same, ...(real ? { 'payment.extra': { $elemMatch: { txId: real.txId, status: 'APPROVED' } } } : {}) },
       { $set: set, ...(real ? { $pull: { 'payment.extra': { txId: real.txId } } } : {}) }
     );
     if (!done.matchedCount) throw fail(409, 'La cotización cambió mientras tanto. Actualiza la lista.');
-    await audit(req, 'cotizacion.pago', real ? `Quitó el pago que registró la oficina en la cotización #${quote.number}: queda el que cobró Wompi (${real.txId})`
+    await audit(req, 'cotizacion.pago', real ? `Quitó el pago que registró la oficina en la cotización #${quote.number}: queda el que cobró ${ONLINE[realBy]} (${real.txId})`
       : paid && online ? `Registró como pagado el saldo de la cotización #${quote.number}`
         : `Marcó la cotización #${quote.number} como ${paid ? 'pagada' : 'pendiente de pago'}`, { entityId: quote._id });
     res.status(200).json(view(await populate(Quote.findOne({ ...companyScope(req), _id: quote._id })), req));
@@ -464,7 +516,7 @@ const invoiceQuote = async (req, res) => {
 
 module.exports = {
   invoiceQuote,
-  setPayment,
+  publicCheckout, setPayment,
   listQuotes, getQuote, createQuote, updateQuote, deleteQuote, sendQuote, reopenQuote, approveQuote, convertQuote,
   publicQuote, publicApprove: publicDecision(true), publicReject: publicDecision(false),
   endOfDay,

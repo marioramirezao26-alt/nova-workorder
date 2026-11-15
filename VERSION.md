@@ -2,6 +2,25 @@
 
 ## Estado: base vendible en construcción (Fase 1 lista; faltan publicación, cobro y funciones de campo)
 
+### Mercado Pago por empresa, apagado (Orden 41, 15-nov-2026)
+- Cada empresa (Colombia o México; en EE. UU. no opera) conecta SU cuenta de Mercado Pago en «Integraciones» para cobrar
+  en línea sus cotizaciones aprobadas (el total o un anticipo) con Checkout Pro. Lo conecta solo el administrador.
+- **Apagado**: sin `MERCADOPAGO_ENABLED=1`, `/api/company/mercadopago*`, el pago público
+  `POST /api/cotizaciones/:token/mercadopago` y el aviso `POST /api/mercadopago/:slug/avisos` responden 404 y nada
+  llama a Mercado Pago. Encendido, solo acepta Access Tokens `TEST-`; uno `APP_USR-` (que puede ser de producción, sin
+  forma documentada de saberlo) solo con `MERCADOPAGO_PRODUCCION=1`, que nadie pone hoy.
+- Credenciales cifradas con `secretBox` (`Company.mercadopago`, `select: false`), nunca salen de la API.
+- El aviso: firma `x-signature` (HMAC-SHA256 del manifiesto `id:…;request-id:…;ts:…;` con la clave secreta de esa
+  empresa, en tiempo constante, ts en dígitos, v1 de 64 hex y 10 minutos de vigencia); del cuerpo no se usa nada: el
+  pago se consulta en `GET /v1/payments/{id}` con el token de esa empresa. La referencia lleva la empresa y la
+  cotización y se compara con la guardada; monto (al centavo) y moneda tienen que coincidir.
+- Idempotente (actualizaciones condicionales): el mismo pago dos veces no cobra dos veces; un pago aprobado con la
+  cotización ya cobrada va a `payment.extra` como posible doble cobro. Devoluciones, contracargos y disputas se anotan
+  y se avisan; NOVA no mueve dinero (el administrador decide si la marca por cobrar).
+- `Quote.payment.method` acepta `'mercadopago'`; Factus: tarjeta crédito 48, débito 49, PSE 47, lo demás ZZZ
+  (pendiente de verificar el 49).
+- Pruebas: `test/mercadopago.test.js` (sin red: `fetch` simulado).
+
 ### Wompi retirado (Orden 41, 15-nov-2026)
 - Mario: Mercado Pago es el proveedor exclusivo de pagos de NOVA y Wompi queda descartado. Medido en la base de
   producción (solo lectura): 0 empresas con Wompi conectado y 0 cotizaciones pagadas con Wompi, así que nadie se queda

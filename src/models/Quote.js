@@ -44,25 +44,28 @@ const quoteSchema = new mongoose.Schema(
     workOrder: { type: mongoose.Schema.Types.ObjectId, ref: 'WorkOrder', default: null },
     // El cobro de una cotización aprobada: cuánto se cobra en línea (todo o el anticipo, fijado al primer intento), su
     // estado (pendiente, anticipo: falta el saldo, o pagado), lo pagado y el saldo, cuánto de eso registró la oficina a
-    // mano, cómo se pagó (wompi, o «oficina» si solo lo marcó la empresa) y la última transacción de Wompi. Wompi se
-    // retiró (Orden 41): 'wompi' se queda en el enum para que los pagos de antes se sigan leyendo y guardando.
+    // mano, cómo se pagó (mercadopago; wompi, retirado en la Orden 41 y que se queda en el enum para que los pagos de
+    // antes se sigan leyendo y guardando; o «oficina» si solo lo marcó la empresa), la referencia del cobro en Mercado
+    // Pago (empresa y cotización, comparada con la de cada pago que avisa) y el último intento.
     payment: {
       due: { type: Number, default: null },
       status: { type: String, enum: ['pendiente', 'anticipo', 'pagado'], default: 'pendiente' },
       amountPaid: { type: Number, default: 0 },
       balance: { type: Number, default: null },
       officeAmount: { type: Number, default: 0 },
-      method: { type: String, enum: ['', 'wompi', 'oficina'], default: '' },
-      methodType: { type: String, default: '' },                 // el medio en Wompi: CARD, PSE, NEQUI… (para la factura)
+      method: { type: String, enum: ['', 'wompi', 'mercadopago', 'oficina'], default: '' },
+      methodType: { type: String, default: '' },                 // el tipo de medio: CARD, PSE… (Wompi) o CREDIT_CARD, BANK_TRANSFER… (Mercado Pago), para la factura
+      ref: { type: String, default: '' },                        // external_reference en Mercado Pago
       test: { type: Boolean, default: false },                   // pagado con las llaves de pruebas: no es plata real
       txId: { type: String, default: '' },
       txStatus: { type: String, default: '' },
       txAt: { type: Date, default: null },                       // cuándo empezó ese intento (para no cobrar dos veces)
       paidAt: { type: Date, default: null },
-      // Pagos aprobados por Wompi que llegaron con la cotización ya cobrada: posible doble cobro para devolver.
+      // Pagos aprobados (por Wompi antes, o por Mercado Pago) que llegaron con la cotización ya cobrada: posible doble
+      // cobro para devolver. `method` dice de cuál (sin él, de Wompi: los de antes).
       extra: {
         type: [new mongoose.Schema({
-          txId: String, amount: Number, status: String, methodType: String, test: Boolean, at: Date,
+          txId: String, amount: Number, status: String, methodType: String, test: Boolean, at: Date, method: String,
         }, { _id: false })],
         default: [],
       },

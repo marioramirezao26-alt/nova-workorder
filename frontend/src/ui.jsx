@@ -36,6 +36,8 @@ export const mapsLink = (address) => `https://www.google.com/maps/search/?api=1&
 export const usCompany = (company) => Boolean(company && (company.market === 'us' || company.lang === 'en'));
 export const companyMarket = (company) => (usCompany(company) ? 'us' : company && company.market === 'mx' ? 'mx' : 'co');
 export const colombiaCompany = (company) => companyMarket(company) === 'co';
+// Mercado Pago cobra en línea en Colombia y en México (la misma regla de src/services/mercadopago.js); en EE. UU., no.
+export const mercadoPagoCompany = (company) => ['co', 'mx'].includes(companyMarket(company));
 // La moneda de sus cotizaciones (la misma regla de src/utils/money.js).
 export const companyCurrency = (company) => ({ co: 'COP', us: 'USD', mx: 'MXN' })[companyMarket(company)];
 // El tercer parámetro dice el país de los celulares: 'en' = Estados Unidos (+1), 'mx' = México (+52), 'es' = Colombia (+57).
