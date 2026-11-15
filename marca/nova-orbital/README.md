@@ -45,7 +45,7 @@ No dibuja nada, ni cambia formas, colores o letras. El inventario de cada corrid
   1. **Transparentes.** La transparencia se calcula separando el fondo `#00000C`. Sobre ese mismo fondo reproducen el original con un error máximo de 2/255.
      - **Solo sirven sobre fondos oscuros.** La palabra NOVA es blanca y en un fondo claro desaparece. Además, el brillo de las órbitas se vuelve un halo.
      - El ruido de compresión más oscuro que el fondo (±3/255) se aplanó.
-  2. **El ícono «maskable» de Android.** El símbolo va al 80 % sobre un fondo liso `#00000C` nuevo, para respetar la zona segura del sistema.
+  2. **El ícono «maskable» de Android.** El símbolo va al 80 % sobre un fondo liso `#00000C` nuevo, para respetar la zona segura del sistema, con el borde del recorte desvanecido (Orden 40).
 
 ## Inventario
 | Archivo (`derivados/`) | Tamaño | Peso | Tipo | Nota |
@@ -68,14 +68,16 @@ No dibuja nada, ni cambia formas, colores o letras. El inventario de cada corrid
 | `nova-orbital-simbolo-transparente-724.png` | 724×724 | 723 KB | **Aproximada (revisar)** | Símbolo con el fondo separado (error máx 2.0/255 sobre #00000C). Solo para fondos oscuros |
 | `nova-orbital-simbolo-transparente-128.png` | 128×128 | 29 KB | **Aproximada (revisar)** | Símbolo transparente pequeño (encabezados) |
 | `nova-orbital-simbolo-referencia-720x565.webp` | 720×565 | 40 KB | Exacta | Recorte suministrado, re-codificado. La órbita toca el borde derecho: referencia, no para iconos |
-| `favicon-16.png` | 16×16 | 1 KB | Exacta | Símbolo cuadrado reescalado (icono) |
-| `favicon-32.png` | 32×32 | 2 KB | Exacta | Símbolo cuadrado reescalado (icono) |
-| `favicon-48.png` | 48×48 | 4 KB | Exacta | Símbolo cuadrado reescalado (icono) |
+| `favicon-16.png` | 16×16 | 1 KB | Exacta | Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado |
+| `favicon-32.png` | 32×32 | 2 KB | Exacta | Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado |
+| `favicon-48.png` | 48×48 | 5 KB | Exacta | Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado |
 | `apple-touch-icon-180.png` | 180×180 | 38 KB | Exacta | Símbolo cuadrado reescalado (icono) |
 | `icono-app-192.png` | 192×192 | 43 KB | Exacta | Símbolo cuadrado reescalado (icono) |
 | `icono-app-512.png` | 512×512 | 259 KB | Exacta | Símbolo cuadrado reescalado (icono) |
-| `favicon.ico` | 48×48 | 7 KB | Exacta | ICO con 16, 32 y 48 px |
-| `icono-app-maskable-512.png` | 512×512 | 175 KB | **Aproximada (revisar)** | Símbolo al 80 % sobre fondo liso #00000C (relleno nuevo alrededor del recorte). **Defecto (Orden 38): costura cuadrada tenue donde termina el recorte**; ver abajo. Hoy no lo usa ninguna página |
+| `favicon.ico` | 48×48 | 8 KB | Exacta | ICO con 16, 32 y 48 px del recorte cerrado del favicon |
+| `icono-app-maskable-512.png` | 512×512 | 159 KB | **Aproximada (aprobada, Orden 40)** | Símbolo al 80 % sobre fondo #00000C con el borde desvanecido en 70 de 724 px (sin costura; cambio máx. 65/255 en la orilla) |
+| `nova-orbital-placa-1200.png` | 1200×400 | 431 KB | Exacta (esquinas) | Logo horizontal sobre su fondo original, esquinas redondeadas (radio 48 px): para fondos claros |
+| `nova-orbital-placa-600.png` | 600×200 | 119 KB | Exacta (esquinas) | Logo horizontal sobre su fondo original, esquinas redondeadas (radio 24 px): para fondos claros |
 
 ## Dónde se usa (PR de la Orden 37, en borrador)
 
@@ -114,4 +116,16 @@ Los archivos web van en `landing/marca/`.
   - En el «maskable» sí aparece una costura cuadrada tenue, porque el recorte va sobre un relleno liso. Ninguna página lo usa hoy.
   - Corregirlo exigiría desvanecer el brillo del borde, y eso altera píxeles del original. **Queda para decisión de Mario.**
 - **Transparentes: solo para fondos oscuros, sin cambios.** Sobre blanco, la estrella y la palabra NOVA, que son blancas, se pierden. Es lo esperado: el original no tiene una versión para fondo claro.
+
+## Decisiones de Mario en la Orden 40 (15-nov-2026)
+
+Mario aprobó tres opciones (hoja comparativa en nova-cerebro, `encargos/mision-07/39-alternativas-identidad.png`). El logo NOVA Orbital no cambia.
+
+1. **Maskable: opción B, borde desvanecido.** Los últimos 70 de los 724 px del recorte se funden con el fondo, así que ya no se ve la costura cuadrada. La órbita y la estrella quedan iguales: solo se atenúa el brillo de la orilla (cambio máximo de 65/255). Sigue marcada como aproximada.
+2. **Favicon: opción B, recorte cerrado.** `favicon-16/32/48.png` y `favicon.ico` salen de un recorte más cerrado del símbolo (x/y 142–582 del cuadro de 724), para que a 16 px se vea la estrella. Son los mismos píxeles del original: exacta. Los íconos de iPhone (180) y de app (192 y 512) siguen siendo el símbolo completo.
+3. **Fondos claros: la placa.** `nova-orbital-placa-1200.png` y `-600.png` son el logo horizontal con su propio fondo y esquinas redondeadas. **Regla:** las transparentes, solo sobre fondos más oscuros que `#1A2233`; sobre fondos claros, la placa. No existe una versión con la palabra NOVA oscura: haría falta recolorear el logo.
+
+Se descartaron dos alternativas:
+- **Máscara circular para el maskable:** recortaba la punta de la órbita.
+- **Símbolo simplificado para el favicon:** a 16 px se perdía la estrella.
 

@@ -144,30 +144,6 @@
   "nota": "Recorte suministrado, re-codificado. La órbita toca el borde derecho: referencia, no para iconos"
  },
  {
-  "archivo": "favicon-16.png",
-  "ancho": 16,
-  "alto": 16,
-  "bytes": 750,
-  "tipo": "exacta",
-  "nota": "Símbolo cuadrado reescalado (icono)"
- },
- {
-  "archivo": "favicon-32.png",
-  "ancho": 32,
-  "alto": 32,
-  "bytes": 2196,
-  "tipo": "exacta",
-  "nota": "Símbolo cuadrado reescalado (icono)"
- },
- {
-  "archivo": "favicon-48.png",
-  "ancho": 48,
-  "alto": 48,
-  "bytes": 4183,
-  "tipo": "exacta",
-  "nota": "Símbolo cuadrado reescalado (icono)"
- },
- {
   "archivo": "apple-touch-icon-180.png",
   "ancho": 180,
   "alto": 180,
@@ -192,19 +168,59 @@
   "nota": "Símbolo cuadrado reescalado (icono)"
  },
  {
+  "archivo": "favicon-16.png",
+  "ancho": 16,
+  "alto": 16,
+  "bytes": 813,
+  "tipo": "exacta",
+  "nota": "Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado"
+ },
+ {
+  "archivo": "favicon-32.png",
+  "ancho": 32,
+  "alto": 32,
+  "bytes": 2478,
+  "tipo": "exacta",
+  "nota": "Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado"
+ },
+ {
+  "archivo": "favicon-48.png",
+  "ancho": 48,
+  "alto": 48,
+  "bytes": 4832,
+  "tipo": "exacta",
+  "nota": "Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado"
+ },
+ {
   "archivo": "favicon.ico",
   "ancho": 48,
   "alto": 48,
-  "bytes": 7251,
+  "bytes": 8247,
   "tipo": "exacta",
-  "nota": "ICO con 16, 32 y 48 px"
+  "nota": "ICO con 16, 32 y 48 px del recorte cerrado del favicon"
  },
  {
   "archivo": "icono-app-maskable-512.png",
   "ancho": 512,
   "alto": 512,
-  "bytes": 179030,
+  "bytes": 162705,
   "tipo": "derivada-aproximada",
-  "nota": "Símbolo al 80 % sobre fondo liso #00000C (relleno nuevo alrededor del recorte); revisar el borde"
+  "nota": "Símbolo al 80 % sobre fondo #00000C con el borde desvanecido en 70 de 724 px (sin costura; cambio máx. 65/255 en la orilla)"
+ },
+ {
+  "archivo": "nova-orbital-placa-1200.png",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 441523,
+  "tipo": "exacta",
+  "nota": "Logo horizontal sobre su fondo original, esquinas redondeadas (radio 48 px): para fondos claros"
+ },
+ {
+  "archivo": "nova-orbital-placa-600.png",
+  "ancho": 600,
+  "alto": 200,
+  "bytes": 121530,
+  "tipo": "exacta",
+  "nota": "Logo horizontal sobre su fondo original, esquinas redondeadas (radio 24 px): para fondos claros"
  }
 ]
