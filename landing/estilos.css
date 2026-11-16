@@ -49,6 +49,9 @@ img { max-width: 100%; height: auto; display: block; }
 .brand img { width: 32px; height: 32px; }
 .brand span { line-height: 1.1; }
 .brand small { display: block; font-weight: 500; letter-spacing: 0.2em; font-size: 0.6rem; color: var(--muted); margin-top: 2px; }
+/* Orden 37: logo oficial NOVA Orbital (opción 3) en el encabezado; el nombre público sigue siendo NOVAWORKORDER */
+.brand img.brand-logo { width: auto; height: 48px; margin: 0 -6px 0 -14px; }   /* Orden 38: recorte más amplio sin borde visible; 48 px = mismo tamaño de la palabra; el margen negativo descuenta el borde transparente */
+.brand > small { margin-top: 6px; }
 .top nav { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 .top nav > a:not(.btn) { color: var(--dim); text-decoration: none; font-size: 0.93rem; font-weight: 500; padding: 8px 12px; border-radius: 10px;
   transition: color 0.18s, background-color 0.18s; }
@@ -289,6 +292,7 @@ footer a:hover { color: var(--text); text-decoration: underline; }
   .top .wrap, .top nav { gap: 10px; }
   .top nav .btn { margin-left: 0; }
   .top nav > .lang { display: none; }               /* el cambio de idioma sigue en el pie de página */
+  .brand img.brand-logo { height: 40px; margin: 0 -5px 0 -12px; }   /* en celular, más pequeño para no apretar los botones */
   .top .login summary { padding: 7px 10px; }
   .login-menu { right: -70px; min-width: 236px; }
   .pains { grid-template-columns: 1fr; }

@@ -1,0 +1,226 @@
+[
+ {
+  "archivo": "nova-orbital-horizontal-2172.webp",
+  "ancho": 2172,
+  "alto": 724,
+  "bytes": 72730,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-1200.webp",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 31086,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-600.webp",
+  "ancho": 600,
+  "alto": 200,
+  "bytes": 12414,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-320.webp",
+  "ancho": 320,
+  "alto": 107,
+  "bytes": 5668,
+  "tipo": "exacta",
+  "nota": "Logo horizontal, fondo oscuro original"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-1200.png",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 396761,
+  "tipo": "exacta",
+  "nota": "Logo horizontal PNG"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-2172.png",
+  "ancho": 2172,
+  "alto": 724,
+  "bytes": 1770868,
+  "tipo": "derivada-aproximada",
+  "nota": "Fondo separado; sobre #00000C reproduce el original (error máx 2.0/255). Solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-1200.webp",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 238740,
+  "tipo": "derivada-aproximada",
+  "nota": "Igual que la transparente de 2172, reescalada; solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-600.webp",
+  "ancho": 600,
+  "alto": 200,
+  "bytes": 64288,
+  "tipo": "derivada-aproximada",
+  "nota": "Igual que la transparente de 2172, reescalada; solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-horizontal-transparente-320.webp",
+  "ancho": 320,
+  "alto": 107,
+  "bytes": 21550,
+  "tipo": "derivada-aproximada",
+  "nota": "Igual que la transparente de 2172, reescalada; solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-encabezado-48.webp",
+  "ancho": 136,
+  "alto": 48,
+  "bytes": 6500,
+  "tipo": "derivada-aproximada",
+  "nota": "Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255"
+ },
+ {
+  "archivo": "nova-orbital-encabezado-96.webp",
+  "ancho": 272,
+  "alto": 96,
+  "bytes": 18228,
+  "tipo": "derivada-aproximada",
+  "nota": "Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255"
+ },
+ {
+  "archivo": "nova-orbital-encabezado-144.webp",
+  "ancho": 408,
+  "alto": 144,
+  "bytes": 35442,
+  "tipo": "derivada-aproximada",
+  "nota": "Transparente recortada (x 0–2052, alto completo) para encabezados oscuros; alfa máx. en el borde 8/255"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-cuadrado-724.png",
+  "ancho": 724,
+  "alto": 724,
+  "bytes": 477002,
+  "tipo": "exacta",
+  "nota": "Recorte 724x724 del logo horizontal (x 191–915): símbolo completo con su fondo"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-cuadrado-512.webp",
+  "ancho": 512,
+  "alto": 512,
+  "bytes": 26996,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-cuadrado-256.webp",
+  "ancho": 256,
+  "alto": 256,
+  "bytes": 10536,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-transparente-724.png",
+  "ancho": 724,
+  "alto": 724,
+  "bytes": 740750,
+  "tipo": "derivada-aproximada",
+  "nota": "Símbolo con el fondo separado (error máx 2.0/255 sobre #00000C). Solo para fondos oscuros"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-transparente-128.png",
+  "ancho": 128,
+  "alto": 128,
+  "bytes": 27202,
+  "tipo": "derivada-aproximada",
+  "nota": "Símbolo transparente pequeño (entrada de la app). Orden 44: el alfa de los últimos 70 de 724 px se funde a 0 para que el brillo no se corte en un recuadro (cambio máx. de alfa 68/255)"
+ },
+ {
+  "archivo": "nova-orbital-simbolo-referencia-720x565.webp",
+  "ancho": 720,
+  "alto": 565,
+  "bytes": 41096,
+  "tipo": "exacta",
+  "nota": "Recorte suministrado, re-codificado. La órbita toca el borde derecho: referencia, no para iconos"
+ },
+ {
+  "archivo": "apple-touch-icon-180.png",
+  "ancho": 180,
+  "alto": 180,
+  "bytes": 39193,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "icono-app-192.png",
+  "ancho": 192,
+  "alto": 192,
+  "bytes": 44306,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "icono-app-512.png",
+  "ancho": 512,
+  "alto": 512,
+  "bytes": 265005,
+  "tipo": "exacta",
+  "nota": "Símbolo cuadrado reescalado (icono)"
+ },
+ {
+  "archivo": "favicon-16.png",
+  "ancho": 16,
+  "alto": 16,
+  "bytes": 813,
+  "tipo": "exacta",
+  "nota": "Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado"
+ },
+ {
+  "archivo": "favicon-32.png",
+  "ancho": 32,
+  "alto": 32,
+  "bytes": 2478,
+  "tipo": "exacta",
+  "nota": "Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado"
+ },
+ {
+  "archivo": "favicon-48.png",
+  "ancho": 48,
+  "alto": 48,
+  "bytes": 4832,
+  "tipo": "exacta",
+  "nota": "Favicon: recorte cerrado del símbolo (x/y 142–582 del cuadro de 724), reescalado"
+ },
+ {
+  "archivo": "favicon.ico",
+  "ancho": 48,
+  "alto": 48,
+  "bytes": 8247,
+  "tipo": "exacta",
+  "nota": "ICO con 16, 32 y 48 px del recorte cerrado del favicon"
+ },
+ {
+  "archivo": "icono-app-maskable-512.png",
+  "ancho": 512,
+  "alto": 512,
+  "bytes": 162705,
+  "tipo": "derivada-aproximada",
+  "nota": "Símbolo al 80 % sobre fondo #00000C con el borde desvanecido en 70 de 724 px (sin costura; cambio máx. 65/255 en la orilla)"
+ },
+ {
+  "archivo": "nova-orbital-placa-1200.png",
+  "ancho": 1200,
+  "alto": 400,
+  "bytes": 441523,
+  "tipo": "exacta",
+  "nota": "Logo horizontal sobre su fondo original, esquinas redondeadas (radio 48 px): para fondos claros"
+ },
+ {
+  "archivo": "nova-orbital-placa-600.png",
+  "ancho": 600,
+  "alto": 200,
+  "bytes": 121530,
+  "tipo": "exacta",
+  "nota": "Logo horizontal sobre su fondo original, esquinas redondeadas (radio 24 px): para fondos claros"
+ }
+]

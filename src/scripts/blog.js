@@ -126,8 +126,9 @@ ${alternos.map(([h, u]) => `  <link rel="alternate" hreflang="${h}" href="${SITI
   <meta property="og:image:alt" content="${esc(imgAlt)}" />
   <meta property="og:url" content="${SITIO}${url}" />
 ${publicado ? `  <meta property="article:published_time" content="${publicado}" />\n` : ''}  <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/img/icono-180.png" />
+  <link rel="icon" href="/marca/favicon.ico" sizes="any" />
+  <link rel="icon" href="/marca/favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/marca/apple-touch-icon-180.png" />
   <link rel="stylesheet" href="/estilos.css" />
   <link rel="stylesheet" href="/blog.css" />
   <script type="application/ld+json">
@@ -138,7 +139,7 @@ ${ld({ '@context': 'https://schema.org', '@graph': [ORG, ...extraLd] })}
   <a class="sr" href="#contenido">${t.saltar}</a>
   <header class="top">
     <div class="wrap">
-      <a class="brand" href="${t.inicio}"><img src="/favicon.svg" alt="" /><span>NOVA<small>WORKORDER</small></span></a>
+      <a class="brand" href="${t.inicio}"><img class="brand-logo" src="/marca/nova-orbital-encabezado-48.webp" srcset="/marca/nova-orbital-encabezado-96.webp 2x, /marca/nova-orbital-encabezado-144.webp 3x" width="136" height="48" alt="NOVA" /><small>WORKORDER</small></a>
       <nav aria-label="${t.menu}">
         <a href="${t.base}">${t.blog}</a>
 ${t.nav.map(([h, x]) => `        <a href="${h}">${x}</a>`).join('\n')}
