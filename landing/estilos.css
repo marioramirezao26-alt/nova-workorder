@@ -272,7 +272,8 @@ footer a:hover { color: var(--text); text-decoration: underline; }
 .doc h2 { font-size: 1.35rem; margin-top: 40px; letter-spacing: -0.015em; }
 .doc p, .doc li { color: #d4e2f5; line-height: 1.7; }
 .doc table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.95rem; }
-.doc th, .doc td { border: 1px solid var(--line-strong); padding: 9px 11px; text-align: left; vertical-align: top; }
+.doc th, .doc td { border: 1px solid var(--line-strong); padding: 9px 11px; text-align: left; vertical-align: top;
+  overflow-wrap: anywhere; }   /* Orden 44: en celular, un nombre largo (gmail.readonly) ya no ensancha la tabla */
 .doc th { background: rgba(255, 255, 255, 0.04); }
 .doc .meta { color: var(--muted); }
 
