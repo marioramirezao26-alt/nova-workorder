@@ -11,9 +11,15 @@ const { validateObjectId } = require('../middleware/validateObjectId');
 const { chatLimiter, chatPollLimiter } = require('../middleware/chatLimiter');
 const { chat, chatStatus, chatMessages } = require('../controllers/chatController');
 const { publicReviews } = require('../controllers/reviewController');
+const { pagoResultadoLimiter } = require('../middleware/pagoResultadoLimiter');
+const { resultadoPago } = require('../controllers/pagoResultadoController');
 
 // Rutas sin sesión que usa la página de ventas (novaworkorder.com). Caddy solo deja pasar /api/public/* en ese dominio.
 const router = express.Router();
+
+// Orden 65: el resultado de un pago de Mercado Pago para la página /pago/resultado (a la que Mercado Pago devuelve a quien
+// paga una mensualidad). Le pregunta a GABY, que consulta el pago; nunca confía en el status de la URL de retorno.
+router.get('/pago/resultado', pagoResultadoLimiter, resultadoPago);
 
 // Mensajes de error en el idioma de la página que envía (la de Estados Unidos manda lang: 'en').
 const t = (es, en) => (value, { req }) => (req.body && req.body.lang === 'en' ? en : es);

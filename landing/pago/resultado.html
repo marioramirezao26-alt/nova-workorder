@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resultado de tu pago | NOVAWORKORDER</title>
+  <meta name="robots" content="noindex" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#07111d" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/estilos.css" />
+</head>
+<body>
+  <!-- Orden 65: la página a la que Mercado Pago devuelve a la persona después de pagar una mensualidad (back_urls de la
+       preferencia que crea GABY). El estado NUNCA sale de la URL (Mercado Pago agrega ?status=…, pero cualquiera puede
+       escribirlo): la página le pregunta a /api/public/pago/resultado, que consulta el pago en GABY, y GABY a Mercado Pago.
+       No muestra nada de quien paga: solo el estado y la referencia del cobro. -->
+  <header class="top">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/favicon.svg" alt="" /><span>NOVA<small>WORKORDER</small></span></a>
+    </div>
+  </header>
+  <main id="contenido" tabindex="-1">
+    <section>
+      <div class="wrap center">
+        <p class="eyebrow">Mercado Pago</p>
+        <h1 id="titulo">Consultando tu pago…</h1>
+        <p class="lead" id="detalle">Un momento: estamos confirmando el estado con Mercado Pago.</p>
+        <p class="small" id="referencia" hidden></p>
+        <div class="cta-row">
+          <button class="btn" type="button" id="reintentar" hidden>Volver a consultar</button>
+          <a class="btn ghost" href="/">Ir al inicio</a>
+        </div>
+        <p class="small">¿Alguna duda con tu pago? Escríbenos a <a href="mailto:cobros@novaworkorder.com">cobros@novaworkorder.com</a> con la referencia.</p>
+      </div>
+    </section>
+  </main>
+  <script>
+    (function () {
+      var q = new URLSearchParams(window.location.search);
+      var pid = q.get('payment_id') || q.get('collection_id') || '';
+      var ref = q.get('external_reference') || '';
+      var titulo = document.getElementById('titulo');
+      var detalle = document.getElementById('detalle');
+      var refEl = document.getElementById('referencia');
+      var boton = document.getElementById('reintentar');
+      var TEXTOS_CONSULTANDO = ['Consultando tu pago…', 'Un momento: estamos confirmando el estado con Mercado Pago.'];
+      var TEXTOS = {
+        aprobado: ['¡Pago aprobado!', 'Mercado Pago confirmó tu pago. En unos minutos queda registrado en tu cuenta y te llega la confirmación por correo.'],
+        pendiente: ['Pago pendiente', 'Mercado Pago todavía está procesando tu pago (con PSE o efectivo puede tardar). Cuando se acredite, lo registramos solos y te avisamos por correo.'],
+        rechazado: ['Pago rechazado', 'Mercado Pago no aprobó este pago. Puedes intentar de nuevo con el mismo link de pago o con otro medio.'],
+        desconocido: ['No pudimos confirmar el pago', 'Todavía no tenemos el resultado. Si ya pagaste, no lo repitas: se registra solo cuando Mercado Pago lo confirme. Vuelve a consultar en un momento.']
+      };
+      function mostrar(estado) {
+        var t = TEXTOS[estado] || TEXTOS.desconocido;
+        titulo.textContent = t[0];
+        detalle.textContent = t[1];
+        boton.hidden = estado === 'aprobado' || estado === 'rechazado';
+        document.body.setAttribute('data-estado', estado);
+      }
+      if (!/^\d{1,20}$/.test(pid) || !/^[A-Za-z0-9._:-]{1,120}$/.test(ref)) {
+        titulo.textContent = 'No encontramos los datos del pago';
+        detalle.textContent = 'Este enlace no trae la información del pago. Si ya pagaste, no lo repitas: se registra solo cuando Mercado Pago lo confirme.';
+        return;
+      }
+      refEl.textContent = 'Referencia: ' + ref;
+      refEl.hidden = false;
+      function consultar() {
+        boton.hidden = true;
+        titulo.textContent = TEXTOS_CONSULTANDO[0];
+        detalle.textContent = TEXTOS_CONSULTANDO[1];
+        fetch('/api/public/pago/resultado?payment_id=' + encodeURIComponent(pid) + '&referencia=' + encodeURIComponent(ref), { headers: { Accept: 'application/json' } })
+          .then(function (r) { return r.ok ? r.json() : { estado: 'desconocido' }; })
+          .then(function (d) { mostrar(d && TEXTOS[d.estado] ? d.estado : 'desconocido'); })
+          .catch(function () { mostrar('desconocido'); });
+      }
+      boton.addEventListener('click', consultar);
+      consultar();
+    })();
+  </script>
+</body>
+</html>

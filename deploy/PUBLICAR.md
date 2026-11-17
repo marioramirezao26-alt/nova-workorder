@@ -85,6 +85,21 @@ systemctl restart nova
 
   GABY debe escuchar en `http://127.0.0.1:8000/api/webchat` (si no, `GABY_WEBCHAT_URL`). Si GABY se cae, el chat sigue
   respondiendo con la IA de `OPENROUTER_API_KEY`. La sal no se cambia después: cambiarla cambia el `ip_hash` de todos.
+- **La página de retorno de Mercado Pago** (Orden 65, `novaworkorder.com/pago/resultado`, a la que Mercado Pago devuelve
+  a quien paga una mensualidad): se publica sola con `landing/` (Caddy la resuelve con `try_files`; no hay que tocarlo).
+  Para que confirme el estado del pago necesita la misma `GABY_MP_RESULTADO_KEY` del `.env` de GABY; se copia igual que
+  la del chat, sin que se vea:
+
+  ```bash
+  grep -q '^GABY_MP_RESULTADO_KEY=.' /opt/nova-workorder/.env || \
+    grep -E '^GABY_MP_RESULTADO_KEY=.' /opt/gaby-os/.env | head -1 >> /opt/nova-workorder/.env
+  grep -c '^GABY_MP_RESULTADO_KEY=.' /opt/nova-workorder/.env   # debe decir 1
+  systemctl restart nova
+  ```
+
+  Sin la llave la página dice «No pudimos confirmar el pago». El estado nunca sale del `status` de la URL: GABY consulta
+  el pago a Mercado Pago (`docs/MERCADOPAGO.md` de GABY-OS). Solo después de comprobar la página por HTTPS se pone
+  `GABY_MP_BACK_URL=https://novaworkorder.com/pago/resultado` en el `.env` de GABY.
 - Lo que sabe está en `src/utils/salesChat.js` (`FACTS`): si cambian los precios, cámbialos ahí, en `landing/index.html`
   (texto y `PRECIO_TECNICO` de la calculadora), en `landing/terminos.html` y en GABY (`GABY_NOVA_PRICE_PER_TECH`,
   `GABY_PEDIDOS_PRICE_PER_STORE`). Los de EE. UU. (dólares) están en `FACTS_EN` y `FACTS_US_ES`, en `landing/en/`, en
